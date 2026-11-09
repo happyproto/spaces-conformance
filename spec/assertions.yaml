@@ -1,104 +1,1419 @@
 # The assertion catalogue: one row per thing the suite checks, each tied to a
-# sentence of Proposal 0016 at the pinned revision. Phase 1 fills it out from
-# design ch. 3.3. These rows are a seed that exercises every rule the
-# validator enforces (`bun run validate`); see docs/catalogue.md for the format.
+# sentence of Proposal 0016 at the pinned revision, or to the pinned lexicons.
+# Built from HAP-408 design ch. 3.3. `bun run validate` enforces the format and
+# the level rule; docs/catalogue.md describes both.
+#
+# Order follows the suites in design ch. 3.2. Within `credentials`, the six
+# cred.httpsig-* rows share one quote: each tests one item of its list.
 revision: "2026-10-29"
 assertions:
-  - id: digest.matches-record-set
-    suite: digest
-    section: "#commit-digest"
-    quote: "The commit's `data` is `sha256(state)`, a 32-byte digest of the 2048-byte buffer."
-    level: must
-    basis: [definition]
-    roles: [repo-host]
-    checks: The commit's data equals the harness's LtHash over {collection}/{rkey}/{cid} for every record the host lists.
+  # --- addressing --------------------------------------------------------------
 
-  - id: digest.order-independent
-    suite: digest
-    section: "#commit-digest"
-    quote: "It is independent of write/delete order, so two repos with the same records always produce the same digest."
-    level: must
-    basis: [definition]
-    roles: [repo-host]
-    checks: The same record set written in two orders gives the same data.
-
-  - id: oplog.entry-shape
-    suite: oplog
-    section: "#incremental-sync"
-    quote: "Each entry is `{ rev (TID), collection, rkey, cid, prev }`. The field `cid` is null for a delete and `prev` is null for a create."
-    level: must
-    basis: [definition]
-    roles: [repo-host]
-    checks: Every listRepoOps entry has exactly these fields, with cid null on delete and prev null on create.
-
-  - id: mac.list-repo-ops-final-page
-    suite: mac
-    section: "#incremental-sync"
-    quote: "If a given oplog response includes the last available operation that occurred to a repo, then the response must also include the member's current [commit](#space-repos)."
-    level: must
-    basis: [keyword, definition]
-    roles: [repo-host]
-    checks: The page holding the last op carries the commit and a MAC; earlier pages carry neither.
-
-  - id: records.write-refuses-credential
-    suite: records
-    section: "#read-access"
-    quote: "Write methods accept only an OAuth credential, since a write is attributed to the authoring user."
+  - id: addressing.record-uri-shape
+    suite: addressing
+    section: "#addressing"
+    quote: >-
+      All segments through `rkey` are necessary to identify a **record in a space**.
     level: must
     basis: [definition]
     roles: [repo-host, pds]
-    checks: createRecord, putRecord, deleteRecord and applyWrites sent with only a space credential are refused.
+    checks: >-
+      Records from listRecords and getRecord, and URIs from createRecord, have the shape
+      at://{spaceDid}/space/{spaceType}/{skey}/{authorDid}/{collection}/{rkey}.
 
-  - id: cred.extra-assertion-not-rejected
-    suite: credentials
-    section: "#access-control"
-    quote: "The authority MUST NOT reject a request solely because it includes a valid assertion that the space does not require."
+  - id: addressing.skey-limits
+    suite: addressing
+    section: "#space-key-skey"
+    quote: >-
+      Maximum length 512 bytes with the same syntax requirements as an `rkey`.
+    level: info
+    roles: [space-host, pds]
+    checks: >-
+      Records whether createSpace refuses an skey over 512 bytes or with invalid rkey syntax.
+      The spec states the limit, not that a host must refuse.
+
+  # --- records -----------------------------------------------------------------
+
+  - id: records.commit-fields
+    suite: records
+    section: "#space-repos"
+    quote: >-
+      | `ver` | integer | commit format version, currently `1` |
     level: must
-    basis: [keyword]
-    roles: [space-host]
-    checks: getSpaceCredential with a valid but unneeded client attestation still issues a credential.
+    basis: [definition, lexicon]
+    lexicon: com.atproto.space.getLatestCommit
+    roles: [repo-host]
+    checks: >-
+      The commit is exactly {ver: 1, repo, space, rev (a TID), data (32 bytes)}, with no
+      signature fields. Stricter than HappyView's interop tests, which also accept the
+      pre-0016 signed shape.
 
-  - id: cred.delegation-token-lifetime
-    suite: credentials
-    section: "#delegation-token"
-    quote: "The token is single-use, short-lived (default 60 seconds), and addressed (`aud`) to the space authority."
-    level: should
-    basis: [default]
-    roles: [pds]
-    checks: A delegation token's exp minus iat is 60.
-
-  - id: lifecycle.create-caller-is-authority
-    suite: lifecycle
-    section: "#xrpc-api"
-    quote: "Create a space with a given [`policy`](#space-policy); caller becomes the authority."
+  - id: records.commit-bytes-encoding
+    suite: records
+    section: "#space-repos"
+    quote: >-
+      | `data` | bytes | `sha256` of the [LtHash state](#commit-digest) (32 bytes) |
     level: must
     basis: [definition]
-    roles: [pds]
-    profiles: [pds]
-    checks: createSpace returns a uri whose authority is the calling account's DID.
+    roles: [repo-host]
+    checks: >-
+      The commit's data is lexicon bytes in JSON, {"$bytes": <standard base64>}, decoding to 32 bytes.
 
-  - id: policy.managed-check-user-access
-    suite: policy
-    section: "#managedspace"
-    quote: "The authority passes the space, the user, the `access` being checked (`read` or `write`), and for reads, the attested `client_id` if one was presented."
+  - id: records.commit-repo-space-match
+    suite: records
+    section: "#commit-mac"
+    quote: >-
+      The syncer checks that the commit's `repo` and `space` match the requested repo,
+      then recomputes the MAC and compares it with `mac`.
     level: must
     basis: [definition]
-    roles: [space-host]
-    requires: [policies.managedspace]
-    checks: The harness managing app receives com.atproto.managedspace.checkUserAccess, and its answer decides issuance.
-    provisional: true
+    roles: [repo-host]
+    checks: >-
+      The commit's repo and space equal the request's repo and space.
 
   - id: records.params-repo
     suite: records
     section: "#xrpc-api"
     level: must
     basis: [lexicon]
-    lexicon: com.atproto.space.listRepoOps
+    lexicon: [com.atproto.space.getLatestCommit, com.atproto.space.getRepo, com.atproto.space.listRepoOps]
+    params: [space, repo]
     roles: [repo-host]
-    checks: getLatestCommit, getRepo and listRepoOps take space and repo parameters.
+    checks: >-
+      getLatestCommit, getRepo and listRepoOps accept space and repo. The harness never
+      retries in an implementation's own shape (design ch. 9.3).
+
+  - id: records.crud-roundtrip
+    suite: records
+    section: "#xrpc-api"
+    quote: >-
+      Create a record in the caller's repo in the specified space.
+    level: must
+    basis: [definition, lexicon]
+    lexicon: [com.atproto.space.createRecord, com.atproto.space.putRecord]
+    params: [space, repo, collection, rkey, record]
+    roles: [pds, repo-host]
+    checks: >-
+      createRecord, putRecord, deleteRecord and getRecord agree with each other, and a
+      client-chosen rkey on createRecord is kept.
+
+  - id: records.apply-writes-atomic
+    suite: records
+    section: "#xrpc-api"
+    quote: >-
+      Apply a batch of creates, updates, and deletes to one repo atomically.
+    level: must
+    basis: [definition, lexicon]
+    lexicon: com.atproto.space.applyWrites
+    params: [space, repo, writes]
+    roles: [pds, repo-host]
+    checks: >-
+      One applyWrites batch lands whole, and its ops share one rev in listRepoOps.
+
+  - id: records.list-inlines-values
+    suite: records
+    section: "#xrpc-api"
+    quote: >-
+      List the records in a repo, inlining record values by default.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      listRecords with no flags returns each record's value.
+
+  - id: records.list-exclude-values
+    suite: records
+    section: "#xrpc-api"
+    quote: >-
+      Set `excludeValues` for a metadata-only listing.
+    level: must
+    basis: [definition, lexicon]
+    lexicon: com.atproto.space.listRecords
+    params: [excludeValues]
+    roles: [repo-host]
+    checks: >-
+      listRecords with excludeValues omits values and keeps each record's uri and cid.
+
+  - id: records.read-requires-auth
+    suite: records
+    section: "#read-access"
+    quote: >-
+      A **space credential** grants whole-space read/sync access directly, so the read and
+      sync methods accept **either** a covering OAuth scope or a space credential.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      Read and sync methods sent with neither OAuth nor a space credential are refused
+      (4xx) on a space without publicRead.
+
+  - id: info.read-auth-status
+    suite: records
+    section: "#read-access"
+    level: info
+    roles: [repo-host]
+    checks: >-
+      Records the status of that refusal. Reference hosts answer 401; the spec names none.
+
+  - id: records.write-refuses-credential
+    suite: records
+    section: "#read-access"
+    quote: >-
+      Write methods accept only an OAuth credential, since a write is attributed to the authoring user.
+    level: must
+    basis: [definition]
+    roles: [repo-host, pds]
+    checks: >-
+      createRecord, putRecord, deleteRecord and applyWrites sent with only a space credential are refused.
+
+  # --- lifecycle ---------------------------------------------------------------
+
+  - id: lifecycle.implicit-create
+    suite: lifecycle
+    section: "#repo-lifecycle"
+    quote: >-
+      A user's space repo is automatically created when they first write a record to that space.
+    level: must
+    basis: [definition]
+    roles: [pds]
+    requires: [repo_host.foreign_authorities]
+    checks: >-
+      The first write into another authority's space creates the repo, with no prior call.
+
+  - id: lifecycle.self-authority-needs-space
+    suite: lifecycle
+    section: "#repo-lifecycle"
+    quote: >-
+      If the user is also the space authority (the space authority DID is the user's own DID),
+      the space must already exist.
+    level: must
+    basis: [keyword]
+    roles: [pds]
+    checks: >-
+      A write to a nonexistent space whose authority is the writer is refused.
+
+  - id: lifecycle.clear-records-empty-digest
+    suite: lifecycle
+    section: "#repo-lifecycle"
+    quote: >-
+      The host deletes every record and advances the repo to a new `rev` with the empty repo's digest.
+    level: must
+    basis: [definition]
+    roles: [pds]
+    checks: >-
+      After clearRecords, getLatestCommit's data is
+      e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad and rev has advanced.
+
+  - id: lifecycle.empty-equals-missing
+    suite: lifecycle
+    section: "#repo-lifecycle"
+    quote: >-
+      Instead, an empty space repo and a nonexistent one are treated as equivalent.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      A never-written repo answers getLatestCommit and listRecords the same way a cleared one does.
+
+  - id: lifecycle.create-caller-is-authority
+    suite: lifecycle
+    section: "#xrpc-api"
+    quote: >-
+      Create a space with a given [`policy`](#space-policy); caller becomes the authority.
+    level: must
+    basis: [definition]
+    roles: [pds]
+    profiles: [pds]
+    checks: >-
+      createSpace returns a uri whose authority is the calling account's DID.
+
+  - id: lifecycle.list-spaces
+    suite: lifecycle
+    section: "#xrpc-api"
+    quote: >-
+      The spaces the caller holds a repo in or is the authority of.
+    level: must
+    basis: [definition, lexicon]
+    lexicon: com.atproto.space.listSpaces
+    params: [did, spaceType]
+    roles: [pds, space-host]
+    checks: >-
+      listSpaces returns the spaces the caller holds a repo in or is the authority of, and
+      nothing else. The did parameter filters by authority, and spaceType by type.
+
+  # --- digest ------------------------------------------------------------------
+
+  - id: digest.empty-repo
+    suite: digest
+    section: "#commit-digest"
+    quote: >-
+      The empty repo's state is all zeroes.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      A repo whose records were all deleted reports data equal to sha256 of 2048 zero bytes.
+
+  - id: digest.matches-record-set
+    suite: digest
+    section: "#commit-digest"
+    quote: >-
+      The commit's `data` is `sha256(state)`, a 32-byte digest of the 2048-byte buffer.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      The commit's data equals the harness's LtHash over {collection}/{rkey}/{cid} for every record the host lists.
+
+  - id: digest.order-independent
+    suite: digest
+    section: "#commit-digest"
+    quote: >-
+      It is independent of write/delete order, so two repos with the same records always
+      produce the same digest.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      The same record set written in two orders, in two repos, gives the same data.
+
+  - id: digest.covers-overwrite-and-delete
+    suite: digest
+    section: "#commit-digest"
+    quote: >-
+      A record is added to or removed from the digest with a single addition or subtraction
+      rather than a recomputation over the whole repo.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      After a create, an overwrite of one record and a delete of another, data covers only the surviving records.
+
+  - id: digest.cid-drisl-plain
+    suite: digest
+    section: "#commit-digest"
+    quote: >-
+      `record_cid` is the [DASL CID](https://dasl.ing/cid.html) of the record's encoded bytes,
+      using the [DRISL](https://dasl.ing/drisl.html) codec, rendered as a string.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      For plain-JSON records, the cid the host returns equals the harness's DRISL CID.
+
+  - id: digest.cid-drisl-typed
+    suite: digest
+    section: "#commit-digest"
+    quote: >-
+      `record_cid` is the [DASL CID](https://dasl.ing/cid.html) of the record's encoded bytes,
+      using the [DRISL](https://dasl.ing/drisl.html) codec, rendered as a string.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      The same for records holding $link, $bytes and integers past 32 bits (up to 2^53-1).
+
+  - id: digest.multi-batch
+    suite: digest
+    section: "#commit-digest"
+    quote: >-
+      Each record in the repo maps to one element, the UTF-8 bytes of `{collection}/{rkey}/{record_cid}`.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      57 records written over several applyWrites calls give the data the harness computes.
+
+  # --- mac ---------------------------------------------------------------------
+
+  - id: mac.kem-key-published
+    suite: mac
+    section: "#kem-key"
+    quote: >-
+      Each account with space repos publishes a P-256 key in its DID document's `verificationMethod` array.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      The author's DID document has {authorDid}#atproto_kem, controller the author, type
+      Multikey, and a P-256 publicKeyMultibase.
+
+  - id: mac.commit-header-present
+    suite: mac
+    section: "#authenticity-headers"
+    quote: >-
+      Methods that return a [commit](#commit-mac) or [record](#record-mac) require a MAC when
+      called with a space credential.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      With a space credential and Atproto-Space-Want-Mac, getLatestCommit returns
+      Atproto-Space-Mac whose type and ver match the request's.
+
+  - id: mac.vary-header
+    suite: mac
+    section: "#authenticity-headers"
+    quote: >-
+      The host returns the 32-byte MAC as a base64 byte sequence in an `Atproto-Space-Mac`
+      response header, and lists the request header in `Vary`:
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      The response's Vary lists Atproto-Space-Want-Mac, and the mac is a 32-byte structured-field byte sequence.
+
+  - id: mac.malformed-request-rejected
+    suite: mac
+    section: "#authenticity-headers"
+    quote: >-
+      Missing or malformed headers, unsupported types or versions, and invalid keys are errors.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      A malformed Want-Mac, an unknown type or ver, or a key_share that isn't a P-256
+      did:key is refused rather than answered without a MAC.
+
+  - id: mac.commit-valid
+    suite: mac
+    section: "#commit-mac"
+    quote: >-
+      The MAC covers the commit's `space`, `repo`, `rev`, and `data`.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      The commit MAC verifies with the harness's HKDF shared secret and HMAC-SHA256 over the defined context.
+
+  - id: mac.commit-bound-to-repo
+    suite: mac
+    section: "#shared-secret"
+    quote: >-
+      After authorizing the request, the repo host decodes the syncer's public key from
+      `key_share`, performs ECDH using the author's private key, and derives the same `shared_secret`.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      A MAC requested with a key_share whose shared secret the harness derived against another
+      account's KEM key doesn't verify, i.e. the host uses the author's own KEM key.
+
+  - id: mac.list-repo-ops-final-page
+    suite: mac
+    section: "#incremental-sync"
+    quote: >-
+      If a given oplog response includes the last available operation that occurred to a repo,
+      then the response must also include the member's current [commit](#space-repos).
+    level: must
+    basis: [keyword, definition]
+    roles: [repo-host]
+    checks: >-
+      The page holding the last op carries the commit and a MAC header. Earlier pages carry neither.
+
+  - id: mac.record-valid
+    suite: mac
+    section: "#record-mac"
+    quote: >-
+      The MAC covers the record's full [URI](#addressing) and CID:
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      getRecord's atproto-space-record MAC verifies over the record URI and binary CID.
+
+  # --- oplog -------------------------------------------------------------------
+
+  - id: oplog.entry-shape
+    suite: oplog
+    section: "#incremental-sync"
+    quote: >-
+      Each entry is `{ rev (TID), collection, rkey, cid, prev }`. The field `cid` is null for a
+      delete and `prev` is null for a create.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      Every listRepoOps entry has exactly these fields, with cid null on delete and prev null on create.
+
+  - id: oplog.since-exclusive
+    suite: oplog
+    section: "#incremental-sync"
+    quote: >-
+      A repo host keeps an **operation log** of recent writes to each repo and returns the operations after `since`.
+    level: must
+    basis: [definition, lexicon]
+    lexicon: com.atproto.space.listRepoOps
+    params: [since]
+    roles: [repo-host]
+    checks: >-
+      listRepoOps with since=R returns only ops with rev greater than R.
+
+  - id: oplog.pagination-complete
+    suite: oplog
+    section: "#incremental-sync"
+    level: must
+    basis: [lexicon]
+    lexicon: com.atproto.space.listRepoOps
+    params: [limit, cursor]
+    roles: [repo-host]
+    checks: >-
+      With a limit below the op count, following cursor returns every op exactly once.
+
+  - id: oplog.pagination-batch-boundary
+    suite: oplog
+    section: "#incremental-sync"
+    quote: >-
+      Multiple records may be mutated atomically, and this is captured by entries sharing a `rev`.
+    level: must
+    basis: [definition, lexicon]
+    lexicon: com.atproto.space.listRepoOps
+    params: [limit, cursor]
+    roles: [repo-host]
+    checks: >-
+      Following listRepoOps's cursor (which the lexicon says takes precedence over since) across
+      a page boundary inside one applyWrites batch loses no ops.
+
+  - id: oplog.stale-values-omitted
+    suite: oplog
+    section: "#incremental-sync"
+    quote: >-
+      If a record has been updated or deleted by a later operation, the host omits the
+      intermediate (now stale) values.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      Only the latest op for a path carries a value. Superseded ones don't.
+
+  - id: oplog.exclude-values
+    suite: oplog
+    section: "#incremental-sync"
+    quote: >-
+      A syncer may set `excludeValues` to receive only the operation metadata (for example, to
+      drive selective `getRecord` calls).
+    level: must
+    basis: [host-honours-may, lexicon]
+    lexicon: com.atproto.space.listRepoOps
+    params: [excludeValues]
+    roles: [repo-host]
+    checks: >-
+      listRepoOps with excludeValues returns entries with no values.
+
+  - id: oplog.fold-matches-commit
+    suite: oplog
+    section: "#incremental-sync"
+    quote: >-
+      When the two digests agree, the syncer knows that their copy is exactly up-to-date with the hosted repo.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      Folding every op from the start into an empty set hash gives the final page's commit data.
+
+  # --- export ------------------------------------------------------------------
+
+  - id: export.star-magic-and-metadata
+    suite: export
+    section: "#repo-serialization"
+    quote: >-
+      The magic bytes are `0x2A 0x6C 0x01 0x00`.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      getRepo returns a STAR archive with this magic, and DRISL metadata with $type atproto-space-repo and every commit field.
+
+  - id: export.star-sorted-unique
+    suite: export
+    section: "#repo-serialization"
+    quote: >-
+      Records MUST appear in strict lexicographic order of the key bytes, with no duplicate keys.
+    level: must
+    basis: [keyword]
+    roles: [repo-host]
+    checks: >-
+      The archive's keys are in strict byte order, with no repeats.
+
+  - id: export.star-digest
+    suite: export
+    section: "#repo-serialization"
+    quote: >-
+      Once every record has been streamed, compare `sha256(state)` against the commit's `data`.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: >-
+      Streaming the archive into a set hash reproduces the metadata's data, and the response MAC verifies.
+
+  - id: export.blob-roundtrip
+    suite: export
+    section: "#blob-sync"
+    quote: >-
+      Blobs referenced by records in a space are stored on the authoring repo's host and
+      fetched via `com.atproto.space.getBlob` with the relevant space credential.
+    level: must
+    basis: [definition, lexicon]
+    lexicon: com.atproto.space.getBlob
+    params: [space, repo, cid]
+    roles: [repo-host]
+    checks: >-
+      listBlobs lists a referenced blob, and getBlob(space, repo, cid) serves its bytes under a space credential.
+
+  # --- credentials -------------------------------------------------------------
+
+  - id: cred.delegation-token-shape
+    suite: credentials
+    section: "#delegation-token"
+    quote: >-
+      The `typ` field in the header is set to `atproto-space-delegation+jwt`.
+    level: must
+    basis: [definition]
+    roles: [pds]
+    checks: >-
+      typ is atproto-space-delegation+jwt, kid is #atproto, iss is the user, sub is the space,
+      aud is {authority}#atproto_pds, there's a jti, and there's no lxm.
+
+  - id: cred.delegation-token-lifetime
+    suite: credentials
+    section: "#delegation-token"
+    quote: >-
+      The token is single-use, short-lived (default 60 seconds), and addressed (`aud`) to the space authority.
+    level: should
+    basis: [default]
+    roles: [pds]
+    checks: >-
+      A delegation token's exp minus iat is 60.
+
+  - id: cred.delegation-token-single-use
+    suite: credentials
+    section: "#delegation-token"
+    quote: >-
+      The token is single-use, short-lived (default 60 seconds), and addressed (`aud`) to the space authority.
+    level: must
+    basis: [definition]
+    roles: [space-host]
+    checks: >-
+      A space host refuses a delegation token presented a second time.
+
+  - id: cred.delegation-token-verifiable
+    suite: credentials
+    section: "#delegation-token"
+    quote: >-
+      The signature for the delegation token is computed using the regular JWT process, using
+      the account's signing key.
+    level: must
+    basis: [definition]
+    roles: [pds]
+    checks: >-
+      The token verifies against the #atproto key in the user's DID document.
+
+  - id: cred.delegation-token-kid-enforced
+    suite: credentials
+    section: "#delegation-token"
+    quote: >-
+      "kid": "#atproto" // Key Identifier - MUST be "#atproto"
+    level: must
+    basis: [keyword]
+    roles: [space-host]
+    checks: >-
+      A space host refuses an otherwise valid delegation token whose kid isn't #atproto.
+
+  - id: cred.credential-shape
+    suite: credentials
+    section: "#space-credential"
+    quote: >-
+      The `typ` field in the header is set to `atproto-space-credential+jwt`.
+    level: must
+    basis: [definition]
+    roles: [space-host]
+    checks: >-
+      typ is atproto-space-credential+jwt, kid is #atproto, iss is the authority, sub is the
+      space, cnf.kid is the requested credentialKid, there's a jti, there's no aud, and the
+      lifetime is at most 60 minutes.
+
+  - id: cred.credential-lifetime-default
+    suite: credentials
+    section: "#space-credential"
+    quote: >-
+      It is short-lived (default 10 minutes, maximum 60 minutes) and signed by the [space
+      authority's](#space-authority) signing key, so any repo host can verify it against the
+      authority's key without contacting the authority.
+    level: should
+    basis: [default]
+    roles: [space-host]
+    checks: >-
+      A space credential's exp minus iat is 600.
+
+  - id: cred.extra-assertion-not-rejected
+    suite: credentials
+    section: "#access-control"
+    quote: >-
+      The authority MUST NOT reject a request solely because it includes a valid assertion that
+      the space does not require.
+    level: must
+    basis: [keyword]
+    roles: [space-host]
+    checks: >-
+      getSpaceCredential with a valid but unneeded client attestation still issues a credential.
+
+  - id: cred.httpsig-no-signature
+    suite: credentials
+    section: "#presenting-a-space-credential"
+    quote: &httpsig >-
+      A host receiving a space credential MUST validate the authorization token and HTTP Message
+      Signature, including:
+    level: must
+    basis: [keyword]
+    roles: [repo-host, space-host]
+    checks: >-
+      A credential with no Signature, no Signature-Input or no Atproto-Space-Audience header is refused.
+
+  - id: cred.httpsig-wrong-components
+    suite: credentials
+    section: "#presenting-a-space-credential"
+    quote: *httpsig
+    level: must
+    basis: [keyword]
+    roles: [repo-host, space-host]
+    checks: >-
+      A signature whose covered components aren't exactly ("authorization" "atproto-space-audience"), in that order, is refused.
+
+  - id: cred.httpsig-wrong-tag
+    suite: credentials
+    section: "#presenting-a-space-credential"
+    quote: *httpsig
+    level: must
+    basis: [keyword]
+    roles: [repo-host, space-host]
+    checks: >-
+      A signature whose tag isn't atproto-space-credential is refused.
+
+  - id: cred.httpsig-wrong-audience
+    suite: credentials
+    section: "#presenting-a-space-credential"
+    quote: *httpsig
+    level: must
+    basis: [keyword]
+    roles: [repo-host, space-host]
+    checks: >-
+      An Atproto-Space-Audience other than the repo owner (or the authority, at the space host) is refused.
+
+  - id: cred.httpsig-non-p256-key
+    suite: credentials
+    section: "#presenting-a-space-credential"
+    quote: *httpsig
+    level: must
+    basis: [keyword]
+    roles: [repo-host, space-host]
+    checks: >-
+      A credential whose cnf.kid isn't a P-256 did:key, or a signature by another key, is refused.
+
+  - id: cred.httpsig-expired
+    suite: credentials
+    section: "#presenting-a-space-credential"
+    quote: *httpsig
+    level: must
+    basis: [keyword]
+    roles: [repo-host, space-host]
+    checks: >-
+      An expired credential is refused even with a valid signature.
+
+  - id: cred.httpsig-high-s-accepted
+    suite: credentials
+    section: "#credential-key-binding"
+    quote: >-
+      Unlike atproto commit signatures, low-S normalization is not required, and verifiers MUST
+      accept both low-S and high-S signatures.
+    level: must
+    basis: [keyword]
+    roles: [repo-host, space-host]
+    checks: >-
+      A request signed with a high-S signature is accepted.
+
+  - id: cred.scheme-case-insensitive
+    suite: credentials
+    section: "#presenting-a-space-credential"
+    quote: >-
+      As with any HTTP authentication scheme, a host recognizes the `Atproto-Space-Credential`
+      scheme regardless of case (e.g. `atproto-space-credential` is also accepted).
+    level: must
+    basis: [definition]
+    roles: [repo-host, space-host]
+    checks: >-
+      The lowercase atproto-space-credential scheme is accepted, with the signature over the header exactly as sent.
+
+  - id: cred.reuse-allowed
+    suite: credentials
+    section: "#presenting-a-space-credential"
+    quote: >-
+      It MAY be reused with the same authorization token and audience DID until the token expires.
+    level: must
+    basis: [host-honours-may]
+    roles: [repo-host, space-host]
+    checks: >-
+      The same credential and signature succeed twice against one audience.
+
+  - id: cred.foreign-authority-accepted
+    suite: credentials
+    section: "#space-credential"
+    quote: >-
+      A single credential is intended to be reused across every repo host serving a repo in the
+      space as well as against a given host for repeated requests, until it expires.
+    level: must
+    basis: [definition]
+    roles: [pds]
+    requires: [repo_host.foreign_authorities]
+    checks: >-
+      A repo host accepts a credential minted by another authority for a space it hosts a repo in.
+
+  - id: cred.revoked-jti-rejected
+    suite: credentials
+    section: "#credential-expiration-and-revocation"
+    quote: >-
+      A repo host MUST reject a credential whose `jti` has been revoked for that space and retain
+      the revocation for at least 60 minutes, after which no credential with that `jti` can remain valid.
+    level: must
+    basis: [keyword]
+    roles: [repo-host]
+    checks: >-
+      After the authority revokes a jti (notifyCredentialRevoked, or the implementation's own
+      trigger through the adapter's revokeCredential hook), the repo host refuses that credential.
+
+  - id: cred.revocation-idempotent
+    suite: credentials
+    section: "#credential-expiration-and-revocation"
+    quote: >-
+      Revocation is idempotent so that the authority may safely retry delivery without creating
+      another stored entry.
+    level: must
+    basis: [definition, lexicon]
+    lexicon: com.atproto.space.notifyCredentialRevoked
+    params: [space, credentials]
+    roles: [repo-host]
+    requires: [repo_host.foreign_authorities]
+    checks: >-
+      The same notifyCredentialRevoked, sent twice, succeeds both times.
+
+  # --- scopes ------------------------------------------------------------------
+
+  - id: scope.authority-self
+    suite: scopes
+    section: "#oauth-scopes"
+    quote: >-
+      `authority` defaults to `self`, the granting user's own DID, so a bare `space:<spaceType>`
+      grant covers only the user's own spaces of that type.
+    level: must
+    basis: [definition]
+    roles: [pds]
+    profiles: [pds]
+    requires: [oauth.scripted]
+    checks: >-
+      A bare space:<type> grant writes in the user's own space of that type and is refused in another authority's.
+
+  - id: scope.manage-create-required
+    suite: scopes
+    section: "#matching"
+    quote: >-
+      `manage=create` authorizes creating a space of the given `spaceType` under the given authority.
+    level: must
+    basis: [definition]
+    roles: [pds, space-host]
+    requires: [oauth.scripted]
+    checks: >-
+      createSpace is refused for a session whose grant lacks manage=create.
+
+  - id: scope.manage-update-required
+    suite: scopes
+    section: "#matching"
+    quote: >-
+      For example, on a `memberspace` space, `manage=update` authorizes `updateSpace` as well as
+      `com.atproto.memberspace.putMember` and `removeMember`.
+    level: must
+    basis: [definition]
+    roles: [pds, space-host]
+    requires: [oauth.scripted, policies.memberspace]
+    checks: >-
+      updateSpace, putMember, removeMember and removeWriter are refused without manage=update.
+
+  - id: scope.manage-delete-required
+    suite: scopes
+    section: "#matching"
+    quote: >-
+      The `manage` verbs map onto the policy-agnostic lifecycle methods
+      (`com.atproto.space.createSpace`, `updateSpace`, `deleteSpace`) as well as any
+      administrative methods the space's [`policy`](#space-policy) defines.
+    level: must
+    basis: [definition]
+    roles: [pds, space-host]
+    requires: [oauth.scripted]
+    checks: >-
+      deleteSpace is refused without manage=delete.
+
+  - id: scope.read-self-own-repo-only
+    suite: scopes
+    section: "#read-access"
+    quote: >-
+      An application holding only `read_self` can read its user's own records but cannot reach
+      the rest of the space.
+    level: must
+    basis: [definition]
+    roles: [pds, repo-host]
+    requires: [oauth.scripted]
+    checks: >-
+      A read_self session reads its own repo, is refused another member's, and is refused getDelegationToken.
+
+  - id: scope.bare-grant-declared-collections
+    suite: scopes
+    section: "#matching"
+    quote: >-
+      Omitting `collection` defaults it to the `collections` declared by the space type's
+      [declaration](#space-type-declarations).
+    level: must
+    basis: [definition]
+    roles: [pds, repo-host]
+    requires: [oauth.scripted, space_type_resolution]
+    checks: >-
+      A grant with no collection writes the fixture declaration's collections and is refused
+      an undeclared one. Needs the host to resolve the fixture space type inside the stack.
+
+  - id: scope.collection-star-widens
+    suite: scopes
+    section: "#matching"
+    quote: >-
+      An application may narrow this by listing a subset of collections, or widen it with `collection=*`.
+    level: must
+    basis: [definition]
+    roles: [pds, repo-host]
+    requires: [oauth.scripted]
+    checks: >-
+      A collection=* grant writes an undeclared collection.
+
+  - id: scope.wildcard-type-no-writes
+    suite: scopes
+    section: "#matching"
+    quote: >-
+      When `spaceType` is `*` there is no declaration to draw from, so the default is empty and
+      the grant confers no write targets unless provided.
+    level: must
+    basis: [definition]
+    roles: [pds, repo-host]
+    requires: [oauth.scripted]
+    checks: >-
+      A space:* grant with no collection is refused every write.
+
+  - id: scope.omitted-action-all
+    suite: scopes
+    section: "#matching"
+    quote: >-
+      Omitting `action` grants `read`, `create`, `update`, and `delete` (`read` is inclusive of `read_self`).
+    level: must
+    basis: [definition]
+    roles: [pds, repo-host]
+    requires: [oauth.scripted]
+    checks: >-
+      A grant with no action reads, creates, updates and deletes.
+
+  # --- error envelopes (graded once per error, design ch. 3.1) -----------------
+
+  - id: xrpc.error.SpaceNotFound
+    suite: lifecycle
+    level: must
+    basis: [lexicon]
+    lexicon: com.atproto.space.getSpace
+    error: SpaceNotFound
+    roles: [space-host, pds]
+    checks: >-
+      getSpace for an unknown space answers {error: "SpaceNotFound", message}.
+
+  - id: xrpc.error.RepoNotFound
+    suite: records
+    level: must
+    basis: [lexicon]
+    lexicon: com.atproto.space.getLatestCommit
+    error: RepoNotFound
+    roles: [repo-host]
+    checks: >-
+      getLatestCommit for an account the host doesn't serve answers {error: "RepoNotFound",
+      message}. An empty repo of a hosted account is not this case (lifecycle.empty-equals-missing).
+
+  - id: xrpc.error.RecordNotFound
+    suite: records
+    level: must
+    basis: [lexicon]
+    lexicon: com.atproto.space.getRecord
+    error: RecordNotFound
+    roles: [repo-host]
+    checks: >-
+      getRecord for a missing rkey answers {error: "RecordNotFound", message}.
+
+  - id: xrpc.error.UnsupportedPolicy
+    suite: policy
+    level: must
+    basis: [lexicon]
+    lexicon: [com.atproto.space.createSpace, com.atproto.space.updateSpace]
+    error: UnsupportedPolicy
+    roles: [space-host, pds]
+    checks: >-
+      createSpace with an unknown policy $type answers {error: "UnsupportedPolicy", message}.
+
+  - id: xrpc.error.PolicyMismatch
+    suite: policy
+    level: must
+    basis: [lexicon]
+    lexicon: com.atproto.memberspace.putMember
+    error: PolicyMismatch
+    roles: [space-host, pds]
+    requires: [policies.memberspace, policies.managedspace]
+    checks: >-
+      putMember on a managedspace space answers {error: "PolicyMismatch", message}.
+
+  - id: xrpc.error.SpaceDeleted
+    suite: deletion
+    level: must
+    basis: [lexicon]
+    lexicon: com.atproto.space.getSpaceCredential
+    error: SpaceDeleted
+    roles: [space-host]
+    checks: >-
+      When the host answers getSpaceCredential for a deleted space with SpaceDeleted, the body
+      is {error: "SpaceDeleted", message}. Whether it does is deletion.credential-error.
+
+  # --- writer-set --------------------------------------------------------------
+
+  - id: writers.notify-write-sent
+    suite: writer-set
+    section: "#write-notifications"
+    quote: >-
+      When an account writes to a space repo, their PDS sends a `com.atproto.space.notifyWrite`
+      containing the updated repo's `rev` and `data` to the space host associated with the space
+      authority (unless the authority is the repo account itself).
+    level: must
+    basis: [definition, lexicon]
+    lexicon: com.atproto.space.notifyWrite
+    params: [space, repo, repoRev, data]
+    roles: [repo-host]
+    requires: [repo_host.foreign_authorities]
+    checks: >-
+      After a write into a space whose authority is the harness, the harness space host receives notifyWrite with the new rev and data.
+
+  - id: writers.notify-write-forwarded
+    suite: writer-set
+    section: "#write-notifications"
+    quote: >-
+      The space host sequences updates with a separate revision (TID) for the overall space, and
+      indicates the current and previous space revision in each forwarded write notification.
+    level: must
+    basis: [definition, lexicon]
+    lexicon: com.atproto.space.notifyWrite
+    params: [spaceRev, prevSpaceRev]
+    roles: [space-host]
+    checks: >-
+      A registered syncer receives the forwarded notifyWrite carrying spaceRev and prevSpaceRev, with no gap between consecutive notifications.
+
+  - id: writers.stale-rev-ignored
+    suite: writer-set
+    section: "#write-notifications"
+    quote: >-
+      updates with a lower or equal revision should be ignored
+    level: should
+    basis: [keyword]
+    roles: [space-host]
+    checks: >-
+      A notifyWrite with a lower or equal rev doesn't change the repo's entry in listRepos.
+
+  - id: writers.future-rev-rejected
+    suite: writer-set
+    section: "#write-notifications"
+    quote: >-
+      and must not correspond to a future timestamp (beyond a short clock skew window)
+    level: must
+    basis: [keyword]
+    roles: [space-host]
+    checks: >-
+      A notifyWrite whose rev is a TID well in the future is refused (the lexicon names FutureRev).
+
+  - id: writers.unauthorized-write-rejected
+    suite: writer-set
+    section: "#write-notifications"
+    quote: >-
+      The space host should reject write notifications for repos which are not authorized to write to the space.
+    level: should
+    basis: [keyword]
+    roles: [space-host]
+    requires: [policies.memberspace]
+    checks: >-
+      A notifyWrite from a non-member of a memberspace space without publicWrite doesn't add it to listRepos.
+
+  - id: writers.register-expiry
+    suite: writer-set
+    section: "#write-notifications"
+    quote: >-
+      Registrations have a fixed time duration, indicated by an expiration time in the API response body.
+    level: must
+    basis: [definition, lexicon]
+    lexicon: [com.atproto.space.registerNotify, com.atproto.space.unregisterNotify]
+    params: [space, service]
+    roles: [space-host]
+    checks: >-
+      registerNotify returns expiresAt in the future. unregisterNotify, called with the same space credential, stops delivery.
+
+  - id: writers.list-repos
+    suite: writer-set
+    section: "#the-sync-boundary-writer-set"
+    quote: >-
+      Alongside each account, `listRepos` returns that repo's current `rev` and `data`.
+    level: must
+    basis: [definition, lexicon]
+    lexicon: com.atproto.space.listRepos
+    params: [space, limit, cursor]
+    roles: [space-host]
+    checks: >-
+      listRepos lists every account that has written, each with its current rev and data, and
+      pages completely.
+
+  - id: writers.list-repos-since-space-rev
+    suite: writer-set
+    section: "#write-notifications"
+    quote: >-
+      Syncers can detect missed notifications from a gap in space revisions, and request a list of
+      all repos in the space updated "since" an earlier space revision using the
+      `com.atproto.space.listRepos` endpoint.
+    level: must
+    basis: [definition, lexicon]
+    lexicon: com.atproto.space.listRepos
+    params: [cursor]
+    roles: [space-host]
+    checks: >-
+      listRepos with cursor set to a spaceRev from a forwarded notifyWrite returns only the repos
+      updated after that space revision (exclusive), per the lexicon's cursor.
+
+  - id: writers.remove-writer
+    suite: writer-set
+    section: "#the-sync-boundary-writer-set"
+    quote: >-
+      This can be explicitly requested with `com.atproto.space.removeWriter`.
+    level: must
+    basis: [definition, lexicon]
+    lexicon: com.atproto.space.removeWriter
+    params: [space, did]
+    roles: [space-host]
+    checks: >-
+      removeWriter drops the account from listRepos.
+
+  - id: writers.removed-writer-retracked
+    suite: writer-set
+    section: "#memberspace"
+    quote: >-
+      While `publicWrite` is set, a removed writer is tracked again as soon as it writes.
+    level: must
+    basis: [definition]
+    roles: [space-host, pds]
+    requires: [policies.memberspace]
+    checks: >-
+      In a memberspace space with publicWrite, an account removed with removeWriter is back in
+      listRepos after its next write.
+
+  - id: writers.repos-resolve-to-host
+    suite: writer-set
+    section: "#the-sync-boundary-writer-set"
+    quote: >-
+      A listed account's repo host is the source of truth for whether that repo actually holds data.
+    level: info
+    roles: [space-host]
+    checks: >-
+      Records whether every repo in listRepos is served by the host its author's DID document
+      names. The spec states this as the syncer's model, not as a host rule.
+
+  # --- policy ------------------------------------------------------------------
+
+  - id: policy.create-get-roundtrip
+    suite: policy
+    section: "#xrpc-api"
+    quote: >-
+      Describe a space: its identity and current [`policy`](#space-policy).
+    level: must
+    basis: [definition]
+    roles: [space-host, pds]
+    checks: >-
+      getSpace after createSpace with a policy returns the created uri and the same policy object.
+
+  - id: policy.unsupported-policy-error
+    suite: policy
+    section: "#space-policy"
+    quote: >-
+      Both `createSpace` and `updateSpace` take the full `policy` object, including its
+      configuration, and MUST fail with an `UnsupportedPolicy` error if the host does not
+      implement the requested policy.
+    level: must
+    basis: [keyword]
+    roles: [space-host, pds]
+    checks: >-
+      createSpace and updateSpace with an unknown policy $type both fail, with the UnsupportedPolicy error name.
+
+  - id: policy.authority-always-authorized
+    suite: policy
+    section: "#space-policy"
+    quote: >-
+      Under every policy, the space authority's own account is always authorized as a user, for
+      both reading and writing, without appearing on a member list or being approved by a managing app.
+    level: must
+    basis: [definition]
+    roles: [space-host, pds]
+    profiles: [pds]
+    checks: >-
+      The authority account gets a credential and is tracked as a writer with no member entry.
+
+  - id: policy.type-change-discards-state
+    suite: policy
+    section: "#space-policy"
+    quote: >-
+      Generally, state from the previous policy (such as a `memberspace` member list) should be
+      discarded, and migrating back to the previous policy should not restore it.
+    level: should
+    basis: [keyword]
+    roles: [space-host, pds]
+    requires: [policies.memberspace, policies.managedspace]
+    checks: >-
+      Switching memberspace to managedspace and back leaves an empty member list.
+
+  - id: policy.baseline-supported
+    suite: policy
+    section: "#space-policy"
+    quote: >-
+      A PDS MUST support the three [baseline policies](#baseline-policies), so that a management
+      surface is available on every account.
+    level: must
+    basis: [keyword]
+    roles: [pds]
+    profiles: [pds]
+    checks: >-
+      createSpace accepts personalspace, memberspace and managedspace policies.
+
+  - id: policy.personalspace-owner-only
+    suite: policy
+    section: "#personalspace"
+    quote: >-
+      Only the space authority's own account is authorized to read, and the authority tracks no other writers.
+    level: must
+    basis: [definition]
+    roles: [pds]
+    requires: [policies.personalspace]
+    checks: >-
+      getSpaceCredential with another user's delegation token is refused, and another user's notifyWrite isn't tracked.
+
+  - id: policy.member-methods
+    suite: policy
+    section: "#memberspace"
+    quote: >-
+      The member list is managed through `memberspace`'s own methods:
+    level: must
+    basis: [definition, lexicon]
+    lexicon: [com.atproto.memberspace.putMember, com.atproto.memberspace.removeMember]
+    params: [space, did]
+    roles: [space-host, pds]
+    requires: [policies.memberspace]
+    checks: >-
+      com.atproto.memberspace.putMember, removeMember and listMembers exist and work.
+
+  - id: policy.put-member-upsert
+    suite: policy
+    section: "#memberspace"
+    quote: >-
+      Each member-list entry carries required `read` and `write` booleans, and `putMember` replaces both together.
+    level: must
+    basis: [definition, lexicon]
+    lexicon: com.atproto.memberspace.putMember
+    params: [read, write]
+    roles: [space-host, pds]
+    requires: [policies.memberspace]
+    checks: >-
+      A second putMember replaces read and write and doesn't add a second entry.
+
+  - id: policy.member-read-gate
+    suite: policy
+    section: "#memberspace"
+    quote: >-
+      Otherwise, the authority authorizes a user whose member-list entry has the corresponding
+      `read` or `write` boolean set to true.
+    level: must
+    basis: [definition]
+    roles: [space-host, pds]
+    requires: [policies.memberspace]
+    checks: >-
+      A non-member is refused a credential, and a member with read gets one.
+
+  - id: policy.public-read
+    suite: policy
+    section: "#memberspace"
+    quote: >-
+      When `publicRead` is set, the authority does not require a delegation token to read.
+    level: must
+    basis: [definition]
+    roles: [space-host, pds]
+    requires: [policies.memberspace]
+    checks: >-
+      With publicRead, getSpaceCredential with no delegation token issues a credential.
+
+  - id: policy.allowed-apps
+    suite: policy
+    section: "#memberspace"
+    quote: >-
+      When set, the authority mints a credential only for a listed app, evaluated against the
+      **attested** `client_id` (the `iss` of the verified client attestation).
+    level: must
+    basis: [definition]
+    roles: [space-host, pds]
+    requires: [policies.memberspace]
+    checks: >-
+      With allowedApps, only a request with a verified attestation from a listed client gets a credential.
+
+  - id: policy.remove-member-drops-writer
+    suite: policy
+    section: "#memberspace"
+    quote: >-
+      When `removeMember` removes a member, or `putMember` revokes a member's write access, the
+      authority SHOULD also remove that account from the writer set.
+    level: should
+    basis: [keyword]
+    roles: [space-host, pds]
+    requires: [policies.memberspace]
+    checks: >-
+      After removeMember, or putMember with write false, the account is gone from listRepos.
+
+  - id: policy.publish-records
+    suite: policy
+    section: "#publishing-to-readers"
+    quote: >-
+      When a flag is set, the authority's PDS publishes that state as records in the authority's
+      own repo in the space, where they sync to readers like any other record.
+    level: must
+    basis: [definition]
+    roles: [space-host, pds]
+    requires: [policies.memberspace]
+    checks: >-
+      With publishPolicy and publishMembers, com.atproto.space.policy/self and
+      com.atproto.memberspace.member/<did> records appear in the authority's repo and track changes.
+
+  - id: policy.publish-records-protected
+    suite: policy
+    section: "#publishing-to-readers"
+    quote: >-
+      The PDS should reject direct writes of these records through repo CRUD methods, and
+      [`clearRecords`](#repo-lifecycle) leaves them in place in the authority's repo.
+    level: should
+    basis: [keyword]
+    roles: [space-host, pds]
+    requires: [policies.memberspace]
+    checks: >-
+      Direct createRecord or putRecord of those records in the authority's repo is refused.
+
+  - id: policy.managed-check-user-access
+    suite: policy
+    section: "#managedspace"
+    quote: >-
+      The authority passes the space, the user, the `access` being checked (`read` or `write`),
+      and for reads, the attested `client_id` if one was presented.
+    level: must
+    basis: [definition, lexicon]
+    lexicon: com.atproto.managedspace.checkUserAccess
+    params: [space, user, access, clientId]
+    roles: [space-host, pds]
+    requires: [policies.managedspace]
+    checks: >-
+      The harness managing app receives com.atproto.managedspace.checkUserAccess with space,
+      user, access and, for an attested read, clientId, and its answer decides issuance.
+
+  # --- deletion ----------------------------------------------------------------
+
+  - id: deletion.notify-space-deleted
+    suite: deletion
+    section: "#space-deletion"
+    quote: >-
+      The authority then notifies the syncers registered for the space with `com.atproto.space.notifySpaceDeleted`.
+    level: must
+    basis: [definition]
+    roles: [space-host]
+    checks: >-
+      A syncer registered with registerNotify receives notifySpaceDeleted after deleteSpace.
+
+  - id: deletion.notify-retry
+    suite: deletion
+    section: "#space-deletion"
+    quote: >-
+      it should retry network failures and transient HTTP statuses, but stop on permanent HTTP errors
+    level: should
+    basis: [keyword]
+    roles: [space-host]
+    checks: >-
+      When the harness syncer answers 503 once, notifySpaceDeleted is delivered again.
+
+  - id: deletion.credential-error
+    suite: deletion
+    section: "#space-deletion"
+    quote: >-
+      The authority should answer `getSpaceCredential` for a deleted space with an explicit `SpaceDeleted` error.
+    level: should
+    basis: [keyword]
+    roles: [space-host]
+    checks: >-
+      getSpaceCredential for a deleted space fails with SpaceDeleted, not SpaceNotFound.
+
+  - id: deletion.member-records-survive
+    suite: deletion
+    section: "#space-deletion"
+    quote: >-
+      If a member still has records under that space, they become readable again under the recreated space's policy.
+    level: must
+    basis: [definition]
+    roles: [space-host, repo-host]
+    checks: >-
+      After deleteSpace, a member's records are still on their repo host, and they're readable
+      again once the authority recreates the space with the same type and skey.
+
+  # --- migration ---------------------------------------------------------------
+
+  - id: migration.get-import-repo
+    suite: migration
+    section: "#account-migration"
+    quote: >-
+      The new host may give an imported repo a new `rev`, while its commit `data` is unchanged.
+    level: must
+    basis: [definition]
+    roles: [pds]
+    checks: >-
+      getRepo from host A then importRepo to host B keeps data, with every record listed on B.
+
+  - id: migration.export-meta
+    suite: migration
+    section: "#space-meta-archive"
+    quote: >-
+      The body has three sections, in this order:
+    level: must
+    basis: [definition, lexicon]
+    lexicon: com.atproto.space.exportSpaceMeta
+    params: [space]
+    roles: [space-host, pds]
+    checks: >-
+      exportSpaceMeta returns an atproto-space-meta STAR whose keys are policy, then policy
+      state, then writer/{did}, each section in strict byte order.
+
+  - id: migration.import-meta
+    suite: migration
+    section: "#space-meta-archive"
+    quote: >-
+      It MUST also reject a policy state key it doesn't recognize, rather than silently dropping access state.
+    level: must
+    basis: [keyword]
+    roles: [pds]
+    checks: >-
+      importSpaceMeta keeps policy, member list and writers, and rejects an archive with an unknown policy-state key.
+
+  # --- conventions outside 0016 ------------------------------------------------
 
   - id: info.unknown-method-status
     suite: records
     level: info
     roles: [repo-host, space-host, pds]
-    checks: Records the status for an XRPC method that doesn't exist. XRPC convention, outside 0016; never scored.
+    checks: >-
+      Records the status for an XRPC method that doesn't exist (reference PDS 400, pds.js 501). Never scored.

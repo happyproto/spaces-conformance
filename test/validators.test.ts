@@ -6,7 +6,8 @@ import { validateDeviations } from '../harness/deviations.ts';
 import { claims, loadManifest, loadPins, type Manifest, notApplicable, validateManifest } from '../harness/manifest.ts';
 import { validateResults } from '../harness/results.ts';
 import { ROOT } from '../harness/schema.ts';
-import { anchors, loadRevisions, loadSpecText, plainText } from '../harness/spec.ts';
+import { loadLexicons } from '../harness/lexicons.ts';
+import { anchors, loadRevisions, loadSpecText, plainText, sectionText } from '../harness/spec.ts';
 
 const revisions = loadRevisions();
 const revKeys = Object.keys(revisions.revisions);
@@ -40,12 +41,13 @@ describe('spec text', () => {
   });
   it('strips links, code spans and emphasis for quote matching', () => {
     expect(plainText('a **set hash** over [commit](#space-repos) `data`')).toBe('a set hash over commit data');
+    expect(plainText('may *not* include `*` or `collection=*`, and _(none)_')).toBe('may not include * or collection=*, and (none)');
   });
 });
 
 describe('catalogue', () => {
   it('accepts the shipped catalogue', () => {
-    expect(validateCatalogue(cat, 'assertions.yaml', spec, revKeys)).toEqual([]);
+    expect(validateCatalogue(cat, 'assertions.yaml', spec, revKeys, loadLexicons(revisions.revisions[revisions.default]))).toEqual([]);
   });
 
   it.each([
@@ -75,6 +77,20 @@ describe('catalogue', () => {
     expect(p.map((x) => x.message)).toContain('quote not found verbatim in revision 2026-10-29');
   });
 
+  it('rejects a quote that is in the revision but outside the section it cites', () => {
+    const p = validateCatalogue(catalogueOf(row({ section: '#incremental-sync' })), 'f', spec, revKeys).map((x) => x.message);
+    expect(p).toContain('quote is in revision 2026-10-29 but not under #incremental-sync');
+  });
+
+  it('treats a section as including its subsections', () => {
+    const quote = 'On authorization, the space host uses `credentialKid` as the space credential\'s `cnf.kid`.';
+    expect(validateCatalogue(catalogueOf(row({ section: '#space-credential', quote })), 'f', spec, revKeys)).toEqual([]);
+    const p = validateCatalogue(catalogueOf(row({ section: '#access-control', quote })), 'f', spec, revKeys).map((x) => x.message);
+    expect(p).toEqual([]);
+    expect(sectionText(spec, '#requesting-a-space-credential')).toMatch(/^#### Requesting a space credential/);
+    expect(sectionText(spec, '#requesting-a-space-credential')).not.toMatch(/Presenting a space credential/);
+  });
+
   it('rejects an unknown section anchor, duplicate ids and unknown revisions', () => {
     const p = validateCatalogue(
       catalogueOf(row({ section: '#no-such-heading' }), row({ since: '2027-01-01' })),
@@ -85,6 +101,29 @@ describe('catalogue', () => {
     expect(p).toContain('section #no-such-heading is not a heading anchor in revision 2026-10-29');
     expect(p).toContain('duplicate id');
     expect(p).toContain('revision 2027-01-01 is not in spec/revisions.json');
+  });
+
+  it('checks lexicon NSIDs, params and error names against the pinned lexicons', () => {
+    const lex = loadLexicons(revisions.revisions[revisions.default]);
+    const lexRow = (over: Partial<Assertion>) => row({ basis: ['lexicon'], quote: undefined, section: undefined, ...over });
+    const msgs = (a: Assertion) => validateCatalogue(catalogueOf(a), 'f', spec, revKeys, lex).map((x) => x.message);
+    expect(msgs(lexRow({ lexicon: 'com.atproto.space.listRepoOps', params: ['space', 'repo', 'since'] }))).toEqual([]);
+    expect(msgs(lexRow({ lexicon: 'com.atproto.space.nope' }))).toContain('lexicon com.atproto.space.nope is not in the pinned lexicons');
+    expect(msgs(lexRow({ lexicon: 'com.atproto.space.listRepos', params: ['since'] }))).toContain(
+      'lexicon com.atproto.space.listRepos defines no parameter or input field since',
+    );
+    expect(msgs(lexRow({ id: 'xrpc.error.Nope', lexicon: 'com.atproto.space.getSpace', error: 'Nope' }))).toContain(
+      'lexicon com.atproto.space.getSpace declares no error Nope',
+    );
+    expect(levelProblems(lexRow({ id: 'xrpc.error.SpaceNotFound', lexicon: 'com.atproto.space.getSpace' }))).toContain(
+      'xrpc.error.<Name> rows need error: <Name>',
+    );
+    expect(levelProblems(row({ params: ['space'] }))).toContain('params and error need a lexicon');
+  });
+
+  it('refuses a lexicon directory that no longer matches its pinned digest', () => {
+    const rev = revisions.revisions[revisions.default];
+    expect(() => loadLexicons({ ...rev, lexicons: { ...rev.lexicons, sha256: '0'.repeat(64) } })).toThrow(/digest/);
   });
 
   it('rejects schema violations before the level rule', () => {

@@ -2,14 +2,15 @@
 
 An over-the-wire conformance suite for atproto spaces ([Proposal 0016](https://github.com/bluesky-social/proposals/tree/701ef9c6be5a99c2d3e87e107fe2531459d1c984/0016-permissioned-data), October 29 revision). It grades space hosts and repo hosts against the spec text, talking to each implementation only over HTTP.
 
-**Status: phase 0.** The formats and their validators exist, and nothing runs against an implementation or gets scored yet.
+**Status: phase 1.** The assertion catalogue is filled in and validated. Nothing runs against an implementation or gets scored yet.
 
 ## Layout
 
 | Path | What |
 |---|---|
 | `spec/revisions.json` | Pinned proposal and lexicon commits. The proposal text is fetched by commit and checked by SHA-256. |
-| `spec/assertions.yaml` | The assertion catalogue. Each row cites a sentence of the pinned text. |
+| `spec/assertions.yaml` | The assertion catalogue. Each row cites a sentence of the pinned text, or the pinned lexicons. |
+| `spec/lexicons/` | The lexicons pinned with each revision, copied unmodified from `bluesky-social/atproto`. |
 | `schemas/` | JSON Schemas for assertions, manifests, deviations and results. |
 | `harness/` | Loaders and validators. The client, crypto and actors land here in phase 2. |
 | `implementations/` | `base.compose.yml`, plus one folder per implementation with a manifest, a compose fragment and, if it has any, known deviations. |

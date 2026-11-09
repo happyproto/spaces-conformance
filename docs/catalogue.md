@@ -4,19 +4,21 @@ Every file below has a JSON Schema in `schemas/`, and `bun run validate` checks 
 
 ## Assertions (`spec/assertions.yaml`)
 
-Each row ties one check to one sentence of Proposal 0016 at the revision `spec/revisions.json` pins. The validator fetches that revision by commit, checks its SHA-256, and caches it in `.cache/spec/`.
+Each row ties one check to one sentence of Proposal 0016 at the revision `spec/revisions.json` pins, or to the lexicons pinned with it. The validator fetches the proposal by commit, checks its SHA-256, and caches it in `.cache/spec/`. The lexicons are vendored in `spec/lexicons/<commit>/` and checked against a digest in `revisions.json`.
 
 | Field | Rule |
 |---|---|
 | `id` | Dotted and stable, never reused. `info.*` ids are level `info`. |
 | `suite` | One of the 14 suites (design ch. 3.2). |
 | `section` | A heading anchor in the pinned text, e.g. `#incremental-sync`. Only lexicon rows and `info` rows may omit it. |
-| `quote` | Must appear verbatim in the pinned text. Links, code spans and bold may be kept or dropped, and whitespace is collapsed before comparing. |
+| `quote` | Must appear verbatim in the pinned text, inside the section it cites (subsections included). "Verbatim" means after Markdown normalisation: both sides have links reduced to their text, code-span backticks and emphasis markers outside code spans removed, table pipes turned into spaces and whitespace collapsed. Every other character must match. |
 | `level` | `must`, `should` or `info`, and must pass the level rule below. |
 | `basis` | One or more of `keyword`, `definition`, `lexicon`, `host-honours-may` and `default`. Required for `must` and `should`. |
 | `roles`, `profiles` | Which implementations the row applies to. `profiles` defaults to both. |
 | `requires` | Capability paths resolved against a manifest's `capabilities` (see below). |
-| `lexicon` | The lexicon NSID, required when `basis` has `lexicon`. |
+| `lexicon` | One NSID or a list, required when `basis` has `lexicon`. Each must exist in the revision's pinned lexicons (`spec/lexicons/<commit>/`). |
+| `params` | Parameter or input-field names the row relies on. Every listed lexicon must define each one. |
+| `error` | For `xrpc.error.<Name>` rows, the error name. It must equal `<Name>` and be declared by the listed lexicon. |
 | `since`, `until` | Revision keys from `spec/revisions.json`. |
 | `provisional` | Set until two implementations with different lineage pass it. |
 
