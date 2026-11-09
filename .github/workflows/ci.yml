@@ -1,0 +1,53 @@
+name: CI
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ${{ vars.RUNNER_AMD64 || 'ubuntu-24.04' }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: bun install --frozen-lockfile
+
+      # The pinned proposal text, fetched by commit and checked by SHA-256.
+      - uses: actions/cache@v6
+        with:
+          path: .cache/spec
+          key: spec-${{ hashFiles('spec/revisions.json') }}
+
+      - name: Type check
+        run: bun run typecheck
+
+      - name: Unit tests
+        run: bun run test
+
+      - name: Validate catalogue, manifests, deviations and results
+        run: bun run validate
+
+      - name: Compose fragments assemble
+        run: >
+          docker compose --env-file pins/images.env
+          -f implementations/base.compose.yml
+          -f implementations/happyview/compose.yml
+          -f implementations/pdsjs/compose.yml
+          -f implementations/zds/compose.yml
+          config -q

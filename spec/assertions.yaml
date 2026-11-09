@@ -1,0 +1,104 @@
+# The assertion catalogue: one row per thing the suite checks, each tied to a
+# sentence of Proposal 0016 at the pinned revision. Phase 1 fills it out from
+# design ch. 3.3. These rows are a seed that exercises every rule the
+# validator enforces (`bun run validate`); see docs/catalogue.md for the format.
+revision: "2026-10-29"
+assertions:
+  - id: digest.matches-record-set
+    suite: digest
+    section: "#commit-digest"
+    quote: "The commit's `data` is `sha256(state)`, a 32-byte digest of the 2048-byte buffer."
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: The commit's data equals the harness's LtHash over {collection}/{rkey}/{cid} for every record the host lists.
+
+  - id: digest.order-independent
+    suite: digest
+    section: "#commit-digest"
+    quote: "It is independent of write/delete order, so two repos with the same records always produce the same digest."
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: The same record set written in two orders gives the same data.
+
+  - id: oplog.entry-shape
+    suite: oplog
+    section: "#incremental-sync"
+    quote: "Each entry is `{ rev (TID), collection, rkey, cid, prev }`. The field `cid` is null for a delete and `prev` is null for a create."
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    checks: Every listRepoOps entry has exactly these fields, with cid null on delete and prev null on create.
+
+  - id: mac.list-repo-ops-final-page
+    suite: mac
+    section: "#incremental-sync"
+    quote: "If a given oplog response includes the last available operation that occurred to a repo, then the response must also include the member's current [commit](#space-repos)."
+    level: must
+    basis: [keyword, definition]
+    roles: [repo-host]
+    checks: The page holding the last op carries the commit and a MAC; earlier pages carry neither.
+
+  - id: records.write-refuses-credential
+    suite: records
+    section: "#read-access"
+    quote: "Write methods accept only an OAuth credential, since a write is attributed to the authoring user."
+    level: must
+    basis: [definition]
+    roles: [repo-host, pds]
+    checks: createRecord, putRecord, deleteRecord and applyWrites sent with only a space credential are refused.
+
+  - id: cred.extra-assertion-not-rejected
+    suite: credentials
+    section: "#access-control"
+    quote: "The authority MUST NOT reject a request solely because it includes a valid assertion that the space does not require."
+    level: must
+    basis: [keyword]
+    roles: [space-host]
+    checks: getSpaceCredential with a valid but unneeded client attestation still issues a credential.
+
+  - id: cred.delegation-token-lifetime
+    suite: credentials
+    section: "#delegation-token"
+    quote: "The token is single-use, short-lived (default 60 seconds), and addressed (`aud`) to the space authority."
+    level: should
+    basis: [default]
+    roles: [pds]
+    checks: A delegation token's exp minus iat is 60.
+
+  - id: lifecycle.create-caller-is-authority
+    suite: lifecycle
+    section: "#xrpc-api"
+    quote: "Create a space with a given [`policy`](#space-policy); caller becomes the authority."
+    level: must
+    basis: [definition]
+    roles: [pds]
+    profiles: [pds]
+    checks: createSpace returns a uri whose authority is the calling account's DID.
+
+  - id: policy.managed-check-user-access
+    suite: policy
+    section: "#managedspace"
+    quote: "The authority passes the space, the user, the `access` being checked (`read` or `write`), and for reads, the attested `client_id` if one was presented."
+    level: must
+    basis: [definition]
+    roles: [space-host]
+    requires: [policies.managedspace]
+    checks: The harness managing app receives com.atproto.managedspace.checkUserAccess, and its answer decides issuance.
+    provisional: true
+
+  - id: records.params-repo
+    suite: records
+    section: "#xrpc-api"
+    level: must
+    basis: [lexicon]
+    lexicon: com.atproto.space.listRepoOps
+    roles: [repo-host]
+    checks: getLatestCommit, getRepo and listRepoOps take space and repo parameters.
+
+  - id: info.unknown-method-status
+    suite: records
+    level: info
+    roles: [repo-host, space-host, pds]
+    checks: Records the status for an XRPC method that doesn't exist. XRPC convention, outside 0016; never scored.

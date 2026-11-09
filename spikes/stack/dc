@@ -1,0 +1,3 @@
+#!/bin/sh
+# docker compose for the spike stack, from any directory.
+exec docker compose -f "$(dirname "$0")/compose.yml" "$@"

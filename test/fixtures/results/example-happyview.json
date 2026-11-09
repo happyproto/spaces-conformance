@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "run": {
+    "id": "2026-11-09T04-12-33Z-happyview-3f9a",
+    "kind": "local",
+    "started_at": "2026-11-09T04:12:33Z",
+    "finished_at": "2026-11-09T04:19:02Z",
+    "attempt": 1
+  },
+  "suite": { "commit": "a1b2c3d", "assertions_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000" },
+  "spec": { "proposal": "0016", "revision": "2026-10-29", "commit": "701ef9c6be", "lexicons": "atproto@98ef3a6b" },
+  "implementation": {
+    "id": "happyview",
+    "image": "ghcr.io/gamesgamesgamesgamesgames/happyview@sha256:74e7e4826204fd3ebee75f222a888dd030b367a349852b8ac28743eff5238b16",
+    "source_revision": "9f084f5c",
+    "upstream_ref": "beta",
+    "roles": ["space-host", "repo-host"],
+    "profile": "bespoke-space-host",
+    "write_auth": "oauth-dpop",
+    "setup_mode": { "accounts": "external", "spaces": "oct29", "bootstrap": "seed.sql" }
+  },
+  "peers": [
+    { "id": "pdsjs", "as": "alice", "image": "ghcr.io/happyproto/pds-test/pdsjs@sha256:1725c1f8d2cee4c4f5095c9309f6cf27e11336b74452f0ae12628afae5fe22be" },
+    { "id": "plc", "image": "ghcr.io/happyproto/pds-test/plc@sha256:be4b9b844e460085372b74194d4d6417206f420b1f1d36c8c8ab86b5d8db9ce5" }
+  ],
+  "deviations_applied": [
+    {
+      "assertion": "records.params-repo",
+      "cause": "repo-host-pre-0016",
+      "reason": "getLatestCommit, getRepo and listRepoOps take did, not repo.",
+      "spec": "#xrpc-api",
+      "tracking": "HAP-388 (PR 6)",
+      "since": "2026-11-08"
+    }
+  ],
+  "results": [
+    { "id": "records.params-repo", "suite": "records", "status": "fail", "ms": 31,
+      "message": "listRepoOps rejected query parameter repo (400)",
+      "evidence": { "request": "GET /xrpc/com.atproto.space.listRepoOps?space=...&repo=...", "status": 400 } },
+    { "id": "records.write-refuses-credential", "suite": "records", "status": "pass", "ms": 12 },
+    { "id": "lifecycle.create-caller-is-authority", "suite": "lifecycle", "status": "skip", "skip_reason": "role pds not claimed" }
+  ],
+  "summary": {
+    "by_role": { "repo-host": { "must_applicable": 2, "must_pass": 1, "should_applicable": 0, "should_pass": 0 } },
+    "unexpected": 0
+  }
+}

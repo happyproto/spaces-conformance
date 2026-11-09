@@ -1,0 +1,36 @@
+# HappyView as space host and repo host (design ch. 4.2, 6.1). Its PUBLIC_URL
+# is the host peers must send: it answers 421 to any other Host.
+services:
+  happyview:
+    image: ${HAPPYVIEW_IMAGE:?set from pins/images.env}
+    user: root
+    entrypoint: ["/bin/sh", "/trust-caddy.sh", "/entrypoint.sh"]
+    volumes:
+      - ./base/trust-caddy.sh:/trust-caddy.sh:ro
+      - caddy_data:/caddy-data:ro
+    environment:
+      DATABASE_URL: postgres://conf:conf@postgres:5432/happyview
+      PUBLIC_URL: https://happyview.test
+      HOST: 0.0.0.0
+      PORT: "3000"
+      PLC_URL: http://plc:2582
+      RELAY_URL: http://plc:2582
+      SESSION_SECRET: spaces-conformance-session-secret-32-bytes
+      TOKEN_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      # Closed ports: nothing in the stack reaches the internet.
+      JETSTREAM_URL: ws://127.0.0.1:9
+      TELEMETRY_COLLECTOR_URL: http://127.0.0.1:9/v1/snapshot
+      PLUGIN_REGISTRY_URL: ""
+      HAPPYVIEW_USER_AGENT: spaces-conformance (+https://github.com/happyproto/spaces-conformance)
+      # Peers are on private addresses, which HappyView otherwise refuses.
+      ALLOW_PRIVATE_DESTINATIONS: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/3000 && printf \"GET /health HTTP/1.0\\r\\nHost: happyview.test\\r\\n\\r\\n\" >&3 && head -n 1 <&3 | grep -q \" 200 \"'"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+    depends_on:
+      postgres:
+        condition: service_healthy
+      caddy:
+        condition: service_healthy
