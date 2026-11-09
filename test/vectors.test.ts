@@ -173,6 +173,18 @@ describe('HTTP message signatures', () => {
     const k = generate('p256');
     expect(verifyPresentation(presentCredential('jwt', 'did:plc:repo', k, o as any), k)).not.toBeNull();
   });
+  it('accepts alg and keyid when they are right, and refuses them when wrong', () => {
+    const k = generate('p256');
+    const ok = `;alg="ecdsa-p256-sha256";keyid="${didKey(k)}"`;
+    expect(verifyPresentation(presentCredential('jwt', 'did:plc:repo', k, { extraParams: ok }), k)).toBeNull();
+    expect(verifyPresentation(presentCredential('jwt', 'did:plc:repo', k, { extraParams: ';alg="rsa-pss-sha512"' }), k)).toBe('wrong alg');
+    expect(verifyPresentation(presentCredential('jwt', 'did:plc:repo', k, { extraParams: `;keyid="${didKey(generate('p256'))}"` }), k)).toBe('keyid is not cnf.kid');
+  });
+  it('parses inner lists with parameters and rebuilds them exactly', async () => {
+    const { parseDictionary, serializeInnerList, isInnerList } = await import('../harness/crypto/sf.ts');
+    const v = parseDictionary('sig1=("a" "b");tag="t";created=1, other=?1').get('sig1');
+    expect(isInnerList(v) && serializeInnerList(v)).toBe('("a" "b");tag="t";created=1');
+  });
   it('refuses a non-P-256 bound key', () => {
     const k = generate('p256');
     expect(verifyPresentation(presentCredential('jwt', 'did:plc:repo', k), { curve: 'secp256k1', compressed: generate('secp256k1').compressed })).toMatch(/P-256/);
