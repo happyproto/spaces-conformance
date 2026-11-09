@@ -1,0 +1,14 @@
+{
+  "description": "STAR-lite v1 archives with the atproto-space-repo profile. One valid archive and the rejections #repo-serialization requires.",
+  "valid": [
+    {
+      "name": "one record",
+      "hex": "2a6c0100ae01a6637265766d336d7a75626d63616f6b77323263766572016464617461582022b46d9c1b9992a4c57eea7e45397918b0ee1f48e0db2efbf70e6b0439ea268a647265706f6d6469643a706c633a616c69636565247479706572617470726f746f2d73706163652d7265706f657370616365783b61743a2f2f6469643a706c633a73706163652f73706163652f636f6d2e6578616d706c652e636f6e666f726d616e63652e73706163652f73656c661e636f6d2e6578616d706c652e636f6e666f726d616e63652e6e6f74652f6154a364746578746568656c6c6f652474797065781c636f6d2e6578616d706c652e636f6e666f726d616e63652e6e6f7465696372656174656441747818323032362d31312d30395430303a30303a30302e3030305a",
+      "records": 1,
+      "sources": [
+        "harness"
+      ]
+    }
+  ],
+  "invalid": "built in test/vectors.test.ts by mutating the valid archive: bad magic, non-canonical varint, trailing meta bytes, truncation inside a pair, out-of-order and duplicate keys, digest mismatch"
+}

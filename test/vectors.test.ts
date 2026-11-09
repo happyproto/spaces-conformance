@@ -1,0 +1,228 @@
+// Runs vectors/*.json against the harness's own crypto (design ch. 3.4), plus
+// the negative cases each format's rules require.
+
+import { createHmac } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { p256 } from '@noble/curves/nist.js';
+import { describe, expect, it } from 'vitest';
+import { concat, fromHex, hex, lenPrefixed, utf8, varint } from '../harness/crypto/bytes.ts';
+import { Cid, CODEC_RAW } from '../harness/crypto/cid.ts';
+import { decode, encode, fromLexJson, recordCid, toLexJson } from '../harness/crypto/drisl.ts';
+import { presentCredential, signatureBase, toHighS, verifyPresentation } from '../harness/crypto/httpsig.ts';
+import { decodeJwt, signJwt, verifyJwt } from '../harness/crypto/jwt.ts';
+import { deriveSharedSecret, ecdhX, hostSharedSecret, syncerSharedSecret } from '../harness/crypto/kem.ts';
+import { didKey, fromSecret, generate, parseDidKey, parseMultikey, multikey } from '../harness/crypto/keys.ts';
+import { EMPTY_DIGEST_HEX, LtHash } from '../harness/crypto/lthash.ts';
+import { commitMac, macHeader, parseMacHeader, parseWantMac, recordMac, wantMacHeader } from '../harness/crypto/mac.ts';
+import { checkSpaceRepo, MAGIC, pathKey, readStar, writeStar } from '../harness/crypto/star.ts';
+import { ROOT } from '../harness/schema.ts';
+
+const vec = (name: string) => JSON.parse(readFileSync(join(ROOT, 'vectors', `${name}.json`), 'utf8'));
+
+describe('LtHash', () => {
+  const v = vec('lthash');
+  it.each((v.vectors as any[]).map((x: any): [string, any] => [x.name, x]))('%s', (_n, x: any) => {
+    const h = new LtHash();
+    for (const e of x.elements ?? []) h.add(utf8(e));
+    for (const r of x.records ?? []) h.add(LtHash.element(r.collection, r.rkey, r.cid));
+    expect(hex(h.digest())).toBe(x.digest);
+  });
+  it('matches the spec constant when empty, is order independent, and removal undoes addition', () => {
+    expect(hex(new LtHash().digest())).toBe(EMPTY_DIGEST_HEX);
+    const a = LtHash.element('c.x.y', 'a', 'bafy1');
+    const b = LtHash.element('c.x.y', 'b', 'bafy2');
+    expect(hex(new LtHash().add(a).add(b).digest())).toBe(hex(new LtHash().add(b).add(a).digest()));
+    expect(hex(new LtHash().add(a).add(b).remove(b).digest())).toBe(hex(new LtHash().add(a).digest()));
+    expect(hex(new LtHash().add(a).remove(a).digest())).toBe(EMPTY_DIGEST_HEX);
+  });
+});
+
+describe('DRISL and CIDs', () => {
+  const v = vec('cid');
+  it.each((v.vectors as any[]).map((x: any): [string, any] => [x.name, x]))('record %s', (_n, x: any) => {
+    expect(recordCid(x.record).toString()).toBe(x.cid);
+    // Round trip: canonical bytes decode and re-encode to themselves.
+    const bytes = encode(fromLexJson(x.record));
+    expect(hex(encode(decode(bytes)))).toBe(hex(bytes));
+    expect(toLexJson(decode(bytes))).toEqual(x.record);
+  });
+  it.each((v.raw as any[]).map((x: any): [string, any] => [x.name, x]))('raw %s', (_n, x: any) => {
+    expect(Cid.of(CODEC_RAW, fromHex(x.bytes_hex)).toString()).toBe(x.cid);
+  });
+  it('parses and prints CIDs', () => {
+    const s = v.vectors[0].cid;
+    expect(Cid.parse(s).toString()).toBe(s);
+  });
+  it.each([
+    ['indefinite map', 'bf ff'],
+    ['non-minimal integer', 'a1 61 61 18 01'],
+    ['unsorted keys', 'a2 61 62 01 61 61 02'],
+    ['length-first violated', 'a2 62 61 61 01 61 62 02'],
+    ['duplicate key', 'a2 61 61 01 61 61 02'],
+    ['non-string key', 'a1 01 02'],
+    ['other tag', 'c1 00'],
+    ['undefined', 'f7'],
+    ['half float', 'f9 3c 00'],
+    ['trailing bytes', 'a0 00'],
+    ['truncated string', '63 61 62'],
+  ])('rejects %s', (_n, h) => {
+    expect(() => decode(fromHex(h.replace(/ /g, '')))).toThrow();
+  });
+  it('refuses floats and unsafe numbers when encoding', () => {
+    expect(() => encode({ f: 1.5 })).toThrow();
+    expect(() => encode({ f: 2 ** 53 })).toThrow();
+  });
+});
+
+describe('keys', () => {
+  it('round trips P-256 and secp256k1 did:keys', () => {
+    for (const curve of ['p256', 'secp256k1'] as const) {
+      const k = generate(curve);
+      const p = parseDidKey(didKey(k));
+      expect(p.curve).toBe(curve);
+      expect(hex(p.compressed)).toBe(hex(k.compressed));
+      expect(parseMultikey(multikey(k)).curve).toBe(curve);
+    }
+    expect(didKey(generate('p256')).startsWith('did:key:zDna')).toBe(true);
+  });
+});
+
+describe('KEM shared secret', () => {
+  const [x] = vec('kem').vectors;
+  it(x.name, () => {
+    const author = fromSecret('p256', fromHex(x.skRm));
+    const pkEm = { curve: 'p256' as const, compressed: p256.Point.fromBytes(fromHex(x.pkEm)).toBytes(true) };
+    expect(hex(hostSharedSecret(author, pkEm))).toBe(x.shared_secret);
+  });
+  it('agrees between syncer and host, and differs for another author key', () => {
+    const author = generate('p256');
+    const eph = generate('p256');
+    const ss = syncerSharedSecret(eph, author);
+    expect(hex(hostSharedSecret(author, eph))).toBe(hex(ss));
+    expect(hex(hostSharedSecret(generate('p256'), eph))).not.toBe(hex(ss));
+    expect(hex(deriveSharedSecret(ecdhX(eph.secret, author), eph, author))).toBe(hex(ss));
+  });
+});
+
+describe('MACs', () => {
+  const v = vec('mac');
+  const ss = fromHex(v.shared_secret);
+  const nodeHmac = (data: Uint8Array) => createHmac('sha256', ss).update(data).digest('hex');
+  it.each((v.commit as any[]).map((x: any): [string, any] => [x.name, x]))('commit %s', (_n, x: any) => {
+    const mac = hex(commitMac(ss, { ver: x.ver, space: x.space, repo: x.repo, rev: x.rev, data: fromHex(x.data) }));
+    expect(mac).toBe(x.mac);
+    const context = concat(utf8(`atproto-space-repo-v${x.ver}`), lenPrefixed(x.space), lenPrefixed(x.repo), lenPrefixed(x.rev));
+    expect(nodeHmac(concat(context, fromHex(x.data)))).toBe(x.mac);
+  });
+  it.each((v.record as any[]).map((x: any): [string, any] => [x.name, x]))('record %s', (_n, x: any) => {
+    const cid = Cid.parse(x.cid);
+    expect(hex(recordMac(ss, x.uri, cid.bytes))).toBe(x.mac);
+    expect(nodeHmac(concat(utf8('atproto-space-record-v1'), lenPrefixed(x.uri), cid.bytes))).toBe(x.mac);
+  });
+  it('round trips the Want-Mac and Mac headers', () => {
+    const k = generate('p256');
+    const w = parseWantMac(wantMacHeader('atproto-space-repo', 1, k));
+    expect([w.type, w.ver, hex(w.keyShare.compressed)]).toEqual(['atproto-space-repo', 1, hex(k.compressed)]);
+    const mac = new Uint8Array(32).fill(7);
+    expect(hex(parseMacHeader(macHeader('atproto-space-repo', 1, mac)).mac)).toBe(hex(mac));
+    expect(parseMacHeader('type="atproto-space-repo", ver=1, mac=:AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=:').mac[31]).toBe(31);
+  });
+  it.each([
+    ['no key_share', 'type="atproto-space-repo", ver=1'],
+    ['secp256k1 key_share', () => `type="atproto-space-repo", ver=1, key_share="${didKey(generate('secp256k1'))}"`],
+    ['ver as string', 'type="atproto-space-repo", ver="1", key_share="did:key:zDnae"'],
+    ['garbage', 'type=='],
+  ])('rejects a Want-Mac with %s', (_n, h) => {
+    expect(() => parseWantMac(typeof h === 'function' ? h() : h)).toThrow();
+  });
+  it('rejects a Mac header whose mac is not 32 bytes', () => {
+    expect(() => parseMacHeader('type="atproto-space-repo", ver=1, mac=:AAEC:')).toThrow();
+  });
+});
+
+describe('HTTP message signatures', () => {
+  const [x] = vec('httpsig').vectors;
+  it('builds the signature base and input the spec shows', () => {
+    expect(signatureBase({ authorization: x.authorization, 'atproto-space-audience': x.audience }, ['authorization', 'atproto-space-audience'], 'atproto-space-credential')).toBe(x.base);
+    const h = presentCredential('credential', x.audience, generate('p256'));
+    expect(h['signature-input']).toBe(x.signature_input);
+    expect(h.authorization).toBe(x.authorization);
+  });
+  it('verifies a good presentation, including high-S and a lowercase scheme', () => {
+    const k = generate('p256');
+    expect(verifyPresentation(presentCredential('jwt', 'did:plc:repo', k), k)).toBeNull();
+    expect(verifyPresentation(presentCredential('jwt', 'did:plc:repo', k, { highS: true }), k)).toBeNull();
+    expect(verifyPresentation(presentCredential('jwt', 'did:plc:repo', k, { scheme: 'atproto-space-credential' }), k)).toBeNull();
+  });
+  it('produces a genuinely high-S signature', () => {
+    const k = generate('p256');
+    const sig = p256.sign(utf8('m'), k.secret, { lowS: true });
+    const hs = toHighS(sig);
+    expect(p256.verify(hs, utf8('m'), k.compressed, { lowS: true })).toBe(false);
+    expect(p256.verify(hs, utf8('m'), k.compressed, { lowS: false })).toBe(true);
+  });
+  it.each([
+    ['no signature', { omitSignature: true }],
+    ['wrong components', { components: ['authorization'] }],
+    ['wrong order', { components: ['atproto-space-audience', 'authorization'] }],
+    ['wrong tag', { tag: 'nope' }],
+    ['another audience signed', { signedAudience: 'did:plc:other' }],
+    ['another signer', { signer: generate('p256') }],
+  ])('refuses %s', (_n, o) => {
+    const k = generate('p256');
+    expect(verifyPresentation(presentCredential('jwt', 'did:plc:repo', k, o as any), k)).not.toBeNull();
+  });
+  it('refuses a non-P-256 bound key', () => {
+    const k = generate('p256');
+    expect(verifyPresentation(presentCredential('jwt', 'did:plc:repo', k), { curve: 'secp256k1', compressed: generate('secp256k1').compressed })).toMatch(/P-256/);
+  });
+});
+
+describe('JWT', () => {
+  it('signs and verifies ES256 and ES256K, and rejects a wrong key or alg', () => {
+    for (const curve of ['p256', 'secp256k1'] as const) {
+      const k = generate(curve);
+      const t = decodeJwt(signJwt({ typ: 'atproto-space-credential+jwt', kid: '#atproto' }, { iss: 'did:plc:x' }, k));
+      expect(t.header.alg).toBe(curve === 'p256' ? 'ES256' : 'ES256K');
+      expect(verifyJwt(t, k)).toBe(true);
+      expect(verifyJwt(t, generate(curve))).toBe(false);
+      expect(verifyJwt({ ...t, header: { ...t.header, alg: 'none' } }, k)).toBe(false);
+    }
+  });
+});
+
+describe('STAR', () => {
+  const [good] = vec('star').valid;
+  const bytes = fromHex(good.hex);
+  it('reads the valid archive and its digest matches its metadata', () => {
+    const r = checkSpaceRepo(bytes);
+    expect(r.records).toHaveLength(good.records);
+    expect(hex(r.computed)).toBe(hex(r.meta.data));
+    expect(r.records[0].cid).toBe('bafyreiesv7m3kvsm5zvhragkl776ixbkwpwxuqx5vr646rlbou7knizux4');
+  });
+  const meta = readStar(bytes).meta;
+  const rec = encode({ a: 1 });
+  const mk = (pairs: [string, Uint8Array][], m = meta) => writeStar(m, pairs.map(([k, v]) => ({ key: utf8(k), value: v })));
+  it.each([
+    ['bad magic', () => concat(new Uint8Array([0x2a, 0x6c, 0x02, 0x00]), bytes.subarray(4))],
+    ['non-canonical meta varint', () => concat(MAGIC, new Uint8Array([0x80 | (bytes[4] & 0x7f), 0x80 | bytes[5], 0x00]), bytes.subarray(6))],
+    ['meta that does not fill its length', () => { const m = encode(meta); return concat(MAGIC, varint(m.length + 1), m, new Uint8Array([0x00])); }],
+    ['truncation inside a pair', () => bytes.subarray(0, bytes.length - 3)],
+    ['a key with no value', () => concat(bytes, varint(3), utf8('a/b'))],
+    ['out-of-order keys', () => mk([['c.x.y/b', rec], ['c.x.y/a', rec]])],
+    ['duplicate keys', () => mk([['c.x.y/a', rec], ['c.x.y/a', rec]])],
+    ['a key that is not a record path', () => mk([['not-a-path', rec]])],
+    ['a non-canonical record', () => mk([['c.x.y/a', fromHex('a1616118 01'.replace(/ /g, ''))]])],
+    ['another $type', () => mk([], { ...meta, $type: 'atproto-space-meta' })],
+  ])('rejects %s', (_n, build) => {
+    expect(() => checkSpaceRepo(build())).toThrow();
+  });
+  it('reports a digest mismatch for the caller to reject', () => {
+    const r = checkSpaceRepo(mk([['com.example.conformance.note/a', rec]]));
+    expect(hex(r.computed)).not.toBe(hex(r.meta.data));
+  });
+  it('builds keys from collection and rkey', () => {
+    expect(hex(pathKey('a.b.c', 'self'))).toBe(hex(utf8('a.b.c/self')));
+  });
+});

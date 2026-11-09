@@ -1,0 +1,15 @@
+{
+  "description": "RFC 9421 signature base for presenting a space credential (0016 #presenting-a-space-credential).",
+  "vectors": [
+    {
+      "authorization": "Atproto-Space-Credential credential",
+      "audience": "did:example:repo",
+      "signature_input": "atproto-space-credential=(\"authorization\" \"atproto-space-audience\");tag=\"atproto-space-credential\"",
+      "base": "\"authorization\": Atproto-Space-Credential credential\n\"atproto-space-audience\": did:example:repo\n\"@signature-params\": (\"authorization\" \"atproto-space-audience\");tag=\"atproto-space-credential\"",
+      "sources": [
+        "spec #presenting-a-space-credential",
+        "atproto#5187 packages/space/src/http-signature.test.ts"
+      ]
+    }
+  ]
+}
