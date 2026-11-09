@@ -11,14 +11,15 @@
 // and each declared basis must hold on its own: `keyword` needs a keyword of
 // the row's level in the quote, `default` needs the word "default", and
 // `lexicon` needs a lexicon NSID. Quotes must appear in the pinned revision,
-// and sections must be anchors in it.
+// inside the section they cite (subsections included), and sections must be
+// anchors in it.
 
 import { readFileSync } from 'node:fs';
 import { parse } from 'yaml';
 import type { Lexicons } from './lexicons.ts';
 import type { Problem } from './problems.ts';
 import { checkSchema } from './schema.ts';
-import { anchors, plainText } from './spec.ts';
+import { anchors, plainText, sectionText } from './spec.ts';
 
 export type Level = 'must' | 'should' | 'info';
 export type Basis = 'keyword' | 'definition' | 'lexicon' | 'host-honours-may' | 'default';
@@ -117,6 +118,10 @@ export function validateCatalogue(cat: unknown, file: string, specText: string, 
     for (const m of levelProblems(a)) at(m);
     if (a.section && !specAnchors.has(a.section)) at(`section ${a.section} is not a heading anchor in revision ${c.revision}`);
     if (a.quote && !specPlain.includes(plainText(a.quote))) at(`quote not found verbatim in revision ${c.revision}`);
+    else if (a.quote && a.section && specAnchors.has(a.section)) {
+      const section = sectionText(specText, a.section) ?? '';
+      if (!plainText(section).includes(plainText(a.quote))) at(`quote is in revision ${c.revision} but not under ${a.section}`);
+    }
     for (const r of [a.since, a.until]) if (r && !revisions.includes(r)) at(`revision ${r} is not in spec/revisions.json`);
     if (a.id.startsWith('info.') && a.level !== 'info') at('info.* ids must be level info');
     if (lex && a.lexicon) {

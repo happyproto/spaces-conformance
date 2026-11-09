@@ -74,23 +74,47 @@ export function plainText(md: string): string {
     .trim();
 }
 
-/** GitHub's heading anchors, with -1, -2 suffixes for repeats. */
-export function anchors(md: string): Set<string> {
-  const out = new Set<string>();
+interface Heading {
+  anchor: string;
+  level: number;
+  line: number;
+}
+
+/** Every heading with its GitHub anchor (-1, -2 suffixes for repeats), skipping fenced code. */
+function headings(md: string): Heading[] {
+  const out: Heading[] = [];
   const counts = new Map<string, number>();
   let fenced = false;
-  for (const line of md.split('\n')) {
+  md.split('\n').forEach((line, i) => {
     if (/^(```|~~~)/.test(line)) fenced = !fenced;
-    if (fenced) continue;
-    const m = /^#{1,6}\s+(.*?)\s*#*\s*$/.exec(line);
-    if (!m) continue;
-    const base = plainText(m[1])
+    if (fenced) return;
+    const m = /^(#{1,6})\s+(.*?)\s*#*\s*$/.exec(line);
+    if (!m) return;
+    const base = plainText(m[2])
       .toLowerCase()
       .replace(/[^\p{L}\p{N}\s_-]/gu, '')
       .replace(/\s/g, '-');
     const n = counts.get(base) ?? 0;
     counts.set(base, n + 1);
-    out.add(`#${n === 0 ? base : `${base}-${n}`}`);
-  }
+    out.push({ anchor: `#${n === 0 ? base : `${base}-${n}`}`, level: m[1].length, line: i });
+  });
   return out;
+}
+
+/** GitHub's heading anchors. */
+export function anchors(md: string): Set<string> {
+  return new Set(headings(md).map((h) => h.anchor));
+}
+
+/**
+ * The Markdown of one section: from its heading up to the next heading of the
+ * same or a higher level, so it includes its subsections. Undefined for an
+ * unknown anchor.
+ */
+export function sectionText(md: string, anchor: string): string | undefined {
+  const hs = headings(md);
+  const k = hs.findIndex((h) => h.anchor === anchor);
+  if (k < 0) return undefined;
+  const end = hs.slice(k + 1).find((h) => h.level <= hs[k].level);
+  return md.split('\n').slice(hs[k].line, end?.line).join('\n');
 }

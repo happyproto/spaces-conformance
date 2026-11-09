@@ -7,7 +7,7 @@ import { claims, loadManifest, loadPins, type Manifest, notApplicable, validateM
 import { validateResults } from '../harness/results.ts';
 import { ROOT } from '../harness/schema.ts';
 import { loadLexicons } from '../harness/lexicons.ts';
-import { anchors, loadRevisions, loadSpecText, plainText } from '../harness/spec.ts';
+import { anchors, loadRevisions, loadSpecText, plainText, sectionText } from '../harness/spec.ts';
 
 const revisions = loadRevisions();
 const revKeys = Object.keys(revisions.revisions);
@@ -75,6 +75,20 @@ describe('catalogue', () => {
   it('rejects a quote that is not in the pinned revision', () => {
     const p = validateCatalogue(catalogueOf(row({ quote: 'The commit is signed with the instance key.' })), 'f', spec, revKeys);
     expect(p.map((x) => x.message)).toContain('quote not found verbatim in revision 2026-10-29');
+  });
+
+  it('rejects a quote that is in the revision but outside the section it cites', () => {
+    const p = validateCatalogue(catalogueOf(row({ section: '#incremental-sync' })), 'f', spec, revKeys).map((x) => x.message);
+    expect(p).toContain('quote is in revision 2026-10-29 but not under #incremental-sync');
+  });
+
+  it('treats a section as including its subsections', () => {
+    const quote = 'On authorization, the space host uses `credentialKid` as the space credential\'s `cnf.kid`.';
+    expect(validateCatalogue(catalogueOf(row({ section: '#space-credential', quote })), 'f', spec, revKeys)).toEqual([]);
+    const p = validateCatalogue(catalogueOf(row({ section: '#access-control', quote })), 'f', spec, revKeys).map((x) => x.message);
+    expect(p).toEqual([]);
+    expect(sectionText(spec, '#requesting-a-space-credential')).toMatch(/^#### Requesting a space credential/);
+    expect(sectionText(spec, '#requesting-a-space-credential')).not.toMatch(/Presenting a space credential/);
   });
 
   it('rejects an unknown section anchor, duplicate ids and unknown revisions', () => {
