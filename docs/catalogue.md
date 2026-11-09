@@ -11,7 +11,7 @@ Each row ties one check to one sentence of Proposal 0016 at the revision `spec/r
 | `id` | Dotted and stable, never reused. `info.*` ids are level `info`. |
 | `suite` | One of the 14 suites (design ch. 3.2). |
 | `section` | A heading anchor in the pinned text, e.g. `#incremental-sync`. Only lexicon rows and `info` rows may omit it. |
-| `quote` | Must appear verbatim in the pinned text. Links, code spans and bold may be kept or dropped, and whitespace is collapsed before comparing. |
+| `quote` | Must appear verbatim in the pinned text, inside the section it cites (subsections included). "Verbatim" means after Markdown normalisation: both sides have links reduced to their text, code-span backticks and emphasis markers outside code spans removed, table pipes turned into spaces and whitespace collapsed. Every other character must match. |
 | `level` | `must`, `should` or `info`, and must pass the level rule below. |
 | `basis` | One or more of `keyword`, `definition`, `lexicon`, `host-honours-may` and `default`. Required for `must` and `should`. |
 | `roles`, `profiles` | Which implementations the row applies to. `profiles` defaults to both. |
