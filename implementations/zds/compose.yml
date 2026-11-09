@@ -1,0 +1,35 @@
+# ZDS (Zig). Its TLS client reads the Debian system store, so trust-caddy.sh
+# is enough for it to reach https peers.
+services:
+  zds:
+    image: ${ZDS_IMAGE:?set from pins/images.env}
+    user: root
+    entrypoint: ["/bin/sh", "/trust-caddy.sh"]
+    command: ["zds"]
+    volumes:
+      - ./base/trust-caddy.sh:/trust-caddy.sh:ro
+      - caddy_data:/caddy-data:ro
+    environment:
+      ZDS_HOST: 0.0.0.0
+      ZDS_PORT: "3000"
+      ZDS_DB: /data/zds.sqlite3
+      ZDS_BLOBSTORE_PATH: /data/blobs
+      ZDS_JWT_SECRET: conformance-zds-jwt-secret
+      ZDS_ADMIN_TOKEN: conformance-zds-admin-token
+      ZDS_HANDLE_DOMAINS: .test
+      ZDS_SERVER_DID: did:web:zds.test
+      ZDS_PLC_ROTATION_KEY: "b96741c5e37c0cbc0e1d9a9e8d0424af4b1d064f754d9d6f87215cb0827dfe1b"
+      ZDS_PERMISSIONED_DATA: "true"
+      ZDS_PUBLIC_URL: https://zds.test
+      ZDS_PLC_DIRECTORY: http://plc:2582
+      ZDS_CRAWLERS: https://harness.test
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/3000 && printf 'GET /xrpc/_health HTTP/1.0\\r\\nHost: zds.test\\r\\n\\r\\n' >&3 && head -n 1 <&3 | grep -q ' 200 '"]
+      interval: 2s
+      timeout: 3s
+      retries: 40
+    depends_on:
+      plc:
+        condition: service_started
+      caddy:
+        condition: service_healthy

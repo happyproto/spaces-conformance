@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/happyproto/spaces-conformance/schemas/manifest.schema.json",
+  "title": "Implementation manifest",
+  "description": "implementations/<id>/manifest.yaml (design ch. 4.1).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "source", "image", "spec_revision", "roles", "profile", "capabilities", "compose", "base_url", "accounts", "spaces"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "name": { "type": "string" },
+    "homepage": { "type": "string", "format": "uri" },
+    "source": { "type": "string", "format": "uri" },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "pin"],
+      "properties": {
+        "repository": { "type": "string" },
+        "pin": { "description": "Variable name in pins/images.env.", "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+        "dispatch_target": { "type": "string" },
+        "platforms": { "type": "array", "items": { "enum": ["linux/amd64", "linux/arm64"] }, "uniqueItems": true }
+      }
+    },
+    "spec_revision": { "type": "string" },
+    "roles": { "type": "array", "items": { "enum": ["repo-host", "space-host", "pds"] }, "minItems": 1, "uniqueItems": true },
+    "profile": { "enum": ["pds", "bespoke-space-host"] },
+    "capabilities": {
+      "description": "Free-form; matched by an assertion's requires paths.",
+      "type": "object",
+      "properties": {
+        "policies": { "type": "array", "items": { "enum": ["personalspace", "memberspace", "managedspace"] }, "uniqueItems": true },
+        "credentials": {
+          "type": "object",
+          "properties": {
+            "signs": { "type": "array", "items": { "enum": ["ES256", "ES256K"] }, "uniqueItems": true },
+            "verifies": { "type": "array", "items": { "enum": ["ES256", "ES256K"] }, "uniqueItems": true }
+          }
+        }
+      }
+    },
+    "lineage": {
+      "description": "Library or codebase per area (design ch. 3.4). A missing area counts as unknown.",
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^(cbor|lthash|mac|httpsig|jwt|star)$": { "type": "string", "minLength": 1 } }
+    },
+    "compose": { "type": "string" },
+    "base_url": { "description": "The URL peers address it by; for HappyView, its PUBLIC_URL.", "type": "string", "format": "uri" },
+    "health": { "type": "string", "pattern": "^/" },
+    "accounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "write_auth"],
+      "properties": {
+        "mode": { "enum": ["create-account", "custom", "external"] },
+        "partner": { "description": "With mode external: the implementation whose accounts are used.", "type": "string" },
+        "write_auth": { "enum": ["password-session", "oauth-dpop", "api-key"] }
+      },
+      "if": { "properties": { "mode": { "const": "external" } } },
+      "then": { "required": ["partner"] }
+    },
+    "spaces": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["create"],
+      "properties": {
+        "authority": { "enum": ["own-did", "account"] },
+        "create": { "enum": ["oct29", "simplespace", "custom"] }
+      }
+    },
+    "setup": { "description": "Adapter module, relative to the manifest.", "type": "string" },
+    "bootstrap": { "description": "Ungraded setup step recorded as setup_mode.bootstrap, e.g. seed.sql.", "type": "string" },
+    "deviations": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["repo", "path"],
+          "properties": { "repo": { "type": "string", "pattern": "^[\\w.-]+/[\\w.-]+$" }, "path": { "type": "string" } }
+        }
+      ]
+    },
+    "limits": { "description": "Printed on the implementation page.", "type": "array", "items": { "type": "string" } },
+    "quirks": { "description": "Harness workarounds that aren't conformance issues.", "type": "object" }
+  }
+}

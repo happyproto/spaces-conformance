@@ -1,0 +1,42 @@
+{
+	local_certs
+	skip_install_trust
+}
+
+(logged) {
+	log {
+		output stdout
+		format json
+	}
+}
+
+happyview.test {
+	import logged
+	tls internal
+	reverse_proxy happyview:3000
+}
+
+# pds.js derives its OAuth issuer and DPoP htu from the socket's scheme and
+# ignores X-Forwarded-Proto, so it's served over plain http: issuer, htu and
+# DID document endpoint then agree.
+http://pdsjs-alice.test {
+	import logged
+	reverse_proxy pdsjs-alice:3000
+}
+
+http://pdsjs-bob.test {
+	import logged
+	reverse_proxy pdsjs-bob:3000
+}
+
+zds.test {
+	import logged
+	tls internal
+	reverse_proxy zds:3000
+}
+
+harness.test {
+	import logged
+	tls internal
+	reverse_proxy harness:8080
+}

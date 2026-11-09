@@ -1,0 +1,33 @@
+id: pdsjs
+name: pds.js
+source: https://tangled.org/chadtmiller.com/pds.js
+image:
+  repository: ghcr.io/happyproto/pds-test/pdsjs
+  pin: PDSJS_IMAGE
+  dispatch_target: pdsjs
+spec_revision: "2026-10-29"
+roles: [pds, repo-host, space-host]
+profile: pds
+capabilities:
+  # Claimed from the spec's baseline; phase 3 confirms each against a run.
+  policies: [personalspace, memberspace, managedspace]
+  repo_host:
+    foreign_authorities: true
+  oauth:
+    # The consent form takes the account password and returns JSON.
+    scripted: true
+compose: compose.yml
+base_url: http://pdsjs-alice.test
+health: /xrpc/_health
+accounts:
+  # One account per container: did:plc genesis, then POST /init.
+  mode: custom
+  write_auth: oauth-dpop
+spaces:
+  authority: account
+  create: simplespace
+deviations: deviations.yaml
+quirks:
+  single_account: true
+  # Builds its OAuth issuer from the socket scheme, so it is served over http.
+  http_only_behind_proxy: true

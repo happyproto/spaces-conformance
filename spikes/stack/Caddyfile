@@ -1,0 +1,45 @@
+{
+	local_certs
+	skip_install_trust
+}
+
+# Access logs on stdout are the spike's evidence of who reached whom.
+(logged) {
+	log {
+		output stdout
+		format json
+	}
+}
+
+happyview.test {
+	import logged
+	tls internal
+	reverse_proxy happyview:3000
+}
+
+# pds.js builds its OAuth issuer and DPoP htu from the socket's own scheme
+# and ignores X-Forwarded-Proto, so behind a TLS front it advertises http://
+# URLs. It is served over plain http here, which keeps issuer, htu and DID
+# document endpoint the same URL.
+http://pdsjs-alice.test {
+	import logged
+	reverse_proxy pdsjs-alice:3000
+}
+
+http://pdsjs-carol.test {
+	import logged
+	reverse_proxy pdsjs-carol:3000
+}
+
+# The harness's receiver and managing-app actors.
+harness.test {
+	import logged
+	tls internal
+	reverse_proxy harness:8080
+}
+
+zds.test {
+	import logged
+	tls internal
+	reverse_proxy zds:3000
+}

@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/happyproto/spaces-conformance/schemas/results.schema.json",
+  "title": "Run results",
+  "description": "One run's result file (design ch. 7.1). Statuses are raw; display states are derived and never stored.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "run", "suite", "spec", "implementation", "peers", "deviations_applied", "results", "summary"],
+  "properties": {
+    "schema": { "const": 1 },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "started_at", "finished_at", "attempt"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}Z-[a-z0-9-]+$" },
+        "kind": { "enum": ["nightly", "candidate", "release", "local"] },
+        "started_at": { "type": "string", "format": "date-time" },
+        "finished_at": { "type": "string", "format": "date-time" },
+        "attempt": { "type": "integer", "minimum": 1 },
+        "ci_url": { "type": "string", "format": "uri" },
+        "logs_artifact": { "type": "string" }
+      }
+    },
+    "suite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commit", "assertions_digest"],
+      "properties": {
+        "commit": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" },
+        "assertions_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["proposal", "revision", "commit", "lexicons"],
+      "properties": {
+        "proposal": { "type": "string" },
+        "revision": { "type": "string" },
+        "commit": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" },
+        "lexicons": { "type": "string" }
+      }
+    },
+    "implementation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "image", "roles", "profile", "write_auth", "setup_mode"],
+      "properties": {
+        "id": { "type": "string" },
+        "image": { "type": "string", "pattern": "@sha256:[0-9a-f]{64}$" },
+        "source_revision": { "type": "string" },
+        "upstream_ref": { "type": "string" },
+        "roles": { "type": "array", "items": { "enum": ["repo-host", "space-host", "pds"] }, "minItems": 1 },
+        "profile": { "enum": ["pds", "bespoke-space-host"] },
+        "write_auth": { "enum": ["password-session", "oauth-dpop", "api-key"] },
+        "setup_mode": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["accounts", "spaces"],
+          "properties": {
+            "accounts": { "enum": ["create-account", "custom", "external"] },
+            "spaces": { "enum": ["oct29", "simplespace", "custom"] },
+            "bootstrap": { "type": "string" }
+          }
+        }
+      }
+    },
+    "peers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "image"],
+        "properties": {
+          "id": { "type": "string" },
+          "as": { "type": "string" },
+          "image": { "type": "string", "pattern": "@sha256:[0-9a-f]{64}$" }
+        }
+      }
+    },
+    "deviations_applied": { "$ref": "deviations.schema.json" },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status"],
+        "properties": {
+          "id": { "type": "string" },
+          "suite": { "type": "string" },
+          "status": { "enum": ["pass", "fail", "error", "skip"] },
+          "ms": { "type": "integer", "minimum": 0 },
+          "message": { "type": "string" },
+          "skip_reason": { "type": "string" },
+          "evidence": { "description": "Only on fail or error; at most 4 KiB serialized.", "type": "object" }
+        },
+        "allOf": [
+          { "if": { "properties": { "status": { "const": "skip" } } }, "then": { "required": ["skip_reason"] } },
+          { "if": { "properties": { "status": { "enum": ["pass", "skip"] } } }, "then": { "not": { "required": ["evidence"] } } }
+        ]
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["by_role", "unexpected"],
+      "properties": {
+        "by_role": {
+          "type": "object",
+          "propertyNames": { "enum": ["repo-host", "space-host", "pds"] },
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["must_applicable", "must_pass", "should_applicable", "should_pass"],
+            "properties": {
+              "must_applicable": { "type": "integer", "minimum": 0 },
+              "must_pass": { "type": "integer", "minimum": 0 },
+              "should_applicable": { "type": "integer", "minimum": 0 },
+              "should_pass": { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
+        "unexpected": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

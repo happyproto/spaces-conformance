@@ -1,0 +1,13 @@
+{
+  "default": "2026-10-29",
+  "revisions": {
+    "2026-10-29": {
+      "proposal": "0016",
+      "repo": "bluesky-social/proposals",
+      "commit": "701ef9c6be5a99c2d3e87e107fe2531459d1c984",
+      "path": "0016-permissioned-data/README.md",
+      "sha256": "5e3760ae25701e5e6582847d6c2a696c46605d7bdb826a4632d1544cbc77b0c9",
+      "lexicons": { "repo": "bluesky-social/atproto", "ref": "pull/5187", "commit": "98ef3a6b9d1364f0543f137dd024de9651b21c4c" }
+    }
+  }
+}

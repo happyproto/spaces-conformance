@@ -1,0 +1,40 @@
+id: happyview
+name: HappyView
+homepage: https://happyview.dev
+source: https://github.com/gamesgamesgamesgamesgames/happyview
+image:
+  repository: ghcr.io/gamesgamesgamesgamesgames/happyview
+  pin: HAPPYVIEW_IMAGE
+  dispatch_target: happyview
+  platforms: [linux/amd64, linux/arm64]
+spec_revision: "2026-10-29"
+roles: [space-host, repo-host]
+profile: bespoke-space-host
+capabilities:
+  policies: [memberspace, managedspace]
+  repo_host:
+    # Hosts repos only in spaces it is the authority of (design ch. 3.1).
+    foreign_authorities: false
+  credentials:
+    signs: [ES256]
+    verifies: [ES256, ES256K]
+  oauth:
+    # Through pds.js's headless consent (phase 0 spike 1).
+    scripted: true
+lineage: { cbor: happyview, lthash: happyview, mac: happyview, httpsig: happyview, jwt: happyview, star: happyview }
+compose: compose.yml
+base_url: https://happyview.test
+health: /health
+accounts:
+  # Users live on pds.js. With feature.spaces_pds_migration off, HappyView
+  # hosts their space repos itself, so they are also its repo-host subjects.
+  mode: external
+  partner: pdsjs
+  write_auth: oauth-dpop
+spaces:
+  authority: own-did
+  create: oct29
+bootstrap: seed.sql
+deviations: { repo: gamesgamesgamesgamesgames/happyview, path: interop/conformance-deviations.yaml }
+limits:
+  - Hosts repos only in its own spaces.
