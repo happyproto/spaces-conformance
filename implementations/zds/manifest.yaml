@@ -1,0 +1,27 @@
+id: zds
+name: ZDS
+source: https://tangled.org/zat.dev/zds
+image:
+  repository: ghcr.io/happyproto/pds-test/zds
+  pin: ZDS_IMAGE
+  dispatch_target: zds
+spec_revision: "2026-10-29"
+roles: [pds, repo-host, space-host]
+profile: pds
+capabilities:
+  # Claimed from the spec's baseline; phase 3 confirms each against a run.
+  policies: [personalspace, memberspace, managedspace]
+  repo_host:
+    foreign_authorities: true
+  oauth:
+    scripted: false
+compose: compose.yml
+base_url: https://zds.test
+health: /xrpc/_health
+accounts:
+  mode: create-account
+  write_auth: password-session
+spaces:
+  authority: account
+  create: oct29
+deviations: deviations.yaml

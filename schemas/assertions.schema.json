@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/happyproto/spaces-conformance/schemas/assertions.schema.json",
+  "title": "Assertion catalogue",
+  "description": "spec/assertions.yaml. Shape only: the level rule, quote and anchor checks are in harness/catalogue.ts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["revision", "assertions"],
+  "properties": {
+    "revision": { "description": "Key into spec/revisions.json that quotes and anchors are checked against.", "type": "string" },
+    "assertions": { "type": "array", "items": { "$ref": "#/$defs/assertion" } }
+  },
+  "$defs": {
+    "role": { "enum": ["repo-host", "space-host", "pds"] },
+    "profile": { "enum": ["pds", "bespoke-space-host"] },
+    "basis": { "enum": ["keyword", "definition", "lexicon", "host-honours-may", "default"] },
+    "suite": {
+      "enum": ["addressing", "records", "digest", "mac", "oplog", "export", "lifecycle", "credentials", "scopes", "writer-set", "policy", "deletion", "migration", "pairing"]
+    },
+    "assertion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "suite", "level", "roles", "checks"],
+      "properties": {
+        "id": {
+          "description": "Stable dotted id. Never reused.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*(\\.[A-Za-z0-9][A-Za-z0-9-]*)+$"
+        },
+        "suite": { "$ref": "#/$defs/suite" },
+        "section": {
+          "description": "Heading anchor in the pinned proposal, e.g. #incremental-sync. Omitted only for lexicon rows and info rows.",
+          "type": "string",
+          "pattern": "^#[a-z0-9-]+$"
+        },
+        "quote": {
+          "description": "The sentence under test, copied from the pinned revision. Markdown emphasis, code spans and links may be kept or dropped.",
+          "type": "string",
+          "minLength": 1
+        },
+        "level": { "enum": ["must", "should", "info"] },
+        "basis": {
+          "description": "Why the level is what it is. Required for must and should.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/basis" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "roles": { "type": "array", "items": { "$ref": "#/$defs/role" }, "minItems": 1, "uniqueItems": true },
+        "profiles": {
+          "description": "Defaults to every profile.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/profile" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "requires": {
+          "description": "Capability paths the implementation must claim, resolved against its manifest's capabilities, e.g. policies.managedspace, oauth.scripted.",
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*(\\.[a-z0-9_-]+)*$" },
+          "uniqueItems": true
+        },
+        "lexicon": { "description": "Lexicon NSID, when basis includes lexicon.", "type": "string", "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9-]+)+\\.[a-zA-Z][a-zA-Z0-9]*$" },
+        "checks": { "description": "What the test does, in one or two sentences.", "type": "string", "minLength": 1 },
+        "since": { "description": "First revision the assertion is valid for.", "type": "string" },
+        "until": { "description": "Last revision the assertion is valid for.", "type": "string" },
+        "provisional": {
+          "description": "Set until two implementations with different lineage pass it (design ch. 3.4).",
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

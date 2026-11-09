@@ -1,0 +1,200 @@
+# HAP-408 phase 0 spike stack: HappyView, two pds.js, ZDS and the harness on
+# one bridge network, behind a Caddy `tls internal` front. Throwaway.
+#
+#   docker compose -f spikes/stack/compose.yml up -d --wait
+#   docker compose -f spikes/stack/compose.yml exec harness node spikes/spike1-auth.ts
+#   docker compose -f spikes/stack/compose.yml down -v
+#
+# Nothing is published to the host, and the network is internal: no egress.
+name: hap408-spike
+
+x-trust: &trust
+  # Installs Caddy's root CA into the system store, then runs the image's own
+  # command. Needs root, because Caddy's pki/ tree is mode 0700.
+  user: root
+  volumes:
+    - ./trust-caddy.sh:/trust-caddy.sh:ro
+    - caddy_data:/caddy-data:ro
+
+x-pdsjs: &pdsjs
+  image: ${PDSJS_IMAGE:-ghcr.io/happyproto/pds-test/pdsjs@sha256:1725c1f8d2cee4c4f5095c9309f6cf27e11336b74452f0ae12628afae5fe22be}
+  healthcheck:
+    test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:'+process.env.PORT+'/xrpc/_health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+    interval: 2s
+    timeout: 3s
+    retries: 30
+  depends_on:
+    plc:
+      condition: service_started
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: conf
+      POSTGRES_PASSWORD: conf
+      POSTGRES_DB: happyview
+    volumes:
+      - ./init-dbs.sql:/docker-entrypoint-initdb.d/init-dbs.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U conf -d happyview"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  plc:
+    image: ${PLC_IMAGE:-ghcr.io/happyproto/pds-test/plc@sha256:be4b9b844e460085372b74194d4d6417206f420b1f1d36c8c8ab86b5d8db9ce5}
+    environment:
+      DB_CREDS_JSON: '{"username":"conf","password":"conf","host":"postgres","port":"5432","database":"plc"}'
+      ENABLE_MIGRATIONS: "true"
+      DB_MIGRATE_CREDS_JSON: '{"username":"conf","password":"conf","host":"postgres","port":"5432","database":"plc"}'
+      PORT: "2582"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    networks:
+      default:
+        aliases:
+          - happyview.test
+          - pdsjs-alice.test
+          - pdsjs-carol.test
+          - zds.test
+          - harness.test
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /data/caddy/pki/authorities/local/root.crt"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+
+  happyview:
+    <<: *trust
+    image: ${HAPPYVIEW_IMAGE:-ghcr.io/gamesgamesgamesgamesgames/happyview:sha-9f084f5}
+    entrypoint: ["/bin/sh", "/trust-caddy.sh", "/entrypoint.sh"]
+    environment:
+      DATABASE_URL: postgres://conf:conf@postgres:5432/happyview
+      PUBLIC_URL: https://happyview.test
+      HOST: 0.0.0.0
+      PORT: "3000"
+      PLC_URL: http://plc:2582
+      RELAY_URL: http://plc:2582
+      SESSION_SECRET: spaces-conformance-spike-session-secret-32b
+      TOKEN_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      # Closed ports: the stack reaches nothing outside itself.
+      JETSTREAM_URL: ws://127.0.0.1:9
+      TELEMETRY_COLLECTOR_URL: http://127.0.0.1:9/v1/snapshot
+      PLUGIN_REGISTRY_URL: ""
+      HAPPYVIEW_USER_AGENT: spaces-conformance/0 (+https://github.com/happyproto/spaces-conformance)
+      ALLOW_PRIVATE_DESTINATIONS: "true"
+      RUST_LOG: info,happyview=debug
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/3000 && printf \"GET /health HTTP/1.0\\r\\nHost: happyview.test\\r\\n\\r\\n\" >&3 && head -n 1 <&3 | grep -q \" 200 \"'"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+    depends_on:
+      postgres:
+        condition: service_healthy
+      caddy:
+        condition: service_healthy
+
+  # Spaces on: a native author.
+  pdsjs-alice:
+    <<: *pdsjs
+    environment:
+      PORT: "3000"
+      PDS_HOSTNAME: ${PDSJS_ALICE_HOST:-pdsjs-alice.test}
+      JWT_SECRET: spike-pdsjs-alice-jwt
+      PDS_PASSWORD: password123
+      PLC_URL: http://plc:2582
+      PDS_ENABLE_SPACES: "true"
+      NODE_EXTRA_CA_CERTS: /caddy-data/caddy/pki/authorities/local/root.crt
+    user: root
+    volumes:
+      - caddy_data:/caddy-data:ro
+
+  # Spaces off: a polyfill author, whose space repo HappyView hosts.
+  pdsjs-carol:
+    <<: *pdsjs
+    environment:
+      PORT: "3000"
+      PDS_HOSTNAME: ${PDSJS_CAROL_HOST:-pdsjs-carol.test}
+      JWT_SECRET: spike-pdsjs-carol-jwt
+      PDS_PASSWORD: password123
+      PLC_URL: http://plc:2582
+      PDS_ENABLE_SPACES: "false"
+      NODE_EXTRA_CA_CERTS: /caddy-data/caddy/pki/authorities/local/root.crt
+    user: root
+    volumes:
+      - caddy_data:/caddy-data:ro
+
+  # The non-Node image: Zig, Debian base.
+  zds:
+    <<: *trust
+    image: ${ZDS_IMAGE:-ghcr.io/happyproto/pds-test/zds@sha256:809bfa1025271946e78c123e8ff99cb48f0a92c4d37485b985631e9d866380d1}
+    entrypoint: ["/bin/sh", "/trust-caddy.sh"]
+    command: ["zds"]
+    environment:
+      ZDS_HOST: 0.0.0.0
+      ZDS_PORT: "3000"
+      ZDS_DB: /data/zds.sqlite3
+      ZDS_BLOBSTORE_PATH: /data/blobs
+      ZDS_JWT_SECRET: spike-zds-jwt-secret
+      ZDS_ADMIN_TOKEN: spike-zds-admin-token
+      ZDS_HANDLE_DOMAINS: .test
+      ZDS_SERVER_DID: did:web:zds.test
+      ZDS_LOG_LEVEL: info
+      ZDS_PLC_ROTATION_KEY: "b96741c5e37c0cbc0e1d9a9e8d0424af4b1d064f754d9d6f87215cb0827dfe1b"
+      ZDS_PERMISSIONED_DATA: "true"
+      ZDS_PUBLIC_URL: https://zds.test
+      ZDS_PLC_DIRECTORY: http://plc:2582
+      # Both point at the harness, so ZDS's own (Zig) TLS client has to trust
+      # Caddy's CA to reach it.
+      ZDS_CRAWLERS: https://harness.test
+      ZDS_PROXY_SERVICE_URL: https://harness.test
+      ZDS_PROXY_SERVICE_DID: did:web:harness.test
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/3000 && printf 'GET /xrpc/_health HTTP/1.0\\r\\nHost: zds.test\\r\\n\\r\\n' >&3 && head -n 1 <&3 | grep -q ' 200 '"]
+      interval: 2s
+      timeout: 3s
+      retries: 40
+    depends_on:
+      plc:
+        condition: service_started
+      caddy:
+        condition: service_healthy
+
+  # The harness: plays client, syncer and receiver. It idles; scripts run in
+  # it with `exec`. (`compose run` containers don't get the service's DNS
+  # name, so Caddy couldn't reach the harness's actors.)
+  harness:
+    image: node:24-bookworm-slim
+    command: ["sleep", "infinity"]
+    init: true
+    user: root
+    working_dir: /suite
+    environment:
+      NODE_EXTRA_CA_CERTS: /caddy-data/caddy/pki/authorities/local/root.crt
+    volumes:
+      - ../..:/suite
+      - caddy_data:/caddy-data:ro
+    depends_on:
+      happyview:
+        condition: service_healthy
+
+volumes:
+  caddy_data:
+
+networks:
+  default:
+    internal: true
+    enable_ipv6: true
+    ipam:
+      config:
+        # IPv6 documentation range (RFC 9637), globally routable in form.
+        - subnet: 3fff:408::/64

@@ -1,0 +1,77 @@
+# Shared services for every run (design ch. 6.1), proven by the HAP-408 phase 0
+# spike. A run is this file plus one or more implementations/<id>/compose.yml,
+# all in one compose project. Relative paths resolve from implementations/,
+# because compose uses the first file's directory for every fragment.
+#
+#   docker compose -f implementations/base.compose.yml \
+#     -f implementations/happyview/compose.yml -f implementations/pdsjs/compose.yml up -d --wait
+#
+# The network is internal (no egress) with an IPv6 documentation subnet.
+# Caddy fronts each implementation under <name>.test with `tls internal`, and
+# containers trust its root CA through base/trust-caddy.sh or NODE_EXTRA_CA_CERTS.
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: conf
+      POSTGRES_PASSWORD: conf
+      POSTGRES_DB: conf
+    volumes:
+      - ./base/init-dbs.sql:/docker-entrypoint-initdb.d/init-dbs.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U conf -d conf"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  plc:
+    image: ${PLC_IMAGE:?set from pins/images.env}
+    environment:
+      DB_CREDS_JSON: '{"username":"conf","password":"conf","host":"postgres","port":"5432","database":"plc"}'
+      ENABLE_MIGRATIONS: "true"
+      DB_MIGRATE_CREDS_JSON: '{"username":"conf","password":"conf","host":"postgres","port":"5432","database":"plc"}'
+      PORT: "2582"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    volumes:
+      - ./base/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    networks:
+      default:
+        aliases: [happyview.test, pdsjs-alice.test, pdsjs-bob.test, zds.test, harness.test]
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /data/caddy/pki/authorities/local/root.crt"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+
+  # Plays client, syncer, receiver and managing app. Idles; the runner execs
+  # into it. A long-running service, because `compose run` containers get no
+  # DNS name and Caddy couldn't reach the harness's actors.
+  harness:
+    image: node:24-bookworm-slim
+    command: ["sleep", "infinity"]
+    init: true
+    user: root
+    working_dir: /suite
+    environment:
+      NODE_EXTRA_CA_CERTS: /caddy-data/caddy/pki/authorities/local/root.crt
+    volumes:
+      - ..:/suite
+      - caddy_data:/caddy-data:ro
+
+volumes:
+  caddy_data:
+
+networks:
+  default:
+    internal: true
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: 3fff:408::/64

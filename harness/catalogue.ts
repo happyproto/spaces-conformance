@@ -1,0 +1,124 @@
+// The assertion catalogue (spec/assertions.yaml) and its validator.
+//
+// Beyond the schema, every row must satisfy the level rule (design ch. 3.1):
+//
+//   must    the quote has MUST / MUST NOT / REQUIRED / SHALL or a lowercase
+//           "must"; or basis includes definition, lexicon or host-honours-may.
+//   should  the quote has SHOULD / RECOMMENDED / "should"; or basis includes
+//           default and the quote states the value as a default.
+//   info    anything.
+//
+// and each declared basis must hold on its own: `keyword` needs a keyword of
+// the row's level in the quote, `default` needs the word "default", and
+// `lexicon` needs a lexicon NSID. Quotes must appear in the pinned revision,
+// and sections must be anchors in it.
+
+import { readFileSync } from 'node:fs';
+import { parse } from 'yaml';
+import type { Problem } from './problems.ts';
+import { checkSchema } from './schema.ts';
+import { anchors, plainText } from './spec.ts';
+
+export type Level = 'must' | 'should' | 'info';
+export type Basis = 'keyword' | 'definition' | 'lexicon' | 'host-honours-may' | 'default';
+export type Role = 'repo-host' | 'space-host' | 'pds';
+export type Profile = 'pds' | 'bespoke-space-host';
+
+export interface Assertion {
+  id: string;
+  suite: string;
+  section?: string;
+  quote?: string;
+  level: Level;
+  basis?: Basis[];
+  roles: Role[];
+  profiles?: Profile[];
+  requires?: string[];
+  lexicon?: string;
+  checks: string;
+  since?: string;
+  until?: string;
+  provisional?: boolean;
+}
+
+export interface Catalogue {
+  revision: string;
+  assertions: Assertion[];
+}
+
+export function loadCatalogue(path: string): Catalogue {
+  return parse(readFileSync(path, 'utf8'));
+}
+
+const MUST_KEYWORD = /\b(MUST|REQUIRED|SHALL)\b|\bmust\b/;
+const SHOULD_KEYWORD = /\b(SHOULD|RECOMMENDED)\b|\bshould\b/;
+const DEFAULT_WORD = /\bdefaults?\b/i;
+
+/** The level-rule problems for one row, as messages. Exported for tests. */
+export function levelProblems(a: Assertion): string[] {
+  const out: string[] = [];
+  const quote = a.quote ? plainText(a.quote) : '';
+  const basis = new Set(a.basis ?? []);
+
+  if (a.level !== 'info' && basis.size === 0) out.push(`level ${a.level} needs a basis`);
+  if (a.level !== 'info' && !a.quote && !basis.has('lexicon')) out.push(`level ${a.level} needs a quote`);
+
+  if (a.level === 'must') {
+    const ok =
+      (basis.has('keyword') && MUST_KEYWORD.test(quote)) ||
+      basis.has('definition') ||
+      basis.has('lexicon') ||
+      basis.has('host-honours-may');
+    if (!ok && basis.size > 0) out.push('level must needs a MUST/REQUIRED keyword in the quote, or a definition, lexicon or host-honours-may basis');
+    if (basis.has('default')) out.push('basis default only supports level should');
+  }
+  if (a.level === 'should') {
+    const ok = (basis.has('keyword') && SHOULD_KEYWORD.test(quote)) || (basis.has('default') && DEFAULT_WORD.test(quote));
+    if (!ok && basis.size > 0) out.push('level should needs a SHOULD keyword in the quote, or a default basis whose quote states the default');
+    for (const b of ['definition', 'lexicon', 'host-honours-may'] as const) {
+      if (basis.has(b)) out.push(`basis ${b} makes a row must, not should`);
+    }
+  }
+
+  if (basis.has('keyword')) {
+    const kw = a.level === 'should' ? SHOULD_KEYWORD : MUST_KEYWORD;
+    if (!kw.test(quote)) out.push(`basis keyword, but the quote has no ${a.level === 'should' ? 'SHOULD' : 'MUST'} keyword`);
+  }
+  if (basis.has('default') && !DEFAULT_WORD.test(quote)) out.push('basis default, but the quote does not state a default');
+  if (basis.has('lexicon') && !a.lexicon) out.push('basis lexicon needs a lexicon NSID');
+  if (a.lexicon && !basis.has('lexicon')) out.push('lexicon is set but basis does not include lexicon');
+  if (!a.section && !basis.has('lexicon') && a.level !== 'info') out.push('only lexicon and info rows may omit section');
+  return out;
+}
+
+/**
+ * Validate a parsed catalogue. `specText` is the pinned revision's Markdown;
+ * `revisions` the known revision keys (for since/until).
+ */
+export function validateCatalogue(cat: unknown, file: string, specText: string, revisions: string[]): Problem[] {
+  const problems = checkSchema('assertions', cat, file);
+  if (problems.length) return problems;
+  const c = cat as Catalogue;
+  if (!revisions.includes(c.revision)) problems.push({ file, message: `revision ${c.revision} is not in spec/revisions.json` });
+
+  const specPlain = plainText(specText);
+  const specAnchors = anchors(specText);
+  const seen = new Set<string>();
+
+  for (const a of c.assertions) {
+    const at = (message: string) => problems.push({ file, where: a.id, message });
+    if (seen.has(a.id)) at('duplicate id');
+    seen.add(a.id);
+    for (const m of levelProblems(a)) at(m);
+    if (a.section && !specAnchors.has(a.section)) at(`section ${a.section} is not a heading anchor in revision ${c.revision}`);
+    if (a.quote && !specPlain.includes(plainText(a.quote))) at(`quote not found verbatim in revision ${c.revision}`);
+    for (const r of [a.since, a.until]) if (r && !revisions.includes(r)) at(`revision ${r} is not in spec/revisions.json`);
+    if (a.id.startsWith('info.') && a.level !== 'info') at('info.* ids must be level info');
+  }
+  return problems;
+}
+
+/** Which profiles an assertion applies to (default: all). */
+export function profilesOf(a: Assertion): Profile[] {
+  return a.profiles ?? ['pds', 'bespoke-space-host'];
+}
