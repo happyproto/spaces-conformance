@@ -182,6 +182,22 @@
           "description": "For xrpc.error.* rows: the error name, declared by the listed lexicon.",
           "type": "string",
           "pattern": "^[A-Z][A-Za-z0-9]*$"
+        },
+        "areas": {
+          "description": "Harness crypto areas the check relies on. While any has a pending cross-check (vectors/*.json), the assertion is provisional.",
+          "type": "array",
+          "items": {
+            "enum": [
+              "cbor",
+              "lthash",
+              "mac",
+              "httpsig",
+              "jwt",
+              "star"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
         }
       }
     }

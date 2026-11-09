@@ -9,7 +9,48 @@
       "sources": [
         "spec #presenting-a-space-credential",
         "atproto#5187 packages/space/src/http-signature.test.ts"
-      ]
+      ],
+      "cross_check": {
+        "area": "httpsig",
+        "status": "cross-checked",
+        "against": [
+          "spec #presenting-a-space-credential",
+          "atproto#5187 packages/space/src/http-signature.test.ts"
+        ]
+      }
     }
-  ]
+  ],
+  "area": "httpsig",
+  "signed": {
+    "description": "A fixed key, so the deterministic (RFC 6979) signatures are reproducible. cnf.kid is the did:key.",
+    "secret": "0101010101010101010101010101010101010101010101010101010101010101",
+    "cnf_kid": "did:key:zDnaeXxvmFHMHjqgQTbadpWG7gPHwnga1i7SMwxrV2BSdUjAD",
+    "authorization": "Atproto-Space-Credential credential",
+    "audience": "did:example:repo",
+    "cases": [
+      {
+        "name": "valid",
+        "signature_input": "atproto-space-credential=(\"authorization\" \"atproto-space-audience\");tag=\"atproto-space-credential\"",
+        "signature": "atproto-space-credential=:4YbevkFRgtfI4daXRmvih7WIhuNxvKOJ0pg/1iO16rAj0VhMVKl4SdIF0QHA9Zhx63lXr3HDjXmlqDpTjHfutA==:",
+        "expect": "accept"
+      },
+      {
+        "name": "tag other",
+        "signature_input": "atproto-space-credential=(\"authorization\" \"atproto-space-audience\");tag=\"other\"",
+        "signature": "atproto-space-credential=:JwYumUERCvcGIcQDCeWmn7baew0FfgYSO150zfG2NpMqqtSc4XKS7Tb6NFJrQcIFIBdCxzJPTb8HPUy7pJj3vg==:",
+        "expect": "reject"
+      },
+      {
+        "name": "signed over another audience",
+        "signature_input": "atproto-space-credential=(\"authorization\" \"atproto-space-audience\");tag=\"atproto-space-credential\"",
+        "signature": "atproto-space-credential=:tKNRS+WGpOQZ0v9ztxpIlpEFilLw4mUJ0RcOW7DAvPcjv1+g9CI/VQjycRii2E2rBpor7ssazkXfPE+gXeosDw==:",
+        "expect": "reject"
+      }
+    ],
+    "cross_check": {
+      "area": "httpsig",
+      "status": "pending",
+      "against": []
+    }
+  }
 }

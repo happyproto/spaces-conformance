@@ -29,6 +29,7 @@ const row = (over: Partial<Assertion>): Assertion => ({
   level: 'must',
   basis: ['definition'],
   roles: ['repo-host'],
+  areas: ['lthash'],
   checks: 'test',
   ...over,
 });
@@ -124,6 +125,11 @@ describe('catalogue', () => {
   it('refuses a lexicon directory that no longer matches its pinned digest', () => {
     const rev = revisions.revisions[revisions.default];
     expect(() => loadLexicons({ ...rev, lexicons: { ...rev.lexicons, sha256: '0'.repeat(64) } })).toThrow(/digest/);
+  });
+
+  it('requires areas on rows in the crypto suites', () => {
+    const p = validateCatalogue(catalogueOf(row({ areas: undefined })), 'f', spec, revKeys).map((x) => x.message);
+    expect(p).toContain('suite digest relies on harness crypto, so the row needs areas');
   });
 
   it('rejects schema violations before the level rule', () => {

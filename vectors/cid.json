@@ -9,7 +9,15 @@
         "harness",
         "@ipld/dag-cbor 9.2.5",
         "HappyView crates/happyview-provider/src/cid.rs tests"
-      ]
+      ],
+      "cross_check": {
+        "area": "cbor",
+        "status": "cross-checked",
+        "against": [
+          "@ipld/dag-cbor 9.2.5",
+          "HappyView crates/happyview-provider/src/cid.rs tests"
+        ]
+      }
     },
     {
       "name": "a1",
@@ -21,7 +29,15 @@
         "harness",
         "@ipld/dag-cbor 9.2.5",
         "HappyView crates/happyview-provider/src/cid.rs tests"
-      ]
+      ],
+      "cross_check": {
+        "area": "cbor",
+        "status": "cross-checked",
+        "against": [
+          "@ipld/dag-cbor 9.2.5",
+          "HappyView crates/happyview-provider/src/cid.rs tests"
+        ]
+      }
     },
     {
       "name": "ordering",
@@ -34,7 +50,15 @@
         "harness",
         "@ipld/dag-cbor 9.2.5",
         "HappyView crates/happyview-provider/src/cid.rs tests"
-      ]
+      ],
+      "cross_check": {
+        "area": "cbor",
+        "status": "cross-checked",
+        "against": [
+          "@ipld/dag-cbor 9.2.5",
+          "HappyView crates/happyview-provider/src/cid.rs tests"
+        ]
+      }
     },
     {
       "name": "text",
@@ -47,7 +71,14 @@
       "sources": [
         "harness",
         "@ipld/dag-cbor 9.2.5"
-      ]
+      ],
+      "cross_check": {
+        "area": "cbor",
+        "status": "cross-checked",
+        "against": [
+          "@ipld/dag-cbor 9.2.5"
+        ]
+      }
     },
     {
       "name": "unicode",
@@ -58,7 +89,14 @@
       "sources": [
         "harness",
         "@ipld/dag-cbor 9.2.5"
-      ]
+      ],
+      "cross_check": {
+        "area": "cbor",
+        "status": "cross-checked",
+        "against": [
+          "@ipld/dag-cbor 9.2.5"
+        ]
+      }
     },
     {
       "name": "link",
@@ -71,7 +109,14 @@
       "sources": [
         "harness",
         "@ipld/dag-cbor 9.2.5"
-      ]
+      ],
+      "cross_check": {
+        "area": "cbor",
+        "status": "cross-checked",
+        "against": [
+          "@ipld/dag-cbor 9.2.5"
+        ]
+      }
     },
     {
       "name": "bytes",
@@ -84,7 +129,14 @@
       "sources": [
         "harness",
         "@ipld/dag-cbor 9.2.5"
-      ]
+      ],
+      "cross_check": {
+        "area": "cbor",
+        "status": "cross-checked",
+        "against": [
+          "@ipld/dag-cbor 9.2.5"
+        ]
+      }
     },
     {
       "name": "bigint",
@@ -95,7 +147,14 @@
       "sources": [
         "harness",
         "@ipld/dag-cbor 9.2.5"
-      ]
+      ],
+      "cross_check": {
+        "area": "cbor",
+        "status": "cross-checked",
+        "against": [
+          "@ipld/dag-cbor 9.2.5"
+        ]
+      }
     },
     {
       "name": "int32edge",
@@ -109,7 +168,14 @@
       "sources": [
         "harness",
         "@ipld/dag-cbor 9.2.5"
-      ]
+      ],
+      "cross_check": {
+        "area": "cbor",
+        "status": "cross-checked",
+        "against": [
+          "@ipld/dag-cbor 9.2.5"
+        ]
+      }
     },
     {
       "name": "neg",
@@ -122,7 +188,14 @@
       "sources": [
         "harness",
         "@ipld/dag-cbor 9.2.5"
-      ]
+      ],
+      "cross_check": {
+        "area": "cbor",
+        "status": "cross-checked",
+        "against": [
+          "@ipld/dag-cbor 9.2.5"
+        ]
+      }
     },
     {
       "name": "nested",
@@ -144,7 +217,14 @@
       "sources": [
         "harness",
         "@ipld/dag-cbor 9.2.5"
-      ]
+      ],
+      "cross_check": {
+        "area": "cbor",
+        "status": "cross-checked",
+        "against": [
+          "@ipld/dag-cbor 9.2.5"
+        ]
+      }
     },
     {
       "name": "blob",
@@ -160,7 +240,14 @@
       "sources": [
         "harness",
         "@ipld/dag-cbor 9.2.5"
-      ]
+      ],
+      "cross_check": {
+        "area": "cbor",
+        "status": "cross-checked",
+        "against": [
+          "@ipld/dag-cbor 9.2.5"
+        ]
+      }
     }
   ],
   "raw": [
@@ -170,7 +257,14 @@
       "cid": "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
       "sources": [
         "HappyView crates/happyview-provider/src/cid.rs tests"
-      ]
+      ],
+      "cross_check": {
+        "area": "cbor",
+        "status": "cross-checked",
+        "against": [
+          "HappyView crates/happyview-provider/src/cid.rs tests"
+        ]
+      }
     },
     {
       "name": "happyview",
@@ -178,7 +272,15 @@
       "cid": "bafkreicpj5vjguacisspt5tjas2gbzub4c26ylz5nkgwczms23lnd7hwm4",
       "sources": [
         "HappyView crates/happyview-provider/src/cid.rs tests"
-      ]
+      ],
+      "cross_check": {
+        "area": "cbor",
+        "status": "cross-checked",
+        "against": [
+          "HappyView crates/happyview-provider/src/cid.rs tests"
+        ]
+      }
     }
-  ]
+  ],
+  "area": "cbor"
 }

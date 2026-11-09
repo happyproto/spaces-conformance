@@ -68,6 +68,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [mac]
     checks: >-
       The commit's repo and space equal the request's repo and space.
 
@@ -200,6 +201,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [pds]
+    areas: [lthash]
     checks: >-
       After clearRecords, getLatestCommit's data is
       e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad and rev has advanced.
@@ -212,6 +214,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [lthash]
     checks: >-
       A never-written repo answers getLatestCommit and listRecords the same way a cleared one does.
 
@@ -251,6 +254,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [lthash]
     checks: >-
       A repo whose records were all deleted reports data equal to sha256 of 2048 zero bytes.
 
@@ -262,6 +266,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [lthash, cbor]
     checks: >-
       The commit's data equals the harness's LtHash over {collection}/{rkey}/{cid} for every record the host lists.
 
@@ -274,6 +279,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [lthash, cbor]
     checks: >-
       The same record set written in two orders, in two repos, gives the same data.
 
@@ -286,6 +292,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [lthash, cbor]
     checks: >-
       After a create, an overwrite of one record and a delete of another, data covers only the surviving records.
 
@@ -298,6 +305,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [cbor]
     checks: >-
       For plain-JSON records, the cid the host returns equals the harness's DRISL CID.
 
@@ -310,6 +318,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [cbor]
     checks: >-
       The same for records holding $link, $bytes and integers past 32 bits (up to 2^53-1).
 
@@ -321,6 +330,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [lthash, cbor]
     checks: >-
       57 records written over several applyWrites calls give the data the harness computes.
 
@@ -334,6 +344,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [mac]
     checks: >-
       The author's DID document has {authorDid}#atproto_kem, controller the author, type
       Multikey, and a P-256 publicKeyMultibase.
@@ -347,6 +358,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [mac, httpsig, jwt]
     checks: >-
       With a space credential and Atproto-Space-Want-Mac, getLatestCommit returns
       Atproto-Space-Mac whose type and ver match the request's.
@@ -360,6 +372,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [mac, httpsig, jwt]
     checks: >-
       The response's Vary lists Atproto-Space-Want-Mac, and the mac is a 32-byte structured-field byte sequence.
 
@@ -371,6 +384,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [mac, httpsig, jwt]
     checks: >-
       A malformed Want-Mac, an unknown type or ver, or a key_share that isn't a P-256
       did:key is refused rather than answered without a MAC.
@@ -383,6 +397,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [mac, httpsig, jwt]
     checks: >-
       The commit MAC verifies with the harness's HKDF shared secret and HMAC-SHA256 over the defined context.
 
@@ -395,6 +410,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [mac, httpsig, jwt]
     checks: >-
       A MAC requested with a key_share whose shared secret the harness derived against another
       account's KEM key doesn't verify, i.e. the host uses the author's own KEM key.
@@ -408,6 +424,7 @@ assertions:
     level: must
     basis: [keyword, definition]
     roles: [repo-host]
+    areas: [mac, httpsig, jwt]
     checks: >-
       The page holding the last op carries the commit and a MAC header. Earlier pages carry neither.
 
@@ -419,6 +436,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [mac, cbor, httpsig, jwt]
     checks: >-
       getRecord's atproto-space-record MAC verifies over the record URI and binary CID.
 
@@ -470,6 +488,7 @@ assertions:
     lexicon: com.atproto.space.listRepoOps
     params: [limit, cursor]
     roles: [repo-host]
+    areas: [lthash, cbor]
     checks: >-
       Following listRepoOps's cursor (which the lexicon says takes precedence over since) across
       a page boundary inside one applyWrites batch loses no ops.
@@ -508,6 +527,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [lthash, cbor]
     checks: >-
       Folding every op from the start into an empty set hash gives the final page's commit data.
 
@@ -521,6 +541,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [star, cbor]
     checks: >-
       getRepo returns a STAR archive with this magic, and DRISL metadata with $type atproto-space-repo and every commit field.
 
@@ -532,6 +553,7 @@ assertions:
     level: must
     basis: [keyword]
     roles: [repo-host]
+    areas: [star]
     checks: >-
       The archive's keys are in strict byte order, with no repeats.
 
@@ -543,6 +565,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: [star, cbor, lthash, mac]
     checks: >-
       Streaming the archive into a set hash reproduces the metadata's data, and the response MAC verifies.
 
@@ -557,6 +580,7 @@ assertions:
     lexicon: com.atproto.space.getBlob
     params: [space, repo, cid]
     roles: [repo-host]
+    areas: [httpsig, jwt]
     checks: >-
       listBlobs lists a referenced blob, and getBlob(space, repo, cid) serves its bytes under a space credential.
 
@@ -570,6 +594,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [pds]
+    areas: [jwt]
     checks: >-
       typ is atproto-space-delegation+jwt, kid is #atproto, iss is the user, sub is the space,
       aud is {authority}#atproto_pds, there's a jti, and there's no lxm.
@@ -582,6 +607,7 @@ assertions:
     level: should
     basis: [default]
     roles: [pds]
+    areas: [jwt]
     checks: >-
       A delegation token's exp minus iat is 60.
 
@@ -593,6 +619,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [space-host]
+    areas: [jwt]
     checks: >-
       A space host refuses a delegation token presented a second time.
 
@@ -605,6 +632,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [pds]
+    areas: [jwt]
     checks: >-
       The token verifies against the #atproto key in the user's DID document.
 
@@ -616,6 +644,7 @@ assertions:
     level: must
     basis: [keyword]
     roles: [space-host]
+    areas: [jwt]
     checks: >-
       A space host refuses an otherwise valid delegation token whose kid isn't #atproto.
 
@@ -627,6 +656,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [space-host]
+    areas: [jwt]
     checks: >-
       typ is atproto-space-credential+jwt, kid is #atproto, iss is the authority, sub is the
       space, cnf.kid is the requested credentialKid, there's a jti, there's no aud, and the
@@ -642,6 +672,7 @@ assertions:
     level: should
     basis: [default]
     roles: [space-host]
+    areas: [jwt]
     checks: >-
       A space credential's exp minus iat is 600.
 
@@ -654,6 +685,7 @@ assertions:
     level: must
     basis: [keyword]
     roles: [space-host]
+    areas: [jwt]
     checks: >-
       getSpaceCredential with a valid but unneeded client attestation still issues a credential.
 
@@ -666,6 +698,7 @@ assertions:
     level: must
     basis: [keyword]
     roles: [repo-host, space-host]
+    areas: [httpsig, jwt]
     checks: >-
       A credential with no Signature, no Signature-Input or no Atproto-Space-Audience header is refused.
 
@@ -676,6 +709,7 @@ assertions:
     level: must
     basis: [keyword]
     roles: [repo-host, space-host]
+    areas: [httpsig, jwt]
     checks: >-
       A signature whose covered components aren't exactly ("authorization" "atproto-space-audience"), in that order, is refused.
 
@@ -686,6 +720,7 @@ assertions:
     level: must
     basis: [keyword]
     roles: [repo-host, space-host]
+    areas: [httpsig, jwt]
     checks: >-
       A signature whose tag isn't atproto-space-credential is refused.
 
@@ -696,6 +731,7 @@ assertions:
     level: must
     basis: [keyword]
     roles: [repo-host, space-host]
+    areas: [httpsig, jwt]
     checks: >-
       An Atproto-Space-Audience other than the repo owner (or the authority, at the space host) is refused.
 
@@ -706,6 +742,7 @@ assertions:
     level: must
     basis: [keyword]
     roles: [repo-host, space-host]
+    areas: [httpsig, jwt]
     checks: >-
       A credential whose cnf.kid isn't a P-256 did:key, or a signature by another key, is refused.
 
@@ -716,6 +753,7 @@ assertions:
     level: must
     basis: [keyword]
     roles: [repo-host, space-host]
+    areas: [httpsig, jwt]
     checks: >-
       An expired credential is refused even with a valid signature.
 
@@ -728,6 +766,7 @@ assertions:
     level: must
     basis: [keyword]
     roles: [repo-host, space-host]
+    areas: [httpsig, jwt]
     checks: >-
       A request signed with a high-S signature is accepted.
 
@@ -740,6 +779,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host, space-host]
+    areas: [httpsig, jwt]
     checks: >-
       The lowercase atproto-space-credential scheme is accepted, with the signature over the header exactly as sent.
 
@@ -751,6 +791,7 @@ assertions:
     level: must
     basis: [host-honours-may]
     roles: [repo-host, space-host]
+    areas: [httpsig, jwt]
     checks: >-
       The same credential and signature succeed twice against one audience.
 
@@ -764,6 +805,7 @@ assertions:
     basis: [definition]
     roles: [pds]
     requires: [repo_host.foreign_authorities]
+    areas: [httpsig, jwt]
     checks: >-
       A repo host accepts a credential minted by another authority for a space it hosts a repo in.
 
@@ -776,6 +818,7 @@ assertions:
     level: must
     basis: [keyword]
     roles: [repo-host]
+    areas: [httpsig, jwt]
     checks: >-
       After the authority revokes a jti (notifyCredentialRevoked, or the implementation's own
       trigger through the adapter's revokeCredential hook), the repo host refuses that credential.
@@ -1055,6 +1098,7 @@ assertions:
     lexicon: [com.atproto.space.registerNotify, com.atproto.space.unregisterNotify]
     params: [space, service]
     roles: [space-host]
+    areas: [httpsig, jwt]
     checks: >-
       registerNotify returns expiresAt in the future. unregisterNotify, called with the same space credential, stops delivery.
 
@@ -1068,6 +1112,7 @@ assertions:
     lexicon: com.atproto.space.listRepos
     params: [space, limit, cursor]
     roles: [space-host]
+    areas: [httpsig, jwt]
     checks: >-
       listRepos lists every account that has written, each with its current rev and data, and
       pages completely.
@@ -1084,6 +1129,7 @@ assertions:
     lexicon: com.atproto.space.listRepos
     params: [cursor]
     roles: [space-host]
+    areas: [httpsig, jwt]
     checks: >-
       listRepos with cursor set to a spaceRev from a forwarded notifyWrite returns only the repos
       updated after that space revision (exclusive), per the lexicon's cursor.
@@ -1381,6 +1427,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [pds]
+    areas: [star, cbor, lthash]
     checks: >-
       getRepo from host A then importRepo to host B keeps data, with every record listed on B.
 
@@ -1394,6 +1441,7 @@ assertions:
     lexicon: com.atproto.space.exportSpaceMeta
     params: [space]
     roles: [space-host, pds]
+    areas: [star, cbor]
     checks: >-
       exportSpaceMeta returns an atproto-space-meta STAR whose keys are policy, then policy
       state, then writer/{did}, each section in strict byte order.
@@ -1406,6 +1454,7 @@ assertions:
     level: must
     basis: [keyword]
     roles: [pds]
+    areas: [star, cbor]
     checks: >-
       importSpaceMeta keeps policy, member list and writers, and rejects an archive with an unknown policy-state key.
 

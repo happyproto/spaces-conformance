@@ -13,7 +13,8 @@ import {
 } from '@atcute/multibase';
 
 export const utf8 = (s: string): Uint8Array => new TextEncoder().encode(s);
-export const fromUtf8 = (b: Uint8Array): string => new TextDecoder('utf-8', { fatal: true }).decode(b);
+/** Strict UTF-8. A leading BOM is kept as U+FEFF, not silently stripped. */
+export const fromUtf8 = (b: Uint8Array): string => new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(b);
 
 export function concat(...parts: Uint8Array[]): Uint8Array {
   const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));

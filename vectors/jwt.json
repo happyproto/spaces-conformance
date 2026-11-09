@@ -1,0 +1,35 @@
+{
+  "area": "jwt",
+  "description": "Compact JWS verification. RFC 7515 A.3 is ES256 and its signature happens to be high-S, which space credential verifiers must accept.",
+  "vectors": [
+    {
+      "name": "RFC 7515 A.3 ES256",
+      "jws": "eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.DtEhU3ljbEg8L38VWAfUAqOyKAM6-Xx-F4GawxaepmXFCgfTjDxw5djxLa8ISlSApmWQxfKTUJqPP3-Kg6NU1Q",
+      "jwk": {
+        "kty": "EC",
+        "crv": "P-256",
+        "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
+        "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"
+      },
+      "expect": "accept",
+      "high_s": true,
+      "sources": [
+        "RFC 7515 appendix A.3"
+      ],
+      "cross_check": {
+        "area": "jwt",
+        "status": "cross-checked",
+        "against": [
+          "RFC 7515 appendix A.3"
+        ]
+      }
+    }
+  ],
+  "negative": [
+    {
+      "name": "payload changed",
+      "jws": "eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJqb2UifQ.DtEhU3ljbEg8L38VWAfUAqOyKAM6-Xx-F4GawxaepmXFCgfTjDxw5djxLa8ISlSApmWQxfKTUJqPP3-Kg6NU1Q",
+      "expect": "reject"
+    }
+  ]
+}

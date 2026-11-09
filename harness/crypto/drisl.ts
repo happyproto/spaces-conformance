@@ -73,14 +73,22 @@ export function encode(value: DrislValue): Uint8Array {
   return concat(...parts);
 }
 
+export const MAX_DEPTH = 128;
+
+export interface DecodeOptions {
+  /** Refuse floats, as atproto records must (the data model has none). */
+  noFloats?: boolean;
+}
+
 /** Decode exactly one canonical DRISL item that fills `bytes`. Throws on anything non-canonical. */
-export function decode(bytes: Uint8Array): DrislValue {
-  const { value, next } = decodeAt(bytes, 0);
+export function decode(bytes: Uint8Array, opts: DecodeOptions = {}): DrislValue {
+  const { value, next } = decodeAt(bytes, 0, 0, opts);
   if (next !== bytes.length) throw new Error(`${bytes.length - next} trailing bytes after DRISL item`);
   return value;
 }
 
-function decodeAt(b: Uint8Array, off: number): { value: DrislValue; next: number } {
+function decodeAt(b: Uint8Array, off: number, depth: number, opts: DecodeOptions): { value: DrislValue; next: number } {
+  if (depth > MAX_DEPTH) throw new Error(`DRISL nested deeper than ${MAX_DEPTH}`);
   const need = (n: number) => {
     if (off + n > b.length) throw new Error('DRISL truncated');
   };
@@ -94,6 +102,7 @@ function decodeAt(b: Uint8Array, off: number): { value: DrislValue; next: number
     if (info === 21) return { value: true, next: off };
     if (info === 22) return { value: null, next: off };
     if (info === 27) {
+      if (opts.noFloats) throw new Error('floats are not allowed in records');
       need(8);
       const f = new DataView(b.buffer, b.byteOffset + off, 8).getFloat64(0);
       if (!Number.isFinite(f)) throw new Error('non-finite float');
@@ -153,7 +162,7 @@ function decodeAt(b: Uint8Array, off: number): { value: DrislValue; next: number
       const n = len();
       const arr: DrislValue[] = [];
       for (let i = 0; i < n; i++) {
-        const r = decodeAt(b, off);
+        const r = decodeAt(b, off, depth + 1, opts);
         arr.push(r.value);
         off = r.next;
       }
@@ -166,12 +175,12 @@ function decodeAt(b: Uint8Array, off: number): { value: DrislValue; next: number
       for (let i = 0; i < n; i++) {
         if (off >= b.length || b[off] >> 5 !== 3) throw new Error('map keys must be text strings');
         const kStart = off;
-        const k = decodeAt(b, off);
+        const k = decodeAt(b, off, depth + 1, opts);
         const kb = b.subarray(kStart, k.next);
         if (prev && (kb.length < prev.length || (kb.length === prev.length && compareBytes(kb, prev) <= 0)))
           throw new Error('map keys out of order or duplicated');
         prev = kb;
-        const v = decodeAt(b, k.next);
+        const v = decodeAt(b, k.next, depth + 1, opts);
         obj[k.value as string] = v.value;
         off = v.next;
       }
@@ -179,7 +188,7 @@ function decodeAt(b: Uint8Array, off: number): { value: DrislValue; next: number
     }
     case 6: {
       if (arg !== 42n) throw new Error(`tag ${arg} is not allowed`);
-      const inner = decodeAt(b, off);
+      const inner = decodeAt(b, off, depth + 1, opts);
       if (!(inner.value instanceof Uint8Array) || inner.value[0] !== 0x00) throw new Error('tag 42 must wrap 0x00-prefixed bytes');
       return { value: Cid.fromBytes(inner.value.subarray(1)), next: inner.next };
     }

@@ -21,6 +21,7 @@ Each row ties one check to one sentence of Proposal 0016 at the revision `spec/r
 | `error` | For `xrpc.error.<Name>` rows, the error name. It must equal `<Name>` and be declared by the listed lexicon. |
 | `since`, `until` | Revision keys from `spec/revisions.json`. |
 | `provisional` | Set until two implementations with different lineage pass it. |
+| `areas` | The harness crypto areas the check runs through (`cbor`, `lthash`, `mac`, `httpsig`, `jwt`, `star`). Required in the `digest`, `mac` and `export` suites. While any listed area has a pending vector cross-check (`vectors/README.md`), the assertion is provisional. |
 
 **Level rule.**
 
