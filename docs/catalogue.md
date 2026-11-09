@@ -4,7 +4,7 @@ Every file below has a JSON Schema in `schemas/`, and `bun run validate` checks 
 
 ## Assertions (`spec/assertions.yaml`)
 
-Each row ties one check to one sentence of Proposal 0016 at the revision `spec/revisions.json` pins. The validator fetches that revision by commit, checks its SHA-256, and caches it in `.cache/spec/`.
+Each row ties one check to one sentence of Proposal 0016 at the revision `spec/revisions.json` pins, or to the lexicons pinned with it. The validator fetches the proposal by commit, checks its SHA-256, and caches it in `.cache/spec/`. The lexicons are vendored in `spec/lexicons/<commit>/` and checked against a digest in `revisions.json`.
 
 | Field | Rule |
 |---|---|
@@ -16,7 +16,9 @@ Each row ties one check to one sentence of Proposal 0016 at the revision `spec/r
 | `basis` | One or more of `keyword`, `definition`, `lexicon`, `host-honours-may` and `default`. Required for `must` and `should`. |
 | `roles`, `profiles` | Which implementations the row applies to. `profiles` defaults to both. |
 | `requires` | Capability paths resolved against a manifest's `capabilities` (see below). |
-| `lexicon` | The lexicon NSID, required when `basis` has `lexicon`. |
+| `lexicon` | One NSID or a list, required when `basis` has `lexicon`. Each must exist in the revision's pinned lexicons (`spec/lexicons/<commit>/`). |
+| `params` | Parameter or input-field names the row relies on. Every listed lexicon must define each one. |
+| `error` | For `xrpc.error.<Name>` rows, the error name. It must equal `<Name>` and be declared by the listed lexicon. |
 | `since`, `until` | Revision keys from `spec/revisions.json`. |
 | `provisional` | Set until two implementations with different lineage pass it. |
 

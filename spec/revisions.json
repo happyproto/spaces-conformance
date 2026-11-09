@@ -7,7 +7,12 @@
       "commit": "701ef9c6be5a99c2d3e87e107fe2531459d1c984",
       "path": "0016-permissioned-data/README.md",
       "sha256": "5e3760ae25701e5e6582847d6c2a696c46605d7bdb826a4632d1544cbc77b0c9",
-      "lexicons": { "repo": "bluesky-social/atproto", "ref": "pull/5187", "commit": "98ef3a6b9d1364f0543f137dd024de9651b21c4c" }
+      "lexicons": {
+        "repo": "bluesky-social/atproto",
+        "ref": "pull/5187",
+        "commit": "98ef3a6b9d1364f0543f137dd024de9651b21c4c",
+        "sha256": "e173ff8dd8c974b1ef9df1c9500baa87ebf54f682ab7e2f73494067e8aea64be"
+      }
     }
   }
 }

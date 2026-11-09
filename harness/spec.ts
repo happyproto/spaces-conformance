@@ -14,7 +14,7 @@ export interface Revision {
   commit: string;
   path: string;
   sha256: string;
-  lexicons: { repo: string; ref: string; commit: string };
+  lexicons: { repo: string; ref: string; commit: string; sha256: string };
 }
 
 export interface Revisions {
@@ -59,11 +59,16 @@ export async function loadSpecText(rev: Revision): Promise<string> {
  * and emphasis markers go, table pipes become spaces, whitespace collapses.
  */
 export function plainText(md: string): string {
+  // Emphasis is stripped only outside code spans, so `collection=*` keeps its star.
   return md
     .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/`([^`]*)`/g, '$1')
-    .replace(/\*\*|__/g, '')
-    .replace(/(^|[\s(])\*(\S[^*]*?)\*(?=[\s).,;:]|$)/g, '$1$2')
+    .split(/(`[^`]*`)/)
+    .map((part) =>
+      part.startsWith('`') && part.endsWith('`') && part.length > 1
+        ? part.slice(1, -1)
+        : part.replace(/\*\*|__/g, '').replace(/(^|[\s(])[*_](\S[^*_]*?)[*_](?=[\s).,;:]|$)/g, '$1$2'),
+    )
+    .join('')
     .replace(/\|/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
