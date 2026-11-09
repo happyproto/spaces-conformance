@@ -1,0 +1,45 @@
+{
+  "description": "LtHash set hash (0016 #commit-digest). digest = sha256(state). Elements are UTF-8 strings.",
+  "vectors": [
+    {
+      "name": "empty repo",
+      "elements": [],
+      "digest": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+      "sources": [
+        "spec #repo-lifecycle constant",
+        "atproto#5187 packages/space/tests/lthash.test.ts"
+      ]
+    },
+    {
+      "name": "two raw elements",
+      "elements": [
+        "one",
+        "two"
+      ],
+      "digest": "ae05cb6d224379d9710c290c8529945c5b0e0fde9ead30b9699057ce701c63e7",
+      "sources": [
+        "atproto#5187 packages/space/tests/lthash.test.ts"
+      ]
+    },
+    {
+      "name": "two records",
+      "records": [
+        {
+          "collection": "com.example.conformance.note",
+          "rkey": "3mzubmcb7sbkq",
+          "cid": "bafyreiesv7m3kvsm5zvhragkl776ixbkwpwxuqx5vr646rlbou7knizux4"
+        },
+        {
+          "collection": "com.example.conformance.note",
+          "rkey": "self",
+          "cid": "bafyreigbtj4x7ip5legnfznufuopl4sg4knzc2cof6duas4b3q2fy6swua"
+        }
+      ],
+      "digest": "5a7c85a9485926264b43aa96494b794c3f0a8ccc36ccb22030b09d5463b7d88b",
+      "sources": [
+        "harness"
+      ],
+      "cross_check": "pending: compare once against HappyView and the reference PDS (design ch. 3.4)"
+    }
+  ]
+}

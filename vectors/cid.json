@@ -1,0 +1,184 @@
+{
+  "description": "DASL CIDs of records given as lexicon JSON (DRISL, sha-256). Typed values use $link and $bytes; integers reach 2^53-1.",
+  "vectors": [
+    {
+      "name": "empty",
+      "record": {},
+      "cid": "bafyreigbtj4x7ip5legnfznufuopl4sg4knzc2cof6duas4b3q2fy6swua",
+      "sources": [
+        "harness",
+        "@ipld/dag-cbor 9.2.5",
+        "HappyView crates/happyview-provider/src/cid.rs tests"
+      ]
+    },
+    {
+      "name": "a1",
+      "record": {
+        "a": 1
+      },
+      "cid": "bafyreihltcnuuyqp2jm24aqydpnlj7b6w3ogwrplomrjtg5rifv44mmjey",
+      "sources": [
+        "harness",
+        "@ipld/dag-cbor 9.2.5",
+        "HappyView crates/happyview-provider/src/cid.rs tests"
+      ]
+    },
+    {
+      "name": "ordering",
+      "record": {
+        "aa": 2,
+        "b": 1
+      },
+      "cid": "bafyreihbaf6v4gjeo76rl6ncekrny5lwbgyjf7zdw2m7w77xsjm3xvige4",
+      "sources": [
+        "harness",
+        "@ipld/dag-cbor 9.2.5",
+        "HappyView crates/happyview-provider/src/cid.rs tests"
+      ]
+    },
+    {
+      "name": "text",
+      "record": {
+        "$type": "com.example.conformance.note",
+        "text": "hello",
+        "createdAt": "2026-11-09T00:00:00.000Z"
+      },
+      "cid": "bafyreiesv7m3kvsm5zvhragkl776ixbkwpwxuqx5vr646rlbou7knizux4",
+      "sources": [
+        "harness",
+        "@ipld/dag-cbor 9.2.5"
+      ]
+    },
+    {
+      "name": "unicode",
+      "record": {
+        "text": "héllo 世界 🎉"
+      },
+      "cid": "bafyreigzb7xbvenemqiklkhb3grcue7ggncm7bsacix6kvy363la3tm7oi",
+      "sources": [
+        "harness",
+        "@ipld/dag-cbor 9.2.5"
+      ]
+    },
+    {
+      "name": "link",
+      "record": {
+        "ref": {
+          "$link": "bafyreigbtj4x7ip5legnfznufuopl4sg4knzc2cof6duas4b3q2fy6swua"
+        }
+      },
+      "cid": "bafyreienrhitqg43cthi4ctljgxzjzetbfbo7szyafqpvemxhgnxhmatbm",
+      "sources": [
+        "harness",
+        "@ipld/dag-cbor 9.2.5"
+      ]
+    },
+    {
+      "name": "bytes",
+      "record": {
+        "b": {
+          "$bytes": "AAECAwQFBgcICQ"
+        }
+      },
+      "cid": "bafyreic5pankfgo2fot5dtxtbwkio4et2loa3njnmpielv3sq7gegjtvtq",
+      "sources": [
+        "harness",
+        "@ipld/dag-cbor 9.2.5"
+      ]
+    },
+    {
+      "name": "bigint",
+      "record": {
+        "v": 9007199254740991
+      },
+      "cid": "bafyreiev3u3sv3qmv67htoluxdbrhwg2dr25lp5ngfobnxrs7dsvkj5ugi",
+      "sources": [
+        "harness",
+        "@ipld/dag-cbor 9.2.5"
+      ]
+    },
+    {
+      "name": "int32edge",
+      "record": {
+        "a": 4294967295,
+        "b": 4294967296,
+        "c": -4294967296,
+        "d": -4294967297
+      },
+      "cid": "bafyreieu5z3kyzhikf75nm6deq4dov6bbch5pofxfzr5kfoirsqqhddmba",
+      "sources": [
+        "harness",
+        "@ipld/dag-cbor 9.2.5"
+      ]
+    },
+    {
+      "name": "neg",
+      "record": {
+        "n": -1,
+        "m": -24,
+        "o": -25
+      },
+      "cid": "bafyreicvzwebcgsoyagdljuh3kqcqs4huugdvkiuixfil4hkn5vnurluji",
+      "sources": [
+        "harness",
+        "@ipld/dag-cbor 9.2.5"
+      ]
+    },
+    {
+      "name": "nested",
+      "record": {
+        "list": [
+          1,
+          "two",
+          {
+            "three": 3
+          },
+          [
+            true,
+            false,
+            null
+          ]
+        ]
+      },
+      "cid": "bafyreiealdy4n4syziv4scnwjfksps2eer2untfx7bir75sv7y43xx36z4",
+      "sources": [
+        "harness",
+        "@ipld/dag-cbor 9.2.5"
+      ]
+    },
+    {
+      "name": "blob",
+      "record": {
+        "$type": "blob",
+        "ref": {
+          "$link": "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku"
+        },
+        "mimeType": "image/png",
+        "size": 12345
+      },
+      "cid": "bafyreic2jnd4konieom2roqqq7mio27hnmcd6qlzzufrqtpajhclpvcpoi",
+      "sources": [
+        "harness",
+        "@ipld/dag-cbor 9.2.5"
+      ]
+    }
+  ],
+  "raw": [
+    {
+      "name": "empty bytes",
+      "bytes_hex": "",
+      "cid": "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+      "sources": [
+        "HappyView crates/happyview-provider/src/cid.rs tests"
+      ]
+    },
+    {
+      "name": "happyview",
+      "bytes_hex": "686170707976696577",
+      "cid": "bafkreicpj5vjguacisspt5tjas2gbzub4c26ylz5nkgwczms23lnd7hwm4",
+      "sources": [
+        "HappyView crates/happyview-provider/src/cid.rs tests"
+      ]
+    }
+  ]
+}

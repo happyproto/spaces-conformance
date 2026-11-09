@@ -5,6 +5,9 @@
     "": {
       "name": "spaces-conformance",
       "dependencies": {
+        "@atcute/multibase": "1.2.5",
+        "@noble/curves": "2.4.0",
+        "@noble/hashes": "2.4.0",
         "ajv": "8.20.0",
         "ajv-formats": "3.0.1",
         "yaml": "2.9.1",
@@ -12,9 +15,6 @@
       "devDependencies": {
         "@atcute/cbor": "2.3.8",
         "@atcute/cid": "2.5.0",
-        "@atcute/multibase": "1.2.5",
-        "@noble/curves": "2.4.0",
-        "@noble/hashes": "2.4.0",
         "@types/node": "24.19.2",
         "typescript": "7.0.2",
         "vitest": "5.0.5",

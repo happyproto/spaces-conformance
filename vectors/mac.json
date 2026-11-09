@@ -1,0 +1,33 @@
+{
+  "description": "Commit and record MACs (0016 #commit-mac, #record-mac) over a fixed shared secret.",
+  "shared_secret": "c0d26aeab536609a572b07695d933b589dcf363ff9d93c93adea537aeabb8cb8",
+  "commit": [
+    {
+      "name": "empty commit",
+      "ver": 1,
+      "space": "at://did:plc:space/space/com.example.conformance.space/self",
+      "repo": "did:plc:alice",
+      "rev": "3mzubmcaokw22",
+      "data": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+      "mac": "6aff76e1fa1d4205ba5502997ae33945ff0e077a9d50a17b8ab4546a05401e86",
+      "sources": [
+        "harness",
+        "node:crypto HMAC (in the test)"
+      ],
+      "cross_check": "pending: compare once against HappyView and the reference PDS"
+    }
+  ],
+  "record": [
+    {
+      "name": "note",
+      "uri": "at://did:plc:space/space/com.example.conformance.space/self/did:plc:alice/com.example.conformance.note/3mzubmcb7sbkq",
+      "cid": "bafyreiesv7m3kvsm5zvhragkl776ixbkwpwxuqx5vr646rlbou7knizux4",
+      "mac": "04970e70d55c12850dca656891d03079c089f9cacf6b348bab2cd021fa963672",
+      "sources": [
+        "harness",
+        "node:crypto HMAC (in the test)"
+      ],
+      "cross_check": "pending"
+    }
+  ]
+}

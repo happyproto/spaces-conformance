@@ -1,0 +1,15 @@
+{
+  "description": "KEM shared secret (0016 #shared-secret). The syncer's key share is pkEm and the author's KEM private key skRm.",
+  "vectors": [
+    {
+      "name": "RFC 9180 A.3.1 DHKEM(P-256, HKDF-SHA256)",
+      "pkEm": "04a92719c6195d5085104f469a8b9814d5838ff72b60501e2c4466e5e67b325ac98536d7b61a1af4b78e5b7f951c0900be863c403ce65c9bfcb9382657222d18c4",
+      "skRm": "f3ce7fdae57e1a310d87f1ebbde6f328be0a99cdbcadf4d6589cf29de4b8ffd2",
+      "shared_secret": "c0d26aeab536609a572b07695d933b589dcf363ff9d93c93adea537aeabb8cb8",
+      "sources": [
+        "RFC 9180 appendix A.3.1",
+        "atproto#5187 packages/space/tests/kem.test.ts"
+      ]
+    }
+  ]
+}
