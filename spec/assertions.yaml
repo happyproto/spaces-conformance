@@ -471,7 +471,8 @@ assertions:
     params: [limit, cursor]
     roles: [repo-host]
     checks: >-
-      A page boundary inside one applyWrites batch loses no ops.
+      Following listRepoOps's cursor (which the lexicon says takes precedence over since) across
+      a page boundary inside one applyWrites batch loses no ops.
 
   - id: oplog.stale-values-omitted
     suite: oplog
@@ -1069,21 +1070,49 @@ assertions:
     roles: [space-host]
     checks: >-
       listRepos lists every account that has written, each with its current rev and data, and
-      pages completely. Not graded: listing "since" a space revision, which #write-notifications
-      describes but the pinned listRepos lexicon has no parameter for.
+      pages completely.
+
+  - id: writers.list-repos-since-space-rev
+    suite: writer-set
+    section: "#write-notifications"
+    quote: >-
+      Syncers can detect missed notifications from a gap in space revisions, and request a list of
+      all repos in the space updated "since" an earlier space revision using the
+      `com.atproto.space.listRepos` endpoint.
+    level: must
+    basis: [definition, lexicon]
+    lexicon: com.atproto.space.listRepos
+    params: [cursor]
+    roles: [space-host]
+    checks: >-
+      listRepos with cursor set to a spaceRev from a forwarded notifyWrite returns only the repos
+      updated after that space revision (exclusive), per the lexicon's cursor.
 
   - id: writers.remove-writer
     suite: writer-set
     section: "#the-sync-boundary-writer-set"
     quote: >-
-      A removed account can be re-added to the writer set later if they make an authorized write to the space.
+      This can be explicitly requested with `com.atproto.space.removeWriter`.
     level: must
     basis: [definition, lexicon]
     lexicon: com.atproto.space.removeWriter
     params: [space, did]
     roles: [space-host]
     checks: >-
-      removeWriter drops an account from listRepos, and a later authorized write re-adds it.
+      removeWriter drops the account from listRepos.
+
+  - id: writers.removed-writer-retracked
+    suite: writer-set
+    section: "#memberspace"
+    quote: >-
+      While `publicWrite` is set, a removed writer is tracked again as soon as it writes.
+    level: must
+    basis: [definition]
+    roles: [space-host, pds]
+    requires: [policies.memberspace]
+    checks: >-
+      In a memberspace space with publicWrite, an account removed with removeWriter is back in
+      listRepos after its next write.
 
   - id: writers.repos-resolve-to-host
     suite: writer-set
