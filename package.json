@@ -11,7 +11,8 @@
     "validate": "node cli/validate.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "check": "bun run typecheck && bun run test && bun run validate"
+    "check": "bun run typecheck && bun run test && bun run validate",
+    "stack:test": "cli/stack.sh test"
   },
   "dependencies": {
     "@atcute/multibase": "1.2.5",

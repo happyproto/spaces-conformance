@@ -54,7 +54,10 @@ services:
   # into it. A long-running service, because `compose run` containers get no
   # DNS name and Caddy couldn't reach the harness's actors.
   harness:
-    image: node:24-bookworm-slim
+    build:
+      context: ..
+      dockerfile: implementations/base/harness.Dockerfile
+    image: spaces-conformance-harness:local
     command: ["sleep", "infinity"]
     init: true
     user: root
@@ -63,6 +66,9 @@ services:
       NODE_EXTRA_CA_CERTS: /caddy-data/caddy/pki/authorities/local/root.crt
     volumes:
       - ..:/suite
+      # An anonymous volume over node_modules keeps the image's Linux install
+      # in place of the host's.
+      - /suite/node_modules
       - caddy_data:/caddy-data:ro
 
 volumes:
