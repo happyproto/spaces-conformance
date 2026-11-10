@@ -7,7 +7,7 @@ import { loadCatalogue } from '../harness/catalogue.ts';
 import { provisionalReason, vectorStatus } from '../harness/provisional.ts';
 import { ROOT } from '../harness/schema.ts';
 
-const row = (over: Partial<Assertion>): Assertion => ({ id: 't.t', suite: 'digest', level: 'must', roles: ['repo-host'], checks: 'x', ...over });
+const row = (over: Partial<Assertion>): Assertion => ({ id: 't.t', suite: 'digest', level: 'must', roles: ['repo-host'], areas: [], checks: 'x', ...over });
 
 describe('provisional fencing', () => {
   it('reads area status from the shipped vectors', () => {
@@ -24,7 +24,7 @@ describe('provisional fencing', () => {
     expect(provisionalReason(row({ areas: ['cbor'] }), s)).toBeNull();
     expect(provisionalReason(row({ areas: ['cbor', 'mac'] }), s)).toMatch(/mac not yet cross-checked/);
     expect(provisionalReason(row({ provisional: true }), s)).toMatch(/flagged/);
-    expect(provisionalReason(row({}), s)).toBeNull();
+    expect(provisionalReason(row({ areas: [] }), s)).toBeNull();
   });
 
   it('treats an area with no vectors as pending, and one pending entry as enough', () => {

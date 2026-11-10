@@ -53,4 +53,5 @@ jobs:
           -f implementations/happyview/compose.yml
           -f implementations/pdsjs/compose.yml
           -f implementations/zds/compose.yml
+          -f implementations/reference/compose.yml
           config -q

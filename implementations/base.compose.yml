@@ -43,7 +43,7 @@ services:
       - caddy_data:/data
     networks:
       default:
-        aliases: [happyview.test, pdsjs-alice.test, pdsjs-bob.test, zds.test, harness.test]
+        aliases: [happyview.test, pdsjs-alice.test, pdsjs-bob.test, zds.test, reference.test, harness.test]
     healthcheck:
       test: ["CMD-SHELL", "test -f /data/caddy/pki/authorities/local/root.crt"]
       interval: 2s

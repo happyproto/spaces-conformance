@@ -21,7 +21,7 @@ Each row ties one check to one sentence of Proposal 0016 at the revision `spec/r
 | `error` | For `xrpc.error.<Name>` rows, the error name. It must equal `<Name>` and be declared by the listed lexicon. |
 | `since`, `until` | Revision keys from `spec/revisions.json`. |
 | `provisional` | Set until two implementations with different lineage pass it. |
-| `areas` | The harness crypto areas the check runs through (`cbor`, `lthash`, `mac`, `httpsig`, `jwt`, `star`). Required in the `digest`, `mac` and `export` suites. While any listed area has a pending vector cross-check (`vectors/README.md`), the assertion is provisional. |
+| `areas` | Required on every row. It lists the harness crypto areas the check runs through (`cbor`, `lthash`, `mac`, `httpsig`, `jwt`, `star`), or is `[]` to acknowledge it uses none, so no row can be left unfenced by omission. It can't be empty in the `digest`, `mac` and `export` suites. While any listed area has a pending vector cross-check (`vectors/README.md`), the assertion is provisional. |
 
 **Level rule.**
 
@@ -70,5 +70,7 @@ One JSON file per run (design ch. 7.1). Statuses are raw: `pass`, `fail`, `error
 - each assertion has at most one result;
 - each id exists in the catalogue;
 - `evidence` appears only on `fail` or `error`, and is at most 4 KiB;
-- every applied deviation has a result;
+- every applied deviation has a result. `deviations_applied` holds the list's entries for the assertions that ran, not the whole list, so a run of a few suites carries only the entries it used;
 - no role has more passes than applicable assertions.
+
+A rerun after an `error` (`cli/run.ts`) keeps the earlier attempt in `run.previous_attempts`, with its failed and errored ids. A result that passed only on the rerun carries `flaky`. `verdict` shows it as "pass (flaky)": it's scored as a pass but warns. When the stack or bootstrap failed first, `run.infrastructure` says where.

@@ -127,9 +127,12 @@ describe('catalogue', () => {
     expect(() => loadLexicons({ ...rev, lexicons: { ...rev.lexicons, sha256: '0'.repeat(64) } })).toThrow(/digest/);
   });
 
-  it('requires areas on rows in the crypto suites', () => {
-    const p = validateCatalogue(catalogueOf(row({ areas: undefined })), 'f', spec, revKeys).map((x) => x.message);
-    expect(p).toContain('suite digest relies on harness crypto, so the row needs areas');
+  it('requires areas on every row, non-empty in the crypto suites', () => {
+    const missing = validateCatalogue(catalogueOf({ ...row({}), areas: undefined as never }), 'f', spec, revKeys).map((x) => x.message);
+    expect(missing.join()).toMatch(/must have required property 'areas'/);
+    const empty = validateCatalogue(catalogueOf(row({ areas: [] })), 'f', spec, revKeys).map((x) => x.message);
+    expect(empty).toContain("suite digest relies on harness crypto, so areas can't be empty");
+    expect(validateCatalogue(catalogueOf(row({ suite: 'records', areas: [] })), 'f', spec, revKeys)).toEqual([]);
   });
 
   it('rejects schema violations before the level rule', () => {

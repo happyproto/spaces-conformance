@@ -43,7 +43,7 @@ export interface Assertion {
   since?: string;
   until?: string;
   provisional?: boolean;
-  areas?: ('cbor' | 'lthash' | 'mac' | 'httpsig' | 'jwt' | 'star')[];
+  areas: ('cbor' | 'lthash' | 'mac' | 'httpsig' | 'jwt' | 'star')[];
 }
 
 export interface Catalogue {
@@ -128,7 +128,7 @@ export function validateCatalogue(cat: unknown, file: string, specText: string, 
     }
     for (const r of [a.since, a.until]) if (r && !revisions.includes(r)) at(`revision ${r} is not in spec/revisions.json`);
     if (a.id.startsWith('info.') && a.level !== 'info') at('info.* ids must be level info');
-    if (CRYPTO_SUITES.has(a.suite) && !a.areas?.length) at(`suite ${a.suite} relies on harness crypto, so the row needs areas`);
+    if (CRYPTO_SUITES.has(a.suite) && !a.areas?.length) at(`suite ${a.suite} relies on harness crypto, so areas can't be empty`);
     if (lex && a.lexicon) {
       for (const nsid of lexiconsOf(a)) {
         if (!lex.has(nsid)) {

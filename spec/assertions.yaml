@@ -17,6 +17,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host, pds]
+    areas: []
     checks: >-
       Records from listRecords and getRecord, and URIs from createRecord, have the shape
       at://{spaceDid}/space/{spaceType}/{skey}/{authorDid}/{collection}/{rkey}.
@@ -28,6 +29,7 @@ assertions:
       Maximum length 512 bytes with the same syntax requirements as an `rkey`.
     level: info
     roles: [space-host, pds]
+    areas: []
     checks: >-
       Records whether createSpace refuses an skey over 512 bytes or with invalid rkey syntax.
       The spec states the limit, not that a host must refuse.
@@ -43,6 +45,7 @@ assertions:
     basis: [definition, lexicon]
     lexicon: com.atproto.space.getLatestCommit
     roles: [repo-host]
+    areas: []
     checks: >-
       The commit is exactly {ver: 1, repo, space, rev (a TID), data (32 bytes)}, with no
       signature fields. Stricter than HappyView's interop tests, which also accept the
@@ -56,6 +59,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: []
     checks: >-
       The commit's data is lexicon bytes in JSON, {"$bytes": <standard base64>}, decoding to 32 bytes.
 
@@ -80,6 +84,7 @@ assertions:
     lexicon: [com.atproto.space.getLatestCommit, com.atproto.space.getRepo, com.atproto.space.listRepoOps]
     params: [space, repo]
     roles: [repo-host]
+    areas: []
     checks: >-
       getLatestCommit, getRepo and listRepoOps accept space and repo. The harness never
       retries in an implementation's own shape (design ch. 9.3).
@@ -94,6 +99,7 @@ assertions:
     lexicon: [com.atproto.space.createRecord, com.atproto.space.putRecord]
     params: [space, repo, collection, rkey, record]
     roles: [pds, repo-host]
+    areas: []
     checks: >-
       createRecord, putRecord, deleteRecord and getRecord agree with each other, and a
       client-chosen rkey on createRecord is kept.
@@ -108,6 +114,7 @@ assertions:
     lexicon: com.atproto.space.applyWrites
     params: [space, repo, writes]
     roles: [pds, repo-host]
+    areas: []
     checks: >-
       One applyWrites batch lands whole, and its ops share one rev in listRepoOps.
 
@@ -119,6 +126,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: []
     checks: >-
       listRecords with no flags returns each record's value.
 
@@ -132,6 +140,7 @@ assertions:
     lexicon: com.atproto.space.listRecords
     params: [excludeValues]
     roles: [repo-host]
+    areas: []
     checks: >-
       listRecords with excludeValues omits values and keeps each record's uri and cid.
 
@@ -144,6 +153,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: []
     checks: >-
       Read and sync methods sent with neither OAuth nor a space credential are refused
       (4xx) on a space without publicRead.
@@ -153,6 +163,7 @@ assertions:
     section: "#read-access"
     level: info
     roles: [repo-host]
+    areas: []
     checks: >-
       Records the status of that refusal. Reference hosts answer 401; the spec names none.
 
@@ -164,6 +175,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host, pds]
+    areas: [httpsig, jwt]
     checks: >-
       createRecord, putRecord, deleteRecord and applyWrites sent with only a space credential are refused.
 
@@ -178,6 +190,7 @@ assertions:
     basis: [definition]
     roles: [pds]
     requires: [repo_host.foreign_authorities]
+    areas: []
     checks: >-
       The first write into another authority's space creates the repo, with no prior call.
 
@@ -190,6 +203,7 @@ assertions:
     level: must
     basis: [keyword]
     roles: [pds]
+    areas: []
     checks: >-
       A write to a nonexistent space whose authority is the writer is refused.
 
@@ -227,6 +241,7 @@ assertions:
     basis: [definition]
     roles: [pds]
     profiles: [pds]
+    areas: []
     checks: >-
       createSpace returns a uri whose authority is the calling account's DID.
 
@@ -240,6 +255,7 @@ assertions:
     lexicon: com.atproto.space.listSpaces
     params: [did, spaceType]
     roles: [pds, space-host]
+    areas: []
     checks: >-
       listSpaces returns the spaces the caller holds a repo in or is the authority of, and
       nothing else. The did parameter filters by authority, and spaceType by type.
@@ -451,6 +467,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: []
     checks: >-
       Every listRepoOps entry has exactly these fields, with cid null on delete and prev null on create.
 
@@ -464,6 +481,7 @@ assertions:
     lexicon: com.atproto.space.listRepoOps
     params: [since]
     roles: [repo-host]
+    areas: []
     checks: >-
       listRepoOps with since=R returns only ops with rev greater than R.
 
@@ -475,6 +493,7 @@ assertions:
     lexicon: com.atproto.space.listRepoOps
     params: [limit, cursor]
     roles: [repo-host]
+    areas: []
     checks: >-
       With a limit below the op count, following cursor returns every op exactly once.
 
@@ -502,6 +521,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
+    areas: []
     checks: >-
       Only the latest op for a path carries a value. Superseded ones don't.
 
@@ -516,6 +536,7 @@ assertions:
     lexicon: com.atproto.space.listRepoOps
     params: [excludeValues]
     roles: [repo-host]
+    areas: []
     checks: >-
       listRepoOps with excludeValues returns entries with no values.
 
@@ -835,6 +856,7 @@ assertions:
     params: [space, credentials]
     roles: [repo-host]
     requires: [repo_host.foreign_authorities]
+    areas: [httpsig, jwt]
     checks: >-
       The same notifyCredentialRevoked, sent twice, succeeds both times.
 
@@ -851,6 +873,7 @@ assertions:
     roles: [pds]
     profiles: [pds]
     requires: [oauth.scripted]
+    areas: [jwt]
     checks: >-
       A bare space:<type> grant writes in the user's own space of that type and is refused in another authority's.
 
@@ -863,6 +886,7 @@ assertions:
     basis: [definition]
     roles: [pds, space-host]
     requires: [oauth.scripted]
+    areas: [jwt]
     checks: >-
       createSpace is refused for a session whose grant lacks manage=create.
 
@@ -876,6 +900,7 @@ assertions:
     basis: [definition]
     roles: [pds, space-host]
     requires: [oauth.scripted, policies.memberspace]
+    areas: [jwt]
     checks: >-
       updateSpace, putMember, removeMember and removeWriter are refused without manage=update.
 
@@ -890,6 +915,7 @@ assertions:
     basis: [definition]
     roles: [pds, space-host]
     requires: [oauth.scripted]
+    areas: [jwt]
     checks: >-
       deleteSpace is refused without manage=delete.
 
@@ -903,6 +929,7 @@ assertions:
     basis: [definition]
     roles: [pds, repo-host]
     requires: [oauth.scripted]
+    areas: [jwt]
     checks: >-
       A read_self session reads its own repo, is refused another member's, and is refused getDelegationToken.
 
@@ -916,6 +943,7 @@ assertions:
     basis: [definition]
     roles: [pds, repo-host]
     requires: [oauth.scripted, space_type_resolution]
+    areas: [jwt]
     checks: >-
       A grant with no collection writes the fixture declaration's collections and is refused
       an undeclared one. Needs the host to resolve the fixture space type inside the stack.
@@ -929,6 +957,7 @@ assertions:
     basis: [definition]
     roles: [pds, repo-host]
     requires: [oauth.scripted]
+    areas: [jwt]
     checks: >-
       A collection=* grant writes an undeclared collection.
 
@@ -942,6 +971,7 @@ assertions:
     basis: [definition]
     roles: [pds, repo-host]
     requires: [oauth.scripted]
+    areas: [jwt]
     checks: >-
       A space:* grant with no collection is refused every write.
 
@@ -954,6 +984,7 @@ assertions:
     basis: [definition]
     roles: [pds, repo-host]
     requires: [oauth.scripted]
+    areas: [jwt]
     checks: >-
       A grant with no action reads, creates, updates and deletes.
 
@@ -966,6 +997,7 @@ assertions:
     lexicon: com.atproto.space.getSpace
     error: SpaceNotFound
     roles: [space-host, pds]
+    areas: []
     checks: >-
       getSpace for an unknown space answers {error: "SpaceNotFound", message}.
 
@@ -976,6 +1008,7 @@ assertions:
     lexicon: com.atproto.space.getLatestCommit
     error: RepoNotFound
     roles: [repo-host]
+    areas: []
     checks: >-
       getLatestCommit for an account the host doesn't serve answers {error: "RepoNotFound",
       message}. An empty repo of a hosted account is not this case (lifecycle.empty-equals-missing).
@@ -987,6 +1020,7 @@ assertions:
     lexicon: com.atproto.space.getRecord
     error: RecordNotFound
     roles: [repo-host]
+    areas: []
     checks: >-
       getRecord for a missing rkey answers {error: "RecordNotFound", message}.
 
@@ -997,6 +1031,7 @@ assertions:
     lexicon: [com.atproto.space.createSpace, com.atproto.space.updateSpace]
     error: UnsupportedPolicy
     roles: [space-host, pds]
+    areas: []
     checks: >-
       createSpace with an unknown policy $type answers {error: "UnsupportedPolicy", message}.
 
@@ -1008,6 +1043,7 @@ assertions:
     error: PolicyMismatch
     roles: [space-host, pds]
     requires: [policies.memberspace, policies.managedspace]
+    areas: []
     checks: >-
       putMember on a managedspace space answers {error: "PolicyMismatch", message}.
 
@@ -1018,6 +1054,7 @@ assertions:
     lexicon: com.atproto.space.getSpaceCredential
     error: SpaceDeleted
     roles: [space-host]
+    areas: [jwt]
     checks: >-
       When the host answers getSpaceCredential for a deleted space with SpaceDeleted, the body
       is {error: "SpaceDeleted", message}. Whether it does is deletion.credential-error.
@@ -1037,6 +1074,7 @@ assertions:
     params: [space, repo, repoRev, data]
     roles: [repo-host]
     requires: [repo_host.foreign_authorities]
+    areas: [jwt]
     checks: >-
       After a write into a space whose authority is the harness, the harness space host receives notifyWrite with the new rev and data.
 
@@ -1051,6 +1089,7 @@ assertions:
     lexicon: com.atproto.space.notifyWrite
     params: [spaceRev, prevSpaceRev]
     roles: [space-host]
+    areas: [httpsig, jwt]
     checks: >-
       A registered syncer receives the forwarded notifyWrite carrying spaceRev and prevSpaceRev, with no gap between consecutive notifications.
 
@@ -1062,6 +1101,7 @@ assertions:
     level: should
     basis: [keyword]
     roles: [space-host]
+    areas: [httpsig, jwt]
     checks: >-
       A notifyWrite with a lower or equal rev doesn't change the repo's entry in listRepos.
 
@@ -1073,6 +1113,7 @@ assertions:
     level: must
     basis: [keyword]
     roles: [space-host]
+    areas: [jwt]
     checks: >-
       A notifyWrite whose rev is a TID well in the future is refused (the lexicon names FutureRev).
 
@@ -1085,6 +1126,7 @@ assertions:
     basis: [keyword]
     roles: [space-host]
     requires: [policies.memberspace]
+    areas: [httpsig, jwt]
     checks: >-
       A notifyWrite from a non-member of a memberspace space without publicWrite doesn't add it to listRepos.
 
@@ -1144,6 +1186,7 @@ assertions:
     lexicon: com.atproto.space.removeWriter
     params: [space, did]
     roles: [space-host]
+    areas: [httpsig, jwt]
     checks: >-
       removeWriter drops the account from listRepos.
 
@@ -1156,6 +1199,7 @@ assertions:
     basis: [definition]
     roles: [space-host, pds]
     requires: [policies.memberspace]
+    areas: [httpsig, jwt]
     checks: >-
       In a memberspace space with publicWrite, an account removed with removeWriter is back in
       listRepos after its next write.
@@ -1167,6 +1211,7 @@ assertions:
       A listed account's repo host is the source of truth for whether that repo actually holds data.
     level: info
     roles: [space-host]
+    areas: [httpsig, jwt]
     checks: >-
       Records whether every repo in listRepos is served by the host its author's DID document
       names. The spec states this as the syncer's model, not as a host rule.
@@ -1181,6 +1226,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [space-host, pds]
+    areas: []
     checks: >-
       getSpace after createSpace with a policy returns the created uri and the same policy object.
 
@@ -1194,6 +1240,7 @@ assertions:
     level: must
     basis: [keyword]
     roles: [space-host, pds]
+    areas: []
     checks: >-
       createSpace and updateSpace with an unknown policy $type both fail, with the UnsupportedPolicy error name.
 
@@ -1207,6 +1254,7 @@ assertions:
     basis: [definition]
     roles: [space-host, pds]
     profiles: [pds]
+    areas: [jwt]
     checks: >-
       The authority account gets a credential and is tracked as a writer with no member entry.
 
@@ -1220,6 +1268,7 @@ assertions:
     basis: [keyword]
     roles: [space-host, pds]
     requires: [policies.memberspace, policies.managedspace]
+    areas: []
     checks: >-
       Switching memberspace to managedspace and back leaves an empty member list.
 
@@ -1233,6 +1282,7 @@ assertions:
     basis: [keyword]
     roles: [pds]
     profiles: [pds]
+    areas: []
     checks: >-
       createSpace accepts personalspace, memberspace and managedspace policies.
 
@@ -1245,6 +1295,7 @@ assertions:
     basis: [definition]
     roles: [pds]
     requires: [policies.personalspace]
+    areas: [jwt]
     checks: >-
       getSpaceCredential with another user's delegation token is refused, and another user's notifyWrite isn't tracked.
 
@@ -1259,6 +1310,7 @@ assertions:
     params: [space, did]
     roles: [space-host, pds]
     requires: [policies.memberspace]
+    areas: []
     checks: >-
       com.atproto.memberspace.putMember, removeMember and listMembers exist and work.
 
@@ -1273,6 +1325,7 @@ assertions:
     params: [read, write]
     roles: [space-host, pds]
     requires: [policies.memberspace]
+    areas: []
     checks: >-
       A second putMember replaces read and write and doesn't add a second entry.
 
@@ -1286,6 +1339,7 @@ assertions:
     basis: [definition]
     roles: [space-host, pds]
     requires: [policies.memberspace]
+    areas: [jwt]
     checks: >-
       A non-member is refused a credential, and a member with read gets one.
 
@@ -1298,6 +1352,7 @@ assertions:
     basis: [definition]
     roles: [space-host, pds]
     requires: [policies.memberspace]
+    areas: [jwt]
     checks: >-
       With publicRead, getSpaceCredential with no delegation token issues a credential.
 
@@ -1311,6 +1366,7 @@ assertions:
     basis: [definition]
     roles: [space-host, pds]
     requires: [policies.memberspace]
+    areas: [jwt]
     checks: >-
       With allowedApps, only a request with a verified attestation from a listed client gets a credential.
 
@@ -1324,6 +1380,7 @@ assertions:
     basis: [keyword]
     roles: [space-host, pds]
     requires: [policies.memberspace]
+    areas: [httpsig, jwt]
     checks: >-
       After removeMember, or putMember with write false, the account is gone from listRepos.
 
@@ -1337,6 +1394,7 @@ assertions:
     basis: [definition]
     roles: [space-host, pds]
     requires: [policies.memberspace]
+    areas: [httpsig, jwt]
     checks: >-
       With publishPolicy and publishMembers, com.atproto.space.policy/self and
       com.atproto.memberspace.member/<did> records appear in the authority's repo and track changes.
@@ -1351,6 +1409,7 @@ assertions:
     basis: [keyword]
     roles: [space-host, pds]
     requires: [policies.memberspace]
+    areas: []
     checks: >-
       Direct createRecord or putRecord of those records in the authority's repo is refused.
 
@@ -1366,6 +1425,7 @@ assertions:
     params: [space, user, access, clientId]
     roles: [space-host, pds]
     requires: [policies.managedspace]
+    areas: [jwt]
     checks: >-
       The harness managing app receives com.atproto.managedspace.checkUserAccess with space,
       user, access and, for an attested read, clientId, and its answer decides issuance.
@@ -1380,6 +1440,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [space-host]
+    areas: [httpsig, jwt]
     checks: >-
       A syncer registered with registerNotify receives notifySpaceDeleted after deleteSpace.
 
@@ -1391,6 +1452,7 @@ assertions:
     level: should
     basis: [keyword]
     roles: [space-host]
+    areas: [httpsig, jwt]
     checks: >-
       When the harness syncer answers 503 once, notifySpaceDeleted is delivered again.
 
@@ -1402,6 +1464,7 @@ assertions:
     level: should
     basis: [keyword]
     roles: [space-host]
+    areas: [jwt]
     checks: >-
       getSpaceCredential for a deleted space fails with SpaceDeleted, not SpaceNotFound.
 
@@ -1413,6 +1476,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [space-host, repo-host]
+    areas: [httpsig, jwt]
     checks: >-
       After deleteSpace, a member's records are still on their repo host, and they're readable
       again once the authority recreates the space with the same type and skey.
@@ -1464,5 +1528,6 @@ assertions:
     suite: records
     level: info
     roles: [repo-host, space-host, pds]
+    areas: []
     checks: >-
       Records the status for an XRPC method that doesn't exist (reference PDS 400, pds.js 501). Never scored.

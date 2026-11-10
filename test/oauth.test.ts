@@ -146,6 +146,20 @@ describe('OAuth client against a mock authorization server', () => {
     await expect(authorize({ issuer, clientId: 'x', scope, dpopKey: generate('p256'), consent: bad })).rejects.toThrow(/state/);
   });
 
+  it('refuses a redirect with no iss, and a token for another account', async () => {
+    const noIss: Consent = { approve: async (as, a) => (await consent.approve(as, a)).replace(/&?iss=[^&]+/, '') };
+    await expect(authorize({ issuer, clientId: 'x', scope, dpopKey: generate('p256'), consent: noIss })).rejects.toThrow(/no iss/);
+    await expect(
+      authorize({ issuer, clientId: 'x', scope, loginHint: 'did:plc:bob', dpopKey: generate('p256'), consent }),
+    ).rejects.toThrow(/not the account that signed in/);
+  });
+
+  it('refuses AS metadata that names another issuer', async () => {
+    const { discover } = await import('../harness/oauth/client.ts');
+    await expect(discover(issuer.replace('127.0.0.1', 'localhost'))).rejects.toThrow(/names issuer/);
+    expect((await discover(`${issuer}/`)).issuer).toBe(issuer);
+  });
+
   it('keeps nonces per origin across requests', async () => {
     const nonces = new NonceStore();
     const k = generate('p256');
@@ -164,7 +178,7 @@ describe('session registration', () => {
 
   it('has no way to register a different scope', () => {
     expect(sessionRegistration.length).toBe(2);
-    const wider = 'atproto space:*?authority=*&manage=create&manage=update&manage=delete&collection=*';
+    const wider = 'atproto space:other';
     // Extra arguments are ignored, whatever a caller passes.
     const r = (sessionRegistration as (...a: unknown[]) => ReturnType<typeof sessionRegistration>)('hvp_1', tokens, wider, { scopes: wider });
     expect(r.scopes).toBe('atproto');

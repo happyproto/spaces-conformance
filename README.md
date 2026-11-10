@@ -2,7 +2,7 @@
 
 An over-the-wire conformance suite for atproto spaces ([Proposal 0016](https://github.com/bluesky-social/proposals/tree/701ef9c6be5a99c2d3e87e107fe2531459d1c984/0016-permissioned-data), October 29 revision). It grades space hosts and repo hosts against the spec text, talking to each implementation only over HTTP.
 
-**Status: phase 1.** The assertion catalogue is filled in and validated. Nothing runs against an implementation or gets scored yet.
+**Status: phase 2.** The catalogue, the harness's crypto, the OAuth client, the stack runner, the reporter and `verdict` exist. A few suites run end to end against the reference PDS. Most assertions don't have a test yet.
 
 ## Layout
 
@@ -16,6 +16,9 @@ An over-the-wire conformance suite for atproto spaces ([Proposal 0016](https://g
 | `implementations/` | `base.compose.yml`, plus one folder per implementation with a manifest, a compose fragment and, if it has any, known deviations. |
 | `pins/images.env` | Image digests. They change only by pull request. |
 | `cli/validate.ts` | Validates every data file. |
+| `cli/run.ts`, `cli/verdict.ts` | The stack runner and the verdict. |
+| `suites/` | The tests, one `assertion(id, ...)` per catalogue row. |
+| `fixtures/records/` | Record samples, plain and typed. |
 | `docs/catalogue.md` | The formats and the rules the validator enforces. |
 | `spikes/` | The phase 0 spikes (HappyView auth, networking) and their findings, kept as a record. Not part of the harness. |
 
@@ -27,6 +30,15 @@ Requires Node 24+ and Bun.
 bun install
 bun run check      # typecheck, unit tests, validate
 ```
+
+Run the suites against one implementation. This brings up its stack, runs the suites in the harness container, writes `results-local/<run-id>.json`, prints the verdict, and tears the stack down:
+
+```sh
+node cli/run.ts reference              # --keep leaves the stack up, --suites digest,records narrows it
+node cli/verdict.ts results-local/<run-id>.json [--deviations file]
+```
+
+`verdict` exits 1 on an unexpected result: an unlisted fail, a pass that's still listed as a deviation, or an error. Provisional results (`vectors/README.md`) only warn.
 
 To bring up a stack by hand:
 
