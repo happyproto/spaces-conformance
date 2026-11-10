@@ -6,6 +6,8 @@ export default defineConfig({
   test: {
     include: ['suites/**/*.test.ts'],
     fileParallelism: false,
+    // Longer than a setup step's deadline (CONFORMANCE_SETUP_TIMEOUT_MS, 45 s),
+    // so a hung setup step records error before the test times out.
     testTimeout: 60_000,
     hookTimeout: 120_000,
     reporters: ['default', './harness/reporter.ts'],

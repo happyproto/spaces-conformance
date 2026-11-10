@@ -4,7 +4,10 @@ import type { RawResult } from '../harness/assert.ts';
 import { capEvidence } from '../harness/assert.ts';
 import { loadCatalogue } from '../harness/catalogue.ts';
 import { vectorStatus } from '../harness/provisional.ts';
-import { assemble, reconcile } from '../harness/reporter.ts';
+import { assemble, openSetupSteps, readRaw, reconcile } from '../harness/reporter.ts';
+import { setup, SetupError } from '../harness/assert.ts';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { declaredAssertions } from '../harness/coverage.ts';
 import { validateResults } from '../harness/results.ts';
 import { ROOT } from '../harness/schema.ts';
@@ -65,6 +68,39 @@ describe('reconciling Vitest with the raw records', () => {
     expect(out.get('b.lost')).toMatchObject({ status: 'error', message: expect.stringMatching(/b\.test\.ts failed to load: SyntaxError/) }));
   it('records an unrun but inapplicable assertion as skip', () => expect(out.get('b.notapplicable')).toMatchObject({ status: 'skip' }));
   it('turns a duplicate record into error', () => expect(out.get('c.twice')).toMatchObject({ status: 'error', message: 'recorded more than once in one run' }));
+});
+
+describe('setup hangs', () => {
+  it('a setup step past its deadline throws SetupError, so it records error', async () => {
+    const hung = setup('createAccount', () => new Promise(() => {}), 20);
+    await expect(hung).rejects.toBeInstanceOf(SetupError);
+    await expect(setup('fine', async () => 7, 1000)).resolves.toBe(7);
+  });
+
+  it('a test timeout during an open setup step is error, not a scored fail', () => {
+    const cases = new Map([['a.hung', { state: 'failed' as const, errors: ['Test timed out in 60000ms.'] }]]);
+    const declared = new Map([['a.hung', 'suites/x/a.test.ts']]);
+    const [r] = reconcile([], cases, declared, new Map(), () => null, () => 'x', new Map([['a.hung', 'createSpace']]));
+    expect(r).toMatchObject({ status: 'error', message: expect.stringMatching(/during setup step createSpace/), evidence: { step: 'createSpace' } });
+  });
+
+  it('reads open setup steps from the markers', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'raw-'));
+    writeFileSync(
+      join(dir, '1.setup.jsonl'),
+      [
+        { id: 'a', step: 'createAccount', phase: 'start' },
+        { id: 'a', step: 'createAccount', phase: 'end' },
+        { id: 'a', step: 'createSpace', phase: 'start' },
+        { id: 'b', step: 'createAccount', phase: 'start' },
+        { id: 'b', step: 'createAccount', phase: 'end' },
+      ].map((x) => JSON.stringify(x)).join('\n'),
+    );
+    expect([...openSetupSteps(dir)]).toEqual([['a', 'createSpace']]);
+    // Setup markers aren't results.
+    writeFileSync(join(dir, '1.jsonl'), JSON.stringify({ id: 'a', suite: 'x', status: 'pass' }));
+    expect(readRaw(dir).map((r) => r.id)).toEqual(['a']);
+  });
 });
 
 describe('declared assertions', () => {

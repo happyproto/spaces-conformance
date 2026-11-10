@@ -6,6 +6,7 @@
 //   - A throw from setup(), or from anything before fn's own checks: error.
 //   - A failed check (fail(), or a Vitest expect): fail, with evidence.
 
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { appendFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'vitest';
@@ -48,12 +49,39 @@ export const fail = (message: string, evidence?: Record<string, unknown>): never
   throw new AssertionFailure(message, evidence);
 };
 
-/** Run a setup step; any throw becomes a SetupError. */
-export async function setup<T>(step: string, fn: () => Promise<T> | T): Promise<T> {
+/** The assertion whose test is running, so setup() can mark its steps. */
+const current = new AsyncLocalStorage<string>();
+
+/**
+ * How long one setup step may take. It's shorter than the test timeout
+ * (vitest.suite.config.ts), so a hung step throws SetupError and records
+ * `error` before Vitest's timeout could turn it into a scored `fail`.
+ */
+export const SETUP_TIMEOUT_MS = Number(process.env.CONFORMANCE_SETUP_TIMEOUT_MS ?? 45_000);
+
+/** Mark a setup step's start and end, for reconcile(): a test timeout inside an open step is `error`. */
+function mark(phase: 'start' | 'end', step: string) {
+  const id = current.getStore();
+  if (!id) return;
+  const dir = rawDir();
+  mkdirSync(dir, { recursive: true });
+  appendFileSync(join(dir, `${process.pid}.setup.jsonl`), `${JSON.stringify({ id, step, phase })}\n`);
+}
+
+/** Run a setup step: a throw, or running past SETUP_TIMEOUT_MS, becomes a SetupError. */
+export async function setup<T>(step: string, fn: () => Promise<T> | T, timeoutMs = SETUP_TIMEOUT_MS): Promise<T> {
+  mark('start', step);
+  let timer: NodeJS.Timeout | undefined;
   try {
-    return await fn();
+    const deadline = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`still running after ${timeoutMs} ms`)), timeoutMs);
+    });
+    return await Promise.race([Promise.resolve().then(fn), deadline]);
   } catch (e) {
     throw e instanceof SetupError ? e : new SetupError(step, e);
+  } finally {
+    clearTimeout(timer);
+    mark('end', step);
   }
 }
 
@@ -86,7 +114,7 @@ export function capEvidence(e: Record<string, unknown>): Record<string, unknown>
 
 /** fn may return a string: the observation, recorded as the result message (how info rows report). */
 export function assertion(id: string, fn: (ctx: RunContext) => Promise<void | string>) {
-  test(id, async (t) => {
+  test(id, (t) => current.run(id, async () => {
     const ctx = await runContext();
     const a = ctx.byId.get(id);
     if (!a) throw new Error(`${id} is not in the catalogue`);
@@ -108,5 +136,5 @@ export function assertion(id: string, fn: (ctx: RunContext) => Promise<void | st
       record({ id, suite: a.suite, status, ms, message: err.message.slice(0, 500), evidence: evidence && capEvidence(evidence) });
       throw e;
     }
-  });
+  }));
 }
