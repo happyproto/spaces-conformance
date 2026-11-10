@@ -22,6 +22,8 @@ services:
       TELEMETRY_COLLECTOR_URL: http://127.0.0.1:9/v1/snapshot
       PLUGIN_REGISTRY_URL: ""
       HAPPYVIEW_USER_AGENT: spaces-conformance (+https://github.com/happyproto/spaces-conformance)
+      # The env fallback for feature.spaces_enabled, so no database row is needed.
+      FEATURE_SPACES_ENABLED: "true"
       # Peers are on private addresses, which HappyView otherwise refuses.
       ALLOW_PRIVATE_DESTINATIONS: "true"
     healthcheck:
