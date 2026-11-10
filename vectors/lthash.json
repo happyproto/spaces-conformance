@@ -8,7 +8,15 @@
       "sources": [
         "spec #repo-lifecycle constant",
         "atproto#5187 packages/space/tests/lthash.test.ts"
-      ]
+      ],
+      "cross_check": {
+        "area": "lthash",
+        "status": "cross-checked",
+        "against": [
+          "spec #repo-lifecycle constant",
+          "atproto#5187 packages/space/tests/lthash.test.ts"
+        ]
+      }
     },
     {
       "name": "two raw elements",
@@ -19,7 +27,14 @@
       "digest": "ae05cb6d224379d9710c290c8529945c5b0e0fde9ead30b9699057ce701c63e7",
       "sources": [
         "atproto#5187 packages/space/tests/lthash.test.ts"
-      ]
+      ],
+      "cross_check": {
+        "area": "lthash",
+        "status": "cross-checked",
+        "against": [
+          "atproto#5187 packages/space/tests/lthash.test.ts"
+        ]
+      }
     },
     {
       "name": "two records",
@@ -39,7 +54,12 @@
       "sources": [
         "harness"
       ],
-      "cross_check": "pending: compare once against HappyView and the reference PDS (design ch. 3.4)"
+      "cross_check": {
+        "area": "lthash",
+        "status": "pending",
+        "against": []
+      }
     }
-  ]
+  ],
+  "area": "lthash"
 }

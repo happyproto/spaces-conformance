@@ -7,8 +7,14 @@
       "records": 1,
       "sources": [
         "harness"
-      ]
+      ],
+      "cross_check": {
+        "area": "star",
+        "status": "pending",
+        "against": []
+      }
     }
   ],
-  "invalid": "built in test/vectors.test.ts by mutating the valid archive: bad magic, non-canonical varint, trailing meta bytes, truncation inside a pair, out-of-order and duplicate keys, digest mismatch"
+  "invalid": "built in test/vectors.test.ts by mutating the valid archive: bad magic, non-canonical varint, trailing meta bytes, truncation inside a pair, out-of-order and duplicate keys, digest mismatch",
+  "area": "star"
 }

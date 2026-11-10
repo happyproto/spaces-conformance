@@ -11,6 +11,7 @@ import { compareBytes, concat, fromUtf8, readVarint, utf8, varint } from './byte
 import { decode, type DrislValue, encode } from './drisl.ts';
 import { Cid, CODEC_DRISL } from './cid.ts';
 import { LtHash } from './lthash.ts';
+import { isNsid, isRecordKey } from '../syntax.ts';
 
 export const MAGIC = new Uint8Array([0x2a, 0x6c, 0x01, 0x00]);
 const MAX_RECORD = 1024 * 1024;
@@ -77,16 +78,18 @@ export function checkSpaceRepo(b: Uint8Array): SpaceRepoCheck {
     if (prev && compareBytes(prev, key) >= 0) throw new Error('STAR: keys out of order or duplicated');
     prev = key;
     const path = fromUtf8(key);
-    const m = /^([a-zA-Z][a-zA-Z0-9-]*(?:\.[a-zA-Z0-9-]+)+)\/([A-Za-z0-9._:~-]{1,512})$/.exec(path);
-    if (!m || m[2] === '.' || m[2] === '..') throw new Error(`STAR: ${path} isn't a record path`);
+    const slash = path.indexOf('/');
+    const collection = path.slice(0, slash);
+    const rkey = path.slice(slash + 1);
+    if (slash < 0 || !isNsid(collection) || !isRecordKey(rkey)) throw new Error(`STAR: ${path} isn't a record path`);
     if (value.length > MAX_RECORD) throw new Error(`STAR: ${path} is over 1 MiB`);
-    const record = decode(value); // throws on non-canonical
+    const record = decode(value, { noFloats: true }); // throws on non-canonical or floats
     if (record === null || typeof record !== 'object' || Array.isArray(record) || record instanceof Uint8Array)
       throw new Error(`STAR: ${path} is not a record map`);
     // The value is the record's canonical DRISL bytes, so its CID hashes them directly.
     const cid = Cid.of(CODEC_DRISL, value).toString();
-    h.add(LtHash.element(m[1], m[2], cid));
-    records.push({ collection: m[1], rkey: m[2], cid, bytes: value });
+    h.add(LtHash.element(collection, rkey, cid));
+    records.push({ collection, rkey, cid, bytes: value });
   }
   return { meta: { ver, repo, space, rev, data }, records, computed: h.digest() };
 }

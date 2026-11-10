@@ -14,7 +14,13 @@
         "harness",
         "node:crypto HMAC (in the test)"
       ],
-      "cross_check": "pending: compare once against HappyView and the reference PDS"
+      "cross_check": {
+        "area": "mac",
+        "status": "pending",
+        "against": []
+      },
+      "hmac_input": "617470726f746f2d73706163652d7265706f2d7631003b61743a2f2f6469643a706c633a73706163652f73706163652f636f6d2e6578616d706c652e636f6e666f726d616e63652e73706163652f73656c66000d6469643a706c633a616c696365000d336d7a75626d63616f6b773232e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+      "hmac_input_note": "Written out from the #commit-mac layout: \"atproto-space-repo-v1\" || u16be(59) || space || u16be(13) || repo || u16be(13) || rev || data. Built independently with Python's struct and hmac."
     }
   ],
   "record": [
@@ -27,7 +33,45 @@
         "harness",
         "node:crypto HMAC (in the test)"
       ],
-      "cross_check": "pending"
+      "cross_check": {
+        "area": "mac",
+        "status": "pending",
+        "against": []
+      }
+    }
+  ],
+  "area": "mac",
+  "negative": [
+    {
+      "name": "one bit flipped",
+      "kind": "commit",
+      "ver": 1,
+      "space": "at://did:plc:space/space/com.example.conformance.space/self",
+      "repo": "did:plc:alice",
+      "rev": "3mzubmcaokw22",
+      "data": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+      "mac": "6aff76e1fa1d4205ba5502997ae33945ff0e077a9d50a17b8ab4546a05401e87",
+      "expect": "reject"
+    },
+    {
+      "name": "MAC for another repo",
+      "kind": "commit",
+      "ver": 1,
+      "space": "at://did:plc:space/space/com.example.conformance.space/self",
+      "repo": "did:plc:alice",
+      "rev": "3mzubmcaokw22",
+      "data": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+      "mac": "4c22d446ebcd2a8dd20ce5ddf6215538d2a636399c6312c094e77cbe4d63a6fd",
+      "note": "the MAC over repo did:plc:bob with the same secret",
+      "expect": "reject"
+    },
+    {
+      "name": "record MAC over another URI",
+      "kind": "record",
+      "uri": "at://did:plc:space/space/com.example.conformance.space/self/did:plc:alice/com.example.conformance.note/3mzubmcb7sbkr",
+      "cid": "bafyreiesv7m3kvsm5zvhragkl776ixbkwpwxuqx5vr646rlbou7knizux4",
+      "mac": "04970e70d55c12850dca656891d03079c089f9cacf6b348bab2cd021fa963672",
+      "expect": "reject"
     }
   ]
 }

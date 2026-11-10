@@ -7,8 +7,8 @@
 
 import { p256 } from '@noble/curves/nist.js';
 import { b64, utf8 } from './bytes.ts';
-import type { KeyPair, PublicKey } from './keys.ts';
-import { parseDictionary } from './sf.ts';
+import { didKey, type KeyPair, type PublicKey } from './keys.ts';
+import { isInnerList, parseDictionary, serializeInnerList } from './sf.ts';
 
 export const LABEL = 'atproto-space-credential';
 export const COMPONENTS = ['authorization', 'atproto-space-audience'] as const;
@@ -49,6 +49,8 @@ export interface PresentOptions {
   /** Sign with a key other than the bound one (cred.httpsig-non-p256-key and friends). */
   signer?: KeyPair;
   highS?: boolean;
+  /** Extra signature parameters after tag, e.g. alg or keyid. */
+  extraParams?: string;
   /** Omit Signature and Signature-Input (cred.httpsig-no-signature). */
   omitSignature?: boolean;
   /** Scheme spelling, e.g. lowercase (cred.scheme-case-insensitive). */
@@ -62,19 +64,26 @@ export function presentCredential(credential: string, audience: string, key: Key
   if (o.omitSignature) return headers;
   const components = o.components ?? COMPONENTS;
   const tag = o.tag ?? LABEL;
-  const base = signatureBase({ authorization, 'atproto-space-audience': o.signedAudience ?? audience }, components, tag);
+  const params = `${signatureParams(components, tag)}${o.extraParams ?? ''}`;
+  const base = [
+    ...components.map((c) => `"${c}": ${c === 'authorization' ? authorization : c === 'atproto-space-audience' ? (o.signedAudience ?? audience) : ''}`),
+    `"@signature-params": ${params}`,
+  ].join('\n');
   const signer = o.signer ?? key;
   let sig: Uint8Array = p256.sign(utf8(base), signer.secret, { lowS: true });
   if (o.highS) sig = toHighS(sig);
-  headers['signature-input'] = `${LABEL}=${signatureParams(components, tag)}`;
+  headers['signature-input'] = `${LABEL}=${params}`;
   headers.signature = `${LABEL}=:${b64(sig)}:`;
   return headers;
 }
 
 /**
- * The host-side check, for the harness's own space-host actor and for vectors:
- * exact components, the tag, and an ecdsa-p256-sha256 signature by `bound`
- * over the headers as received. Returns a reason on failure.
+ * The host-side check, for the harness's own space-host actor and for vectors.
+ * Signature-Input is parsed, not string-compared: the label's inner list must
+ * be exactly ("authorization" "atproto-space-audience") with
+ * tag="atproto-space-credential"; alg, when present, must be
+ * ecdsa-p256-sha256 and keyid, when present, the bound did:key. The base is
+ * built from the @signature-params as received. Returns a reason on failure.
  */
 export function verifyPresentation(headers: Record<string, string | undefined>, bound: PublicKey): string | null {
   const authorization = headers.authorization;
@@ -83,16 +92,29 @@ export function verifyPresentation(headers: Record<string, string | undefined>, 
   if (!audience) return 'no Atproto-Space-Audience';
   if (!headers['signature-input'] || !headers.signature) return 'no signature';
   if (bound.curve !== 'p256') return 'cnf.kid is not P-256';
-  // The input must be exactly this, so a string compare is the whole check.
-  if (headers['signature-input'].trim() !== `${LABEL}=${signatureParams(COMPONENTS, LABEL)}`) return 'wrong components or tag';
-  let sigs;
+  let input, sigs;
   try {
+    input = parseDictionary(headers['signature-input']);
     sigs = parseDictionary(headers.signature);
   } catch {
-    return 'malformed signature';
+    return 'malformed signature headers';
   }
+  const list = input.get(LABEL);
+  if (!isInnerList(list)) return `no ${LABEL} signature input`;
+  const names = list.inner.map((c) => (typeof c === 'string' ? c : null));
+  if (names.length !== COMPONENTS.length || names.some((n, i) => n !== COMPONENTS[i])) return 'wrong components';
+  const param = (k: string) => list.params.find(([n]) => n === k)?.[1];
+  if (param('tag') !== LABEL) return 'wrong tag';
+  const alg = param('alg');
+  if (alg !== undefined && alg !== 'ecdsa-p256-sha256') return 'wrong alg';
+  const keyid = param('keyid');
+  if (keyid !== undefined && keyid !== didKey(bound)) return 'keyid is not cnf.kid';
   const sig = sigs.get(LABEL);
   if (!(sig instanceof Uint8Array) || sig.length !== 64) return 'malformed signature';
-  const base = signatureBase({ authorization, 'atproto-space-audience': audience }, COMPONENTS, LABEL);
+  const base = [
+    `"authorization": ${authorization}`,
+    `"atproto-space-audience": ${audience}`,
+    `"@signature-params": ${serializeInnerList(list)}`,
+  ].join('\n');
   return p256.verify(sig, utf8(base), bound.compressed, { lowS: false }) ? null : 'signature does not verify';
 }

@@ -1,15 +1,27 @@
 // RFC 9651 Structured Field Dictionaries, as far as the space headers need:
-// bare items that are strings, tokens, integers, booleans or byte sequences,
-// with parameters ignored. Strict: anything else is a parse error.
+// bare items (strings, tokens, integers, booleans, byte sequences), inner
+// lists of bare items, and parameters on both. Strict: anything else is a
+// parse error. Parameters are kept in order, so @signature-params can be
+// rebuilt exactly.
 
 import { b64, fromB64 } from './bytes.ts';
 
-export type SfItem = string | number | boolean | Uint8Array | { token: string };
+export type SfBare = string | number | boolean | Uint8Array | { token: string };
+export type SfParams = [string, SfBare][];
+export interface SfInnerList {
+  inner: SfBare[];
+  params: SfParams;
+}
+export type SfItem = SfBare | SfInnerList;
 export type SfDictionary = Map<string, SfItem>;
+/** Parameters per dictionary member, for members that carry any. */
+export type SfMemberParams = Map<string, SfParams>;
 
 const KEY = /^[a-z*][a-z0-9_.*-]*/;
 
-export function parseDictionary(input: string): SfDictionary {
+export const isInnerList = (v: SfItem | undefined): v is SfInnerList => typeof v === 'object' && v !== null && 'inner' in v;
+
+export function parseDictionary(input: string, memberParams?: SfMemberParams): SfDictionary {
   const s = input.trim();
   const out: SfDictionary = new Map();
   let i = 0;
@@ -19,27 +31,42 @@ export function parseDictionary(input: string): SfDictionary {
   const ws = () => {
     while (s[i] === ' ' || s[i] === '\t') i++;
   };
-  while (i < s.length) {
+  const key = (): string => {
     const k = KEY.exec(s.slice(i));
     if (!k) fail('expected a key');
-    const key = k![0];
-    i += key.length;
-    let value: SfItem = true;
-    if (s[i] === '=') {
-      i++;
-      value = parseItem();
-    }
+    i += k![0].length;
+    return k![0];
+  };
+  const params = (): SfParams => {
+    const ps: SfParams = [];
     while (s[i] === ';') {
-      i++; // parameters: skipped, but must be well-formed
-      const pk = KEY.exec(s.slice(i));
-      if (!pk) fail('bad parameter');
-      i += pk![0].length;
+      i++;
+      while (s[i] === ' ') i++;
+      const k = key();
+      let v: SfBare = true;
       if (s[i] === '=') {
         i++;
-        parseItem();
+        v = bare();
       }
+      ps.push([k, v]);
     }
-    out.set(key, value);
+    return ps;
+  };
+
+  while (i < s.length) {
+    const k = key();
+    let value: SfItem = true;
+    let ps: SfParams = [];
+    if (s[i] === '=') {
+      i++;
+      if (s[i] === '(') value = innerList();
+      else {
+        value = bare();
+        ps = params();
+      }
+    } else ps = params();
+    out.set(k, value);
+    if (ps.length) memberParams?.set(k, ps);
     ws();
     if (i >= s.length) break;
     if (s[i] !== ',') fail('expected ","');
@@ -49,7 +76,24 @@ export function parseDictionary(input: string): SfDictionary {
   }
   return out;
 
-  function parseItem(): SfItem {
+  function innerList(): SfInnerList {
+    i++; // (
+    const inner: SfBare[] = [];
+    for (;;) {
+      while (s[i] === ' ') i++;
+      if (s[i] === ')') {
+        i++;
+        break;
+      }
+      if (i >= s.length) fail('unterminated inner list');
+      inner.push(bare());
+      params(); // member parameters: not used by the space headers
+      if (s[i] !== ' ' && s[i] !== ')') fail('expected " " or ")" in inner list');
+    }
+    return { inner, params: params() };
+  }
+
+  function bare(): SfBare {
     const c = s[i];
     if (c === '"') {
       let str = '';
@@ -94,15 +138,25 @@ export function parseDictionary(input: string): SfDictionary {
   }
 }
 
+export function serializeBare(v: SfBare): string {
+  if (v === true) return '?1';
+  if (v === false) return '?0';
+  if (typeof v === 'string') return `"${v.replace(/[\\"]/g, (m) => `\\${m}`)}"`;
+  if (typeof v === 'number') return String(v);
+  if (v instanceof Uint8Array) return `:${b64(v)}:`;
+  return v.token;
+}
+
+export const serializeParams = (ps: SfParams): string => ps.map(([k, v]) => (v === true ? `;${k}` : `;${k}=${serializeBare(v)}`)).join('');
+
+export const serializeInnerList = (l: SfInnerList): string => `(${l.inner.map(serializeBare).join(' ')})${serializeParams(l.params)}`;
+
 export function serializeDictionary(entries: [string, SfItem][]): string {
   return entries
     .map(([k, v]) => {
       if (v === true) return k;
-      if (typeof v === 'string') return `${k}="${v.replace(/[\\"]/g, (m) => `\\${m}`)}"`;
-      if (typeof v === 'number') return `${k}=${v}`;
-      if (v === false) return `${k}=?0`;
-      if (v instanceof Uint8Array) return `${k}=:${b64(v)}:`;
-      return `${k}=${v.token}`;
+      if (isInnerList(v)) return `${k}=${serializeInnerList(v)}`;
+      return `${k}=${serializeBare(v)}`;
     })
     .join(', ');
 }

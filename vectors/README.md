@@ -14,13 +14,20 @@ Each vector lists its `sources`:
 | `node:crypto HMAC (in the test)` | Recomputed in the test with Node's own HMAC, a second HMAC implementation. |
 | `harness` | Computed by this harness only. |
 
-A vector whose only source is `harness` carries `cross_check: pending`. Phase 3 compares each one once against HappyView and the reference PDS. If two of the three agree and the harness disagrees, the harness is wrong.
+Every positive vector carries a machine-readable `cross_check: {area, status, against}`:
+- `area` is one of `cbor`, `lthash`, `mac`, `httpsig`, `jwt` or `star`. These are the same areas as the manifests' `lineage`.
+- `status` is `cross-checked` when a source other than the harness agrees, and `pending` otherwise.
+
+An area is **pending** while any of its vectors is pending, or while it has none. Each assertion lists the `areas` its check runs through (`spec/assertions.yaml`). While any of them is pending, the assertion is provisional (`harness/provisional.ts`). It's shown as "fail (provisional)", isn't scored, and only warns in CI. Phase 3 clears an area by comparing its pending vectors once against HappyView and the reference PDS. If two of the three agree and the harness disagrees, the harness is wrong.
+
+Every verifier also has `negative` vectors, inputs it must reject. That way a harness that's too lenient can't pass its own positive vectors and clear an area.
 
 | File | Covers |
 |---|---|
+| `jwt.json` | Compact JWS verification: RFC 7515 A.3 (ES256, with a high-S signature). |
 | `lthash.json` | The set hash, including the empty digest. |
 | `cid.json` | DRISL record CIDs, including `$link`, `$bytes`, integers near 2^32 and 2^53-1, and raw CIDs. |
 | `kem.json` | The HKDF shared secret. |
-| `mac.json` | Commit and record MACs. |
-| `httpsig.json` | The RFC 9421 signature base and `Signature-Input`. |
+| `mac.json` | Commit and record MACs. One commit vector has its full HMAC input written out in hex. Negatives: a flipped bit, a MAC for another repo, another URI. |
+| `httpsig.json` | The RFC 9421 signature base and `Signature-Input`, plus fixed-key presentations (deterministic signatures) to accept or reject. |
 | `star.json` | One valid `atproto-space-repo` archive. The rejections are built in the test. |

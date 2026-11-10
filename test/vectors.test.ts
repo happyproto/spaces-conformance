@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { p256 } from '@noble/curves/nist.js';
 import { describe, expect, it } from 'vitest';
-import { concat, fromHex, hex, lenPrefixed, utf8, varint } from '../harness/crypto/bytes.ts';
+import { concat, fromB64url, fromHex, hex, lenPrefixed, utf8, varint } from '../harness/crypto/bytes.ts';
 import { Cid, CODEC_RAW } from '../harness/crypto/cid.ts';
 import { decode, encode, fromLexJson, recordCid, toLexJson } from '../harness/crypto/drisl.ts';
 import { presentCredential, signatureBase, toHighS, verifyPresentation } from '../harness/crypto/httpsig.ts';
@@ -69,6 +69,18 @@ describe('DRISL and CIDs', () => {
   ])('rejects %s', (_n, h) => {
     expect(() => decode(fromHex(h.replace(/ /g, '')))).toThrow();
   });
+  it('caps nesting depth', () => {
+    const deep = new Uint8Array(200).fill(0x81); // 200 nested one-element arrays
+    expect(() => decode(concat(deep, new Uint8Array([0x00])))).toThrow(/deeper/);
+  });
+  it('keeps a BOM in a string instead of stripping it', () => {
+    expect(decode(fromHex('64efbbbf41'))).toBe('\ufeffA');
+  });
+  it('refuses floats when asked, as records must', () => {
+    const f = fromHex('a16166fb3ff8000000000000');
+    expect(decode(f)).toEqual({ f: 1.5 });
+    expect(() => decode(f, { noFloats: true })).toThrow(/floats/);
+  });
   it('refuses floats and unsafe numbers when encoding', () => {
     expect(() => encode({ f: 1.5 })).toThrow();
     expect(() => encode({ f: 2 ** 53 })).toThrow();
@@ -94,6 +106,11 @@ describe('KEM shared secret', () => {
     const author = fromSecret('p256', fromHex(x.skRm));
     const pkEm = { curve: 'p256' as const, compressed: p256.Point.fromBytes(fromHex(x.pkEm)).toBytes(true) };
     expect(hex(hostSharedSecret(author, pkEm))).toBe(x.shared_secret);
+  });
+  it.each((vec('kem').negative as any[]).map((n: any): [string, any] => [n.name, n]))('negative: %s', (_n, n: any) => {
+    const author = fromSecret('p256', fromHex(n.skRm));
+    const pkEm = { curve: 'p256' as const, compressed: p256.Point.fromBytes(fromHex(n.pkEm)).toBytes(true) };
+    expect(hex(hostSharedSecret(author, pkEm))).not.toBe(n.not_shared_secret);
   });
   it('agrees between syncer and host, and differs for another author key', () => {
     const author = generate('p256');
@@ -136,6 +153,18 @@ describe('MACs', () => {
   ])('rejects a Want-Mac with %s', (_n, h) => {
     expect(() => parseWantMac(typeof h === 'function' ? h() : h)).toThrow();
   });
+  it('matches the HMAC input written out from the spec layout', () => {
+    const x = v.commit[0];
+    const context = concat(utf8(`atproto-space-repo-v${x.ver}`), lenPrefixed(x.space), lenPrefixed(x.repo), lenPrefixed(x.rev));
+    expect(hex(concat(context, fromHex(x.data)))).toBe(x.hmac_input);
+  });
+  it.each((v.negative as any[]).map((x: any): [string, any] => [x.name, x]))('negative: %s does not verify', (_n, x: any) => {
+    const got =
+      x.kind === 'commit'
+        ? commitMac(ss, { ver: x.ver, space: x.space, repo: x.repo, rev: x.rev, data: fromHex(x.data) })
+        : recordMac(ss, x.uri, Cid.parse(x.cid).bytes);
+    expect(hex(got)).not.toBe(x.mac);
+  });
   it('rejects a Mac header whose mac is not 32 bytes', () => {
     expect(() => parseMacHeader('type="atproto-space-repo", ver=1, mac=:AAEC:')).toThrow();
   });
@@ -173,9 +202,47 @@ describe('HTTP message signatures', () => {
     const k = generate('p256');
     expect(verifyPresentation(presentCredential('jwt', 'did:plc:repo', k, o as any), k)).not.toBeNull();
   });
+  it('accepts alg and keyid when they are right, and refuses them when wrong', () => {
+    const k = generate('p256');
+    const ok = `;alg="ecdsa-p256-sha256";keyid="${didKey(k)}"`;
+    expect(verifyPresentation(presentCredential('jwt', 'did:plc:repo', k, { extraParams: ok }), k)).toBeNull();
+    expect(verifyPresentation(presentCredential('jwt', 'did:plc:repo', k, { extraParams: ';alg="rsa-pss-sha512"' }), k)).toBe('wrong alg');
+    expect(verifyPresentation(presentCredential('jwt', 'did:plc:repo', k, { extraParams: `;keyid="${didKey(generate('p256'))}"` }), k)).toBe('keyid is not cnf.kid');
+  });
+  it('parses inner lists with parameters and rebuilds them exactly', async () => {
+    const { parseDictionary, serializeInnerList, isInnerList } = await import('../harness/crypto/sf.ts');
+    const v = parseDictionary('sig1=("a" "b");tag="t";created=1, other=?1').get('sig1');
+    expect(isInnerList(v) && serializeInnerList(v)).toBe('("a" "b");tag="t";created=1');
+  });
   it('refuses a non-P-256 bound key', () => {
     const k = generate('p256');
     expect(verifyPresentation(presentCredential('jwt', 'did:plc:repo', k), { curve: 'secp256k1', compressed: generate('secp256k1').compressed })).toMatch(/P-256/);
+  });
+});
+
+describe('fixed-key HTTP signatures', () => {
+  const sg = vec('httpsig').signed;
+  const k = fromSecret('p256', fromHex(sg.secret));
+  it('derives the vector cnf.kid', () => expect(didKey(k)).toBe(sg.cnf_kid));
+  it.each((sg.cases as any[]).map((c: any): [string, any] => [c.name, c]))('%s', (_n, c: any) => {
+    const headers = { authorization: sg.authorization, 'atproto-space-audience': sg.audience, 'signature-input': c.signature_input, signature: c.signature };
+    expect(verifyPresentation(headers, k) === null).toBe(c.expect === 'accept');
+  });
+  it('reproduces the valid signature deterministically', () => {
+    const h = presentCredential('credential', sg.audience, k);
+    expect(h.signature).toBe(sg.cases[0].signature);
+  });
+});
+
+describe('JWT vectors', () => {
+  const jv = vec('jwt');
+  const keyOf = (jwk: any) => ({ curve: 'p256' as const, compressed: p256.Point.fromBytes(new Uint8Array([4, ...fromB64url(jwk.x), ...fromB64url(jwk.y)])).toBytes(true) });
+  it.each((jv.vectors as any[]).map((x: any): [string, any] => [x.name, x]))('%s verifies (high-S accepted)', (_n, x: any) => {
+    expect(verifyJwt(decodeJwt(x.jws), keyOf(x.jwk))).toBe(true);
+    expect(verifyJwt(decodeJwt(x.jws), keyOf(x.jwk), { lowS: true })).toBe(!x.high_s);
+  });
+  it.each((jv.negative as any[]).map((x: any): [string, any] => [x.name, x]))('negative: %s', (_n, x: any) => {
+    expect(verifyJwt(decodeJwt(x.jws), keyOf(jv.vectors[0].jwk))).toBe(false);
   });
 });
 
@@ -214,6 +281,11 @@ describe('STAR', () => {
     ['duplicate keys', () => mk([['c.x.y/a', rec], ['c.x.y/a', rec]])],
     ['a key that is not a record path', () => mk([['not-a-path', rec]])],
     ['a non-canonical record', () => mk([['c.x.y/a', fromHex('a1616118 01'.replace(/ /g, ''))]])],
+    ['a record with a float', () => mk([['c.x.y/a', fromHex('a16166fb3ff8000000000000')]])],
+    ['a collection that is not an NSID', () => mk([['c.x-.y/a', rec]])],
+    ['a two-segment collection', () => mk([['c.y/a', rec]])],
+    ['an rkey of ..', () => mk([['c.x.y/..', rec]])],
+    ['a record over 1 MiB', () => mk([['c.x.y/a', encode({ b: new Uint8Array(1024 * 1024) })]])],
     ['another $type', () => mk([], { ...meta, $type: 'atproto-space-meta' })],
   ])('rejects %s', (_n, build) => {
     expect(() => checkSpaceRepo(build())).toThrow();
