@@ -24,7 +24,7 @@ export function validateResults(data: unknown, file: string, cat?: Catalogue): P
     if (seen.has(res.id)) at('result listed twice');
     seen.add(res.id);
     if (ids && !ids.has(res.id)) at('assertion is not in the catalogue');
-    if (res.evidence !== undefined && JSON.stringify(res.evidence).length > EVIDENCE_LIMIT) at(`evidence is over ${EVIDENCE_LIMIT} bytes`);
+    if (res.evidence !== undefined && Buffer.byteLength(JSON.stringify(res.evidence)) > EVIDENCE_LIMIT) at(`evidence is over ${EVIDENCE_LIMIT} bytes`);
   }
   for (const d of r.deviations_applied) {
     if (!seen.has(d.assertion)) problems.push({ file, where: d.assertion, message: 'deviation applied to an assertion with no result' });

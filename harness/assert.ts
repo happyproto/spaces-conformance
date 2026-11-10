@@ -67,10 +67,14 @@ function record(r: RawResult) {
   appendFileSync(join(dir, `${process.pid}.jsonl`), `${JSON.stringify(r)}\n`);
 }
 
-/** Trim evidence to the 4 KiB limit by shortening its longest string fields. */
+/**
+ * Trim evidence to the 4 KiB limit (UTF-8 bytes of its JSON) by halving its
+ * longest top-level string fields. Nested objects aren't trimmed field by
+ * field: if strings can't bring it under, the evidence becomes {truncated: true}.
+ */
 export function capEvidence(e: Record<string, unknown>): Record<string, unknown> {
   let out = { ...e };
-  while (JSON.stringify(out).length > EVIDENCE_LIMIT) {
+  while (Buffer.byteLength(JSON.stringify(out)) > EVIDENCE_LIMIT) {
     const [k, v] = Object.entries(out)
       .filter(([, v]) => typeof v === 'string')
       .sort((a, b) => (b[1] as string).length - (a[1] as string).length)[0] ?? [];

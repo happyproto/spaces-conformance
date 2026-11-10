@@ -7,14 +7,20 @@
 // It brings up base + the implementation's fragment (+ its partner's), runs
 // the implementation's bootstrap.sh if it has one, runs the suites inside the
 // harness container, and writes results-local/<run-id>.json. A run with any
-// `error` result is rerun once on a fresh stack; the second attempt stands.
+// `error` result, or whose stack or bootstrap failed, is rerun once on a fresh
+// stack. The second attempt stands, but it keeps the first attempt's failing
+// ids, and a fail-to-pass flip is marked flaky (it warns, never gates). Two
+// infrastructure failures in a row exit 3 with the step that failed.
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
+import { loadCatalogue } from '../harness/catalogue.ts';
 import { loadManifest } from '../harness/manifest.ts';
+import { formatProblem } from '../harness/problems.ts';
+import { validateResults } from '../harness/results.ts';
 import { ROOT } from '../harness/schema.ts';
 
 const { values, positionals } = parseArgs({
@@ -72,17 +78,21 @@ const deviations =
 if (manifest.deviations && typeof manifest.deviations === 'object' && !values.deviations)
   console.warn(`note: ${impl}'s deviations live in ${manifest.deviations.repo}; pass --deviations to apply them`);
 
-function attempt(n: number): { runId: string; out: string; errors: number } {
+type Outcome =
+  | { kind: 'results'; runId: string; out: string; file: any }
+  | { kind: 'infrastructure'; runId: string; step: string };
+
+function attempt(n: number): Outcome {
   const stamp = new Date().toISOString().replace(/\.\d+Z$/, 'Z').replace(/:/g, '-');
   const runId = `${stamp}-${impl}-${randomBytes(2).toString('hex')}`;
   const startedAt = new Date().toISOString();
   console.log(`\n=== ${runId} (attempt ${n})`);
   try {
-    if (dc(['up', '-d', '--wait', '--build']).status !== 0) throw new Error('the stack did not come up healthy');
+    if (dc(['up', '-d', '--wait', '--build']).status !== 0) return { kind: 'infrastructure', runId, step: 'stack: the stack did not come up healthy' };
     const bootstrap = join(ROOT, 'implementations', impl, 'bootstrap.sh');
     if (existsSync(bootstrap)) {
       const r = spawnSync('sh', [bootstrap], { cwd: ROOT, stdio: 'inherit', env: { ...process.env, COMPOSE: `docker compose -p ${project} --env-file pins/images.env ${files.map((f) => `-f ${f}`).join(' ')}` } });
-      if (r.status !== 0) throw new Error(`${impl}/bootstrap.sh failed`);
+      if (r.status !== 0) return { kind: 'infrastructure', runId, step: `bootstrap: ${impl}/bootstrap.sh exited ${r.status}` };
     }
     const env: Record<string, string> = {
       CONFORMANCE_IMPL: impl,
@@ -95,26 +105,56 @@ function attempt(n: number): { runId: string; out: string; errors: number } {
       CONFORMANCE_IMAGES: JSON.stringify(images),
       CONFORMANCE_PEERS: JSON.stringify(peers),
       SUITE_COMMIT: suiteCommit,
+      ...(values.suites ? { CONFORMANCE_SUITES: values.suites } : {}),
       ...(deviations ? { CONFORMANCE_DEVIATIONS: `/suite/${deviations}` } : {}),
       ...(process.env.CONFORMANCE_CI_URL ? { CONFORMANCE_CI_URL: process.env.CONFORMANCE_CI_URL } : {}),
     };
-    const suites = values.suites ? values.suites.split(',').map((s) => `suites/${s}`) : [];
-    // Vitest exits non-zero whenever an assertion fails; that's a result, not a runner failure.
-    dc(['exec', '-T', ...Object.entries(env).flatMap(([k, v]) => ['-e', `${k}=${v}`]), 'harness', 'node_modules/.bin/vitest', 'run', '--config', 'vitest.suite.config.ts', ...suites]);
+    const suites = values.suites ? values.suites.split(',').map((x) => `suites/${x}`) : [];
+    const v = dc(['exec', '-T', ...Object.entries(env).flatMap(([k, val]) => ['-e', `${k}=${val}`]), 'harness', 'node_modules/.bin/vitest', 'run', '--config', 'vitest.suite.config.ts', ...suites]);
+    // Vitest exits 1 when any assertion fails: that's a result. Anything else is the harness breaking.
+    if (v.status !== 0 && v.status !== 1) return { kind: 'infrastructure', runId, step: `harness: vitest exited ${v.status}` };
   } finally {
     if (!values.keep) dc(['down', '-v'], { stdio: 'pipe' });
   }
   const out = join(ROOT, 'results-local', `${runId}.json`);
-  if (!existsSync(out)) throw new Error(`no results file at ${out}: the reporter didn't run or failed validation`);
-  const errors = JSON.parse(readFileSync(out, 'utf8')).results.filter((r: { status: string }) => r.status === 'error').length;
-  return { runId, out, errors };
+  if (!existsSync(out)) return { kind: 'infrastructure', runId, step: 'harness: no valid results file was written (see the .invalid.json, if any)' };
+  const file = JSON.parse(readFileSync(out, 'utf8'));
+  const problems = validateResults(file, out, loadCatalogue(join(ROOT, 'spec', 'assertions.yaml')));
+  if (problems.length) return { kind: 'infrastructure', runId, step: `harness: results failed validation: ${problems.map(formatProblem).join('; ')}` };
+  return { kind: 'results', runId, out, file };
 }
 
-let run = attempt(1);
-if (run.errors && !values['no-retry']) {
-  console.log(`\n${run.errors} result(s) were error; rerunning once on a fresh stack`);
-  run = attempt(2);
+const notPassing = (file: any, status: string) => file.results.filter((r: { status: string }) => r.status === status).map((r: { id: string }) => r.id);
+
+const first = attempt(1);
+let final = first;
+const errored = first.kind === 'infrastructure' || notPassing(first.file, 'error').length > 0;
+if (errored && !values['no-retry']) {
+  console.log(`\n${first.kind === 'infrastructure' ? `infrastructure: ${first.step}` : `${notPassing(first.file, 'error').length} result(s) were error`}; rerunning once on a fresh stack`);
+  final = attempt(2);
 }
-console.log(`\nresults: ${run.out}`);
-const v = spawnSync(process.execPath, [join(ROOT, 'cli', 'verdict.ts'), run.out, ...(deviations ? ['--deviations', deviations] : [])], { stdio: 'inherit' });
+if (final.kind === 'infrastructure') {
+  console.error(`\ninfrastructure: ${final.step}`);
+  process.exit(3);
+}
+if (final !== first) {
+  // Keep the first attempt visible: its non-passing ids, and any flip to pass.
+  const f = final.file;
+  if (first.kind === 'results') {
+    const failed = notPassing(first.file, 'fail');
+    const erroredIds = notPassing(first.file, 'error');
+    f.run.previous_attempts = [{ id: first.runId, failed, errored: erroredIds }];
+    for (const r of f.results)
+      if (r.status === 'pass' && (failed.includes(r.id) || erroredIds.includes(r.id)))
+        r.flaky = { attempt: 1, status: failed.includes(r.id) ? 'fail' : 'error', run: first.runId };
+  } else f.run.infrastructure = first.step;
+  const problems = validateResults(f, final.out, loadCatalogue(join(ROOT, 'spec', 'assertions.yaml')));
+  if (problems.length) {
+    console.error(problems.map(formatProblem).join('\n'));
+    process.exit(3);
+  }
+  writeFileSync(final.out, `${JSON.stringify(f, null, 2)}\n`);
+}
+console.log(`\nresults: ${final.out}`);
+const v = spawnSync(process.execPath, [join(ROOT, 'cli', 'verdict.ts'), final.out, ...(deviations ? ['--deviations', deviations] : [])], { stdio: 'inherit' });
 process.exit(v.status ?? 1);

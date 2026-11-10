@@ -16,7 +16,7 @@ import type { Area, AreaStatus } from './provisional.ts';
 import { provisionalReason } from './provisional.ts';
 
 export type Raw = 'pass' | 'fail' | 'error' | 'skip';
-export type Display = 'pass' | 'fail' | 'fail (provisional)' | 'known deviation' | 'fixed, still listed' | 'error' | 'not applicable';
+export type Display = 'pass' | 'pass (flaky)' | 'fail' | 'fail (provisional)' | 'known deviation' | 'fixed, still listed' | 'error' | 'not applicable';
 export type Gate = 'ok' | 'warn' | 'fail';
 
 export interface Judged {
@@ -30,11 +30,12 @@ export interface Judged {
   provisional: string | null;
 }
 
-export function judge(raw: Raw, listed: boolean, provisional: boolean): Omit<Judged, 'id' | 'raw' | 'provisional'> {
+// A pass after an earlier attempt's fail or error is 'pass (flaky)': scored as a pass, gate warn.
+export function judge(raw: Raw, listed: boolean, provisional: boolean, flaky = false): Omit<Judged, 'id' | 'raw' | 'provisional'> {
   if (raw === 'skip') return { display: 'not applicable', gate: 'ok', scored: false, passing: false };
   if (raw === 'error') return { display: 'error', gate: 'fail', scored: false, passing: false };
   if (raw === 'pass') {
-    if (!listed) return { display: 'pass', gate: 'ok', scored: !provisional, passing: true };
+    if (!listed) return { display: flaky ? 'pass (flaky)' : 'pass', gate: flaky ? 'warn' : 'ok', scored: !provisional, passing: true };
     return { display: 'fixed, still listed', gate: provisional ? 'warn' : 'fail', scored: !provisional, passing: true };
   }
   if (listed) return { display: 'known deviation', gate: 'ok', scored: !provisional, passing: false };
@@ -49,7 +50,7 @@ export interface Summary {
 }
 
 export function judgeAll(
-  results: { id: string; status: Raw }[],
+  results: { id: string; status: Raw; flaky?: unknown }[],
   byId: Map<string, Assertion>,
   listed: Set<string>,
   areas: Map<Area, AreaStatus>,
@@ -62,7 +63,7 @@ export function judgeAll(
   for (const r of results) {
     const a = byId.get(r.id);
     const provisional = a ? provisionalReason(a, areas) : 'not in the catalogue';
-    const j = { id: r.id, raw: r.status, provisional, ...judge(r.status, listed.has(r.id), provisional !== null) };
+    const j = { id: r.id, raw: r.status, provisional, ...judge(r.status, listed.has(r.id), provisional !== null, !!r.flaky) };
     judged.push(j);
     if (!a || !j.scored || a.level === 'info') continue;
     for (const role of a.roles.filter((x) => roles.includes(x))) {

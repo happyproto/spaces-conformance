@@ -4,7 +4,8 @@ import type { RawResult } from '../harness/assert.ts';
 import { capEvidence } from '../harness/assert.ts';
 import { loadCatalogue } from '../harness/catalogue.ts';
 import { vectorStatus } from '../harness/provisional.ts';
-import { assemble } from '../harness/reporter.ts';
+import { assemble, reconcile } from '../harness/reporter.ts';
+import { declaredAssertions } from '../harness/coverage.ts';
 import { validateResults } from '../harness/results.ts';
 import { ROOT } from '../harness/schema.ts';
 import { judge, judgeAll } from '../harness/verdict.ts';
@@ -24,6 +25,53 @@ describe('display states and gating (design ch. 4.4)', () => {
     ['skip', false, false, 'not applicable', 'ok', false, false],
   ] as const)('raw %s, listed %s, provisional %s -> %s (%s)', (raw, listed, prov, display, gate, scored, passing) => {
     expect(judge(raw, listed, prov)).toEqual({ display, gate, scored, passing });
+  });
+});
+
+describe('flaky passes', () => {
+  it('show as pass (flaky), score as a pass, and warn', () => {
+    expect(judge('pass', false, false, true)).toEqual({ display: 'pass (flaky)', gate: 'warn', scored: true, passing: true });
+  });
+});
+
+describe('reconciling Vitest with the raw records', () => {
+  const declared = new Map([
+    ['a.timeout', 'suites/x/a.test.ts'],
+    ['a.unrecorded', 'suites/x/a.test.ts'],
+    ['a.ok', 'suites/x/a.test.ts'],
+    ['b.lost', 'suites/x/b.test.ts'],
+    ['b.notapplicable', 'suites/x/b.test.ts'],
+    ['c.twice', 'suites/x/c.test.ts'],
+  ]);
+  const cases = new Map([
+    ['a.timeout', { state: 'failed' as const, errors: ['Test timed out in 60000ms.'] }],
+    ['a.unrecorded', { state: 'failed' as const, errors: ['boom in a hook'] }],
+    ['a.ok', { state: 'passed' as const, errors: [] }],
+    ['c.twice', { state: 'passed' as const, errors: [] }],
+  ]);
+  const raw: RawResult[] = [
+    { id: 'a.timeout', suite: 'x', status: 'pass', ms: 61000 }, // finished after its timeout
+    { id: 'a.ok', suite: 'x', status: 'pass' },
+    { id: 'c.twice', suite: 'x', status: 'pass' },
+    { id: 'c.twice', suite: 'x', status: 'fail' },
+  ];
+  const out = new Map(
+    reconcile(raw, cases, declared, new Map([['suites/x/b.test.ts', 'SyntaxError: nope']]), (id) => (id === 'b.notapplicable' ? 'role pds not claimed' : null), () => 'x').map((r) => [r.id, r]),
+  );
+  it('turns a late pass after a timeout into fail', () => expect(out.get('a.timeout')).toMatchObject({ status: 'fail' }));
+  it('turns a failed test with no record into error', () => expect(out.get('a.unrecorded')).toMatchObject({ status: 'error', message: 'boom in a hook' }));
+  it('keeps a good record', () => expect(out.get('a.ok')!.status).toBe('pass'));
+  it('reports the declared assertions of a file that failed to load as error', () =>
+    expect(out.get('b.lost')).toMatchObject({ status: 'error', message: expect.stringMatching(/b\.test\.ts failed to load: SyntaxError/) }));
+  it('records an unrun but inapplicable assertion as skip', () => expect(out.get('b.notapplicable')).toMatchObject({ status: 'skip' }));
+  it('turns a duplicate record into error', () => expect(out.get('c.twice')).toMatchObject({ status: 'error', message: 'recorded more than once in one run' }));
+});
+
+describe('declared assertions', () => {
+  it('finds every assertion() in the suites, by source', () => {
+    const d = declaredAssertions();
+    for (const id of ['digest.cid-drisl-plain', 'records.commit-fields', 'info.unknown-method-status']) expect(d.has(id), id).toBe(true);
+    expect(declaredAssertions(['digest']).has('records.commit-fields')).toBe(false);
   });
 });
 
@@ -77,9 +125,22 @@ describe('the reporter', () => {
     expect(file.implementation.setup_mode).toEqual({ accounts: 'create-account', spaces: 'simplespace' });
   });
 
-  it('caps evidence at 4 KiB', () => {
+  it('caps evidence at 4 KiB of UTF-8, not UTF-16 units', () => {
     const e = capEvidence({ body: 'x'.repeat(10_000), status: 400 });
-    expect(JSON.stringify(e).length).toBeLessThanOrEqual(4096);
+    expect(Buffer.byteLength(JSON.stringify(e))).toBeLessThanOrEqual(4096);
     expect(e.status).toBe(400);
+    const wide = capEvidence({ body: '世'.repeat(2000) }); // 2000 units but 6000 bytes
+    expect(Buffer.byteLength(JSON.stringify(wide))).toBeLessThanOrEqual(4096);
+  });
+
+  it('accepts a rerun with previous attempts and a flaky pass, and refuses evidence over 4 KiB in bytes', () => {
+    const env = { CONFORMANCE_IMPL: 'reference', CONFORMANCE_RUN_ID: '2026-11-10T05-24-57Z-reference-d3e5', CONFORMANCE_IMAGES: JSON.stringify({ reference: `ghcr.io/x/y@sha256:${'a'.repeat(64)}` }), SUITE_COMMIT: 'abc1234' };
+    const cat = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
+    const file: any = assemble(env, { accounts: 'create-account', spaces: 'simplespace' }, [{ id: 'records.commit-fields', suite: 'records', status: 'pass' }]);
+    file.run.previous_attempts = [{ id: 'earlier', failed: ['records.commit-fields'], errored: [] }];
+    file.results[0].flaky = { attempt: 1, status: 'fail', run: 'earlier' };
+    expect(validateResults(file, 'r', cat)).toEqual([]);
+    const big: any = assemble(env, { accounts: 'create-account', spaces: 'simplespace' }, [{ id: 'records.commit-fields', suite: 'records', status: 'fail', evidence: { b: '世'.repeat(1500) } }]);
+    expect(validateResults(big, 'r', cat).map((p) => p.message)).toContain('evidence is over 4096 bytes');
   });
 });

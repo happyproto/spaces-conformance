@@ -1,4 +1,4 @@
-import { assertion, fail, setup } from '../../harness/assert.ts';
+import { assertion, fail } from '../../harness/assert.ts';
 import type { RunContext } from '../../harness/context.ts';
 import { recordCid } from '../../harness/crypto/drisl.ts';
 import { COLLECTION, ownerSpace, records, xrpcUrl } from '../fixtures.ts';
@@ -15,7 +15,8 @@ async function checkCids(ctx: RunContext, set: 'plain' | 'typed') {
       collection: COLLECTION,
       record,
     });
-    if (created.status >= 300) await setup(`createRecord ${name}`, () => Promise.reject(new Error(`${created.status} ${JSON.stringify(created.body)}`)));
+    // Accepting these records is part of the behaviour under test, so a refusal is a fail, not setup.
+    if (created.status >= 300) fail(`createRecord refused the ${set} record ${name} (${created.status})`, { record: name, status: created.status, body: JSON.stringify(created.body).slice(0, 1000) });
     const rkey = String(created.body.uri).split('/').pop()!;
     const got = await owner.auth.request('GET', xrpcUrl(owner.repoHost, 'com.atproto.space.getRecord', { space, repo: owner.did, collection: COLLECTION, rkey }));
     if (created.body.cid !== expected || got.body?.cid !== expected)

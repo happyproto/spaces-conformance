@@ -43,6 +43,8 @@ if (values.json) {
     const pct = (p: number, n: number) => (n ? `${Math.round((100 * p) / n)}%` : 'n/a');
     console.log(`${role}: must ${s!.must_pass}/${s!.must_applicable} (${pct(s!.must_pass, s!.must_applicable)}), should ${s!.should_pass}/${s!.should_applicable}`);
   }
+  if (file.run.previous_attempts?.length) console.log(`rerun of ${file.run.previous_attempts.map((a: { id: string }) => a.id).join(', ')}`);
+  if (file.run.infrastructure) console.log(`earlier attempt hit infrastructure: ${file.run.infrastructure}`);
   const warns = judged.filter((j) => j.gate === 'warn').length;
   console.log(`\n${summary.unexpected} unexpected, ${warns} warning(s)`);
 }
