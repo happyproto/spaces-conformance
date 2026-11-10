@@ -70,7 +70,8 @@
         "suite",
         "level",
         "roles",
-        "checks"
+        "checks",
+        "areas"
       ],
       "properties": {
         "id": {
@@ -184,7 +185,7 @@
           "pattern": "^[A-Z][A-Za-z0-9]*$"
         },
         "areas": {
-          "description": "Harness crypto areas the check relies on. While any has a pending cross-check (vectors/*.json), the assertion is provisional.",
+          "description": "Harness crypto areas the check relies on, or [] to acknowledge it uses none. Required on every row. While any listed area has a pending cross-check (vectors/*.json), the assertion is provisional.",
           "type": "array",
           "items": {
             "enum": [
@@ -196,7 +197,6 @@
               "star"
             ]
           },
-          "minItems": 1,
           "uniqueItems": true
         }
       }

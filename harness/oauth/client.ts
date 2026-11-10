@@ -29,6 +29,8 @@ export async function discover(issuer: string): Promise<AuthServer> {
   const r = await http(`${issuer.replace(/\/$/, '')}/.well-known/oauth-authorization-server`);
   if (r.status !== 200 || typeof r.body !== 'object') throw new Error(`no AS metadata at ${issuer} (${r.status})`);
   const m = r.body as AuthServer;
+  // RFC 8414 §3.3: the metadata's issuer must be the issuer it was fetched for.
+  if (m.issuer !== issuer.replace(/\/$/, '')) throw new Error(`AS metadata at ${issuer} names issuer ${m.issuer}`);
   if (!m.pushed_authorization_request_endpoint || !m.token_endpoint) throw new Error(`AS ${issuer} lacks PAR or token endpoints`);
   return m;
 }
@@ -105,8 +107,9 @@ export async function authorize(o: AuthorizeOptions): Promise<TokenSet> {
   const redirect = new URL(await o.consent.approve(as, { requestUri: par.body.request_uri, clientId: o.clientId }));
   if (redirect.searchParams.get('error')) throw new OAuthError('consent', 400, Object.fromEntries(redirect.searchParams));
   if (redirect.searchParams.get('state') !== state) throw new OAuthError('consent', 400, { error: 'state mismatch' });
+  // RFC 9207: atproto requires iss on the authorization response.
   const iss = redirect.searchParams.get('iss');
-  if (iss && iss !== as.issuer) throw new OAuthError('consent', 400, { error: `iss ${iss} is not ${as.issuer}` });
+  if (iss !== as.issuer) throw new OAuthError('consent', 400, { error: iss ? `iss ${iss} is not ${as.issuer}` : 'redirect has no iss' });
   const code = redirect.searchParams.get('code');
   if (!code) throw new OAuthError('consent', 400, { error: 'no code' });
 
@@ -116,6 +119,8 @@ export async function authorize(o: AuthorizeOptions): Promise<TokenSet> {
   });
   if (tok.status >= 300 || !tok.body?.access_token) throw new OAuthError('token', tok.status, tok.body);
   const b = tok.body;
+  if (o.loginHint?.startsWith('did:') && b.sub !== o.loginHint)
+    throw new OAuthError('token', tok.status, { error: `token sub ${b.sub} is not the account that signed in (${o.loginHint})` });
   if (String(b.token_type).toLowerCase() !== 'dpop') throw new OAuthError('token', tok.status, { error: `token_type ${b.token_type} is not DPoP` });
   return {
     accessToken: b.access_token,
