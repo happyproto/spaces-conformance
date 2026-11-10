@@ -12,7 +12,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "check": "bun run typecheck && bun run test && bun run validate",
-    "stack:test": "cli/stack.sh test"
+    "stack:test": "cli/stack.sh test",
+    "run": "node cli/run.ts",
+    "verdict": "node cli/verdict.ts"
   },
   "dependencies": {
     "@atcute/multibase": "1.2.5",

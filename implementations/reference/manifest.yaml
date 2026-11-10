@@ -1,0 +1,32 @@
+id: reference
+name: Bluesky reference PDS (pds-spaces-alpha)
+source: https://github.com/bluesky-social/atproto
+image:
+  repository: ghcr.io/happyproto/pds-test/pds-spaces-alpha
+  pin: PDS_SPACES_ALPHA_IMAGE
+  dispatch_target: pds-spaces-alpha
+  platforms: [linux/amd64]
+spec_revision: "2026-10-29"
+roles: [pds, repo-host, space-host]
+profile: pds
+capabilities:
+  # The pinned image (built 2026-10-01) predates the Oct 29 policy objects:
+  # it serves com.atproto.simplespace.* and no memberspace/managedspace methods.
+  policies: []
+  repo_host:
+    foreign_authorities: true
+  oauth:
+    scripted: false
+lineage: { cbor: "@atproto/lex-cbor", lthash: "@atproto/space", mac: "@atproto/space", httpsig: "@atproto/space", jwt: "@atproto/crypto", star: "@atproto/star" }
+compose: compose.yml
+base_url: https://reference.test
+health: /xrpc/_health
+accounts:
+  mode: create-account
+  write_auth: password-session
+spaces:
+  authority: account
+  # Setup only (ungraded): the pinned image has only the Oct 22 lifecycle.
+  create: simplespace
+setup: adapter.ts
+deviations: deviations.yaml

@@ -1,0 +1,55 @@
+{
+  "description": "Plain-JSON records (strings, integers within 32 bits, booleans, null, nesting).",
+  "records": [
+    {
+      "name": "text",
+      "record": {
+        "$type": "com.example.conformance.note",
+        "text": "hello",
+        "createdAt": "2026-11-09T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "unicode",
+      "record": {
+        "$type": "com.example.conformance.note",
+        "text": "héllo 世界 🎉"
+      }
+    },
+    {
+      "name": "ordering",
+      "record": {
+        "$type": "com.example.conformance.note",
+        "aa": 2,
+        "b": 1
+      }
+    },
+    {
+      "name": "nested",
+      "record": {
+        "$type": "com.example.conformance.note",
+        "list": [
+          1,
+          "two",
+          {
+            "three": 3
+          },
+          [
+            true,
+            false,
+            null
+          ]
+        ]
+      }
+    },
+    {
+      "name": "neg",
+      "record": {
+        "$type": "com.example.conformance.note",
+        "n": -1,
+        "m": -24,
+        "o": -25
+      }
+    }
+  ]
+}

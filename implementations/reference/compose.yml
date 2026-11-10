@@ -1,0 +1,37 @@
+# The Bluesky reference PDS, pds-spaces-alpha, built by happyproto/pds-test.
+# amd64 only: it runs emulated on Apple Silicon, slowly.
+services:
+  reference:
+    image: ${PDS_SPACES_ALPHA_IMAGE:?set from pins/images.env}
+    platform: linux/amd64
+    user: root
+    volumes:
+      - caddy_data:/caddy-data:ro
+    # The PDS needs its data directory to exist; a run keeps nothing.
+    tmpfs:
+      - /tmp/pds
+    environment:
+      PDS_HOSTNAME: reference.test
+      PDS_PORT: "3000"
+      PDS_DEV_MODE: "true"
+      PDS_DATA_DIRECTORY: /tmp/pds
+      PDS_BLOBSTORE_DISK_LOCATION: /tmp/pds/blocks
+      PDS_JWT_SECRET: conformance-reference-jwt-secret
+      PDS_ADMIN_PASSWORD: conformance-admin
+      PDS_DID_PLC_URL: http://plc:2582
+      PDS_SERVICE_HANDLE_DOMAINS: .test
+      PDS_INVITE_REQUIRED: "false"
+      PDS_RATE_LIMITS_ENABLED: "false"
+      PDS_PLC_ROTATION_KEY_K256_PRIVATE_KEY_HEX: ee69c68a213e447d2c0881ef7a8a3e821c9500344bbaafe8011f057597eb8d58
+      NODE_EXTRA_CA_CERTS: /caddy-data/caddy/pki/authorities/local/root.crt
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/xrpc/_health || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 100
+      start_period: 10s
+    depends_on:
+      plc:
+        condition: service_started
+      caddy:
+        condition: service_healthy

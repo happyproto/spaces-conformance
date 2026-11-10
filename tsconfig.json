@@ -12,5 +12,5 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["harness", "cli", "test", "implementations/**/*.ts", "vitest.config.ts", "vitest.stack.config.ts"]
+  "include": ["harness", "cli", "test", "implementations/**/*.ts", "vitest.config.ts", "vitest.stack.config.ts", "vitest.suite.config.ts", "suites"]
 }

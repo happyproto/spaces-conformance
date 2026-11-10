@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "run": {
+    "id": "2026-11-10T05-24-57Z-reference-d3e5",
+    "kind": "local",
+    "started_at": "2026-11-10T05:24:57.345Z",
+    "finished_at": "2026-11-10T05:25:06.907Z",
+    "attempt": 1
+  },
+  "suite": {
+    "commit": "3e1da607e7",
+    "assertions_digest": "sha256:99dcaecb78495f4d0de9525bea01cf4ce435c09e7d72a6d242d6c756f1f264ad"
+  },
+  "spec": {
+    "proposal": "0016",
+    "revision": "2026-10-29",
+    "commit": "701ef9c6be",
+    "lexicons": "atproto@98ef3a6b"
+  },
+  "implementation": {
+    "id": "reference",
+    "image": "ghcr.io/happyproto/pds-test/pds-spaces-alpha@sha256:1cf9349e9f0e89789784569fed376cd647742ea7c368948625f44779ba03f150",
+    "roles": [
+      "pds",
+      "repo-host",
+      "space-host"
+    ],
+    "profile": "pds",
+    "write_auth": "password-session",
+    "setup_mode": {
+      "accounts": "create-account",
+      "spaces": "simplespace"
+    }
+  },
+  "peers": [
+    {
+      "id": "plc",
+      "image": "ghcr.io/happyproto/pds-test/plc@sha256:be4b9b844e460085372b74194d4d6417206f420b1f1d36c8c8ab86b5d8db9ce5"
+    }
+  ],
+  "deviations_applied": [],
+  "results": [
+    {
+      "id": "digest.cid-drisl-plain",
+      "suite": "digest",
+      "status": "pass",
+      "ms": 275
+    },
+    {
+      "id": "digest.cid-drisl-typed",
+      "suite": "digest",
+      "status": "pass",
+      "ms": 87
+    },
+    {
+      "id": "info.read-auth-status",
+      "suite": "records",
+      "status": "pass",
+      "ms": 3,
+      "message": "listRecords with no auth answered 401"
+    },
+    {
+      "id": "info.unknown-method-status",
+      "suite": "records",
+      "status": "pass",
+      "ms": 6,
+      "message": "an unknown method answered 400"
+    },
+    {
+      "id": "records.commit-bytes-encoding",
+      "suite": "records",
+      "status": "fail",
+      "ms": 31,
+      "message": "commit.data is not {\"$bytes\": ...}",
+      "evidence": {
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"hi2eSEyR5wZ/2oOGNxErh2fUnblZ/Dnhl2sCEU7OrPU\"},\"ikm\":{\"$bytes\":\"zfHLJh1s3KMMIQpqlwuGwtuCB1psj9kSrhg/phyoO5A\"},\"mac\":{\"$bytes\":\"1IU8xMnWhs3q30c8cayXwmEeYwHFK/pyvScA1LiwPDY\"},\"sig\":{\"$bytes\":\"mOxam/3gPpcQrLqprNKVFxq1VZUSJ638n/eevC2JFZBEvJWqgUCRX/hg9m6m+ejxkO6eo61uOpSCJyq65wFX9A\"},\"rev\":\"3mzwpalq6fc2j\",\"$type\":\"com.atproto.space.defs#signedCommit\"}"
+      }
+    },
+    {
+      "id": "records.commit-fields",
+      "suite": "records",
+      "status": "fail",
+      "ms": 354,
+      "message": "commit fields are [$type, hash, ikm, mac, rev, sig, ver], not exactly [data, repo, rev, space, ver]",
+      "evidence": {
+        "body": "{\"commit\":{\"ver\":1,\"hash\":{\"$bytes\":\"8n82NTZk2Ba1Vw5csA6JcMZfGbsMKBZ43QvFJ3iSbho\"},\"ikm\":{\"$bytes\":\"AkNO8okyEEBhjhseFp+z9ZfvA+kR+xX+Vx40etmODTw\"},\"mac\":{\"$bytes\":\"vr3NpQa54BcEUq468GZzH2lN0YimtEs1j4A0JiboP3k\"},\"sig\":{\"$bytes\":\"sUORvnymMAFYc+NKJsvLzx/tNv6I4XwMPj9Sd943KtszD5isOK2/GyMkLRgehlLunopc/9Q+zThtLwBEGyNl1w\"},\"rev\":\"3mzwpalosh22j\",\"$type\":\"com.atproto.space.defs#signedCommit\"}}"
+      }
+    },
+    {
+      "id": "records.read-requires-auth",
+      "suite": "records",
+      "status": "pass",
+      "ms": 132
+    }
+  ],
+  "summary": {
+    "by_role": {
+      "pds": {
+        "must_applicable": 0,
+        "must_pass": 0,
+        "should_applicable": 0,
+        "should_pass": 0
+      },
+      "repo-host": {
+        "must_applicable": 5,
+        "must_pass": 3,
+        "should_applicable": 0,
+        "should_pass": 0
+      },
+      "space-host": {
+        "must_applicable": 0,
+        "must_pass": 0,
+        "should_applicable": 0,
+        "should_pass": 0
+      }
+    },
+    "unexpected": 2
+  }
+}

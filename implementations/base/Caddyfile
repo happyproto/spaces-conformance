@@ -35,6 +35,12 @@ zds.test {
 	reverse_proxy zds:3000
 }
 
+reference.test {
+	import logged
+	tls internal
+	reverse_proxy reference:3000
+}
+
 harness.test {
 	import logged
 	tls internal

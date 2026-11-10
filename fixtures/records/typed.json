@@ -1,0 +1,40 @@
+{
+  "description": "Records with $link, $bytes and integers past 32 bits, up to 2^53-1.",
+  "records": [
+    {
+      "name": "link",
+      "record": {
+        "$type": "com.example.conformance.note",
+        "ref": {
+          "$link": "bafyreigbtj4x7ip5legnfznufuopl4sg4knzc2cof6duas4b3q2fy6swua"
+        }
+      }
+    },
+    {
+      "name": "bytes",
+      "record": {
+        "$type": "com.example.conformance.note",
+        "b": {
+          "$bytes": "AAECAwQFBgcICQ"
+        }
+      }
+    },
+    {
+      "name": "bigint",
+      "record": {
+        "$type": "com.example.conformance.note",
+        "v": 9007199254740991
+      }
+    },
+    {
+      "name": "int32edge",
+      "record": {
+        "$type": "com.example.conformance.note",
+        "a": 4294967295,
+        "b": 4294967296,
+        "c": -4294967296,
+        "d": -4294967297
+      }
+    }
+  ]
+}
