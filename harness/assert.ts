@@ -14,6 +14,9 @@ import { type RunContext, runContext } from './context.ts';
 import { notApplicable } from './manifest.ts';
 import { EVIDENCE_LIMIT } from './results.ts';
 import { ROOT } from './schema.ts';
+import { ASSERTION_DEADLINE_MS, SETUP_TIMEOUT_MS } from './timeouts.ts';
+
+export { ASSERTION_DEADLINE_MS, SETUP_TIMEOUT_MS };
 
 export interface RawResult {
   id: string;
@@ -52,26 +55,8 @@ export const fail = (message: string, evidence?: Record<string, unknown>): never
 /** The assertion whose test is running, so setup() can mark its steps. */
 const current = new AsyncLocalStorage<string>();
 
-/**
- * How long one setup step may take. It's shorter than the test timeout
- * (vitest.suite.config.ts), so a hung step throws SetupError and records
- * `error` before Vitest's timeout could turn it into a scored `fail`.
- */
-export const SETUP_TIMEOUT_MS = Number(process.env.CONFORMANCE_SETUP_TIMEOUT_MS ?? 45_000);
-
-/**
- * How long one assertion may run in all. It's just under the test timeout, so
- * runAssertion() classifies a slow test itself, while it still knows which
- * setup step is open: several steps, each within SETUP_TIMEOUT_MS, can
- * together outlast the test.
- */
-export const ASSERTION_DEADLINE_MS = Number(process.env.CONFORMANCE_ASSERTION_DEADLINE_MS ?? 58_000);
-
 /** Setup steps open right now, per assertion id, in start order. */
 const openSteps = new Map<string, string[]>();
-/** Assertions whose result is already recorded: a later record (an orphaned fn finishing) is dropped. */
-const settled = new Set<string>();
-
 /** Mark a setup step's start and end: in memory for runAssertion(), on disk for reconcile(). */
 function mark(phase: 'start' | 'end', step: string) {
   const id = current.getStore();
@@ -110,8 +95,6 @@ export function rawDir(): string {
 }
 
 function record(r: RawResult) {
-  if (settled.has(r.id)) return;
-  settled.add(r.id);
   const dir = rawDir();
   mkdirSync(dir, { recursive: true });
   appendFileSync(join(dir, `${process.pid}.jsonl`), `${JSON.stringify(r)}\n`);
@@ -140,8 +123,9 @@ export class DeadlineExceeded extends Error {}
 /**
  * Run one applicable assertion and record its result. Past `deadlineMs` it
  * records at once: `error` if a setup step is open (ungraded), else `fail`
- * (the host was too slow). The orphaned fn may finish later; its record is
- * dropped, so it can't turn into a late pass.
+ * (the host was too slow). The orphaned fn may finish later, but nothing
+ * records it: only the race's winner reaches a record() call. Setup steps are
+ * deadlined below this (harness/timeouts.ts), and this below Vitest's timeout.
  */
 export function runAssertion<C>(id: string, suite: string, ctx: C, fn: (ctx: C) => Promise<void | string>, deadlineMs = ASSERTION_DEADLINE_MS): Promise<void> {
   return current.run(id, async () => {

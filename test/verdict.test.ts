@@ -5,7 +5,8 @@ import { capEvidence } from '../harness/assert.ts';
 import { loadCatalogue } from '../harness/catalogue.ts';
 import { vectorStatus } from '../harness/provisional.ts';
 import { assemble, openSetupSteps, readRaw, reconcile } from '../harness/reporter.ts';
-import { DeadlineExceeded, runAssertion, setup, SetupError } from '../harness/assert.ts';
+import { DeadlineExceeded, fail, runAssertion, setup, SetupError } from '../harness/assert.ts';
+import { checkTimeouts } from '../harness/timeouts.ts';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { declaredAssertions } from '../harness/coverage.ts';
@@ -124,6 +125,51 @@ describe('setup hangs', () => {
       if (prev === undefined) delete process.env.CONFORMANCE_RAW_DIR;
       else process.env.CONFORMANCE_RAW_DIR = prev;
     }
+  });
+
+  it('a slow host that finishes after the deadline, either way, leaves exactly one fail', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'raw-'));
+    const prev = process.env.CONFORMANCE_RAW_DIR;
+    process.env.CONFORMANCE_RAW_DIR = dir;
+    try {
+      const late = (outcome: 'resolve' | 'reject') => async () => {
+        await new Promise((r) => setTimeout(r, 200));
+        if (outcome === 'reject') fail('the host answered wrongly, late');
+      };
+      await expect(runAssertion('a.lateok', 'x', {}, late('resolve'), 50)).rejects.toBeInstanceOf(DeadlineExceeded);
+      await expect(runAssertion('a.latebad', 'x', {}, late('reject'), 50)).rejects.toBeInstanceOf(DeadlineExceeded);
+      await new Promise((r) => setTimeout(r, 300));
+      const recs = readRaw(dir);
+      expect(recs.filter((r) => r.id === 'a.lateok')).toEqual([expect.objectContaining({ status: 'fail' })]);
+      expect(recs.filter((r) => r.id === 'a.latebad')).toEqual([expect.objectContaining({ status: 'fail' })]);
+      const out = reconcile(recs, new Map(), new Map(), new Map(), () => null, () => 'x');
+      expect(out.map((r) => r.status)).toEqual(['fail', 'fail']);
+    } finally {
+      if (prev === undefined) delete process.env.CONFORMANCE_RAW_DIR;
+      else process.env.CONFORMANCE_RAW_DIR = prev;
+    }
+  });
+
+  it('a duplicate assertion id in one file still records twice, so reconcile flags it', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'raw-'));
+    const prev = process.env.CONFORMANCE_RAW_DIR;
+    process.env.CONFORMANCE_RAW_DIR = dir;
+    try {
+      await runAssertion('a.twice', 'x', {}, async () => {}, 1000);
+      await runAssertion('a.twice', 'x', {}, async () => {}, 1000);
+      const [r] = reconcile(readRaw(dir), new Map(), new Map(), new Map(), () => null, () => 'x');
+      expect(r).toMatchObject({ id: 'a.twice', status: 'error', message: 'recorded more than once in one run' });
+    } finally {
+      if (prev === undefined) delete process.env.CONFORMANCE_RAW_DIR;
+      else process.env.CONFORMANCE_RAW_DIR = prev;
+    }
+  });
+
+  it('refuses a deadline at or past the test timeout, or a setup timeout at or past the deadline', () => {
+    expect(() => checkTimeouts({ test: 60_000, deadline: 58_000, setup: 45_000 })).not.toThrow();
+    expect(() => checkTimeouts({ test: 60_000, deadline: 60_000, setup: 45_000 })).toThrow(/below the test timeout/);
+    expect(() => checkTimeouts({ test: 30_000, deadline: 58_000, setup: 45_000 })).toThrow(/below the test timeout/);
+    expect(() => checkTimeouts({ test: 60_000, deadline: 40_000, setup: 45_000 })).toThrow(/below the assertion deadline/);
   });
 
   it('a test timeout during an open setup step is error, not a scored fail', () => {
