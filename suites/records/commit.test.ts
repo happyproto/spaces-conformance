@@ -46,3 +46,12 @@ assertion('records.commit-bytes-encoding', async (ctx) => {
   }
   if (bytes.length !== 32) fail(`commit.data decodes to ${bytes.length} bytes, not 32`, evidence);
 });
+
+assertion('records.commit-repo-space-match', async (ctx) => {
+  const { owner, space, body } = await latestCommit(ctx);
+  const c = body?.commit ?? {};
+  const evidence = { requested: JSON.stringify({ repo: owner.did, space }), commit: JSON.stringify(c).slice(0, 1500) };
+  if (c.repo === undefined && c.space === undefined) fail('the commit has no repo or space field', evidence);
+  if (c.repo !== owner.did) fail(`commit.repo is ${c.repo}, not the requested ${owner.did}`, evidence);
+  if (c.space !== space) fail(`commit.space is ${c.space}, not the requested space`, evidence);
+});

@@ -26,6 +26,14 @@ export function ownerSpace(ctx: RunContext): Promise<Fixture> {
   return fixture;
 }
 
+let member: Promise<Account> | undefined;
+
+/** A second account on the same implementation (for pds.js, its own container). */
+export function memberAccount(ctx: RunContext): Promise<Account> {
+  member ??= ctx.adapter.provisionAccount(ctx, 'bob');
+  return member;
+}
+
 export const records = (name: 'plain' | 'typed'): { name: string; record: Record<string, unknown> }[] =>
   JSON.parse(readFileSync(join(ROOT, 'fixtures', 'records', `${name}.json`), 'utf8')).records;
 
