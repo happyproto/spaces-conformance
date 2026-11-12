@@ -2,18 +2,18 @@
 # only once a run confirms it isn't a harness bug. Confirmed against
 # PDSJS_IMAGE sha256:1725c1f8d2ce on 2026-11-12.
 
-# One cause: space records are encoded from their lex-JSON as-is.
+# One cause: how space record values are encoded (pds.js#4).
 - assertion: digest.cid-drisl-typed
   cause: space-record-encoding
   reason: >-
-    Space record CIDs differ from DRISL for $link, $bytes and integers past 32 bits.
-    $link and $bytes are encoded as maps, not as a CID and a byte string. An integer
-    past 32 bits is left out of the encoding entirely, so the stored map is malformed.
+    createRecord and getRecord return CIDs that differ from DRISL for all four typed
+    fixture records: a $link, a $bytes, and integers past 32 bits. Plain-JSON records
+    match.
   spec: "#commit-digest"
   tracking: https://tangled.org/chadtmiller.com/pds.js/issues/4
   since: "2026-11-12"
 
-# One cause: listRepoOps reads only `since`, and its cursor is a rev.
+# One cause: listRepoOps doesn't follow cursor (pds.js#5).
 - assertion: oplog.pagination-complete
   cause: oplog-cursor-ignored
   reason: >-
@@ -25,8 +25,8 @@
 - assertion: oplog.pagination-batch-boundary
   cause: oplog-cursor-ignored
   reason: >-
-    listRepoOps ignores cursor, and a rev-only position can't resume inside a batch
-    whose ops share one rev, so paging across such a batch loses or repeats ops.
+    Paging with limit=2 across one three-op applyWrites batch, following cursor,
+    returned m1, m2, m1, m2: the first page twice, and m3 never.
   spec: "#incremental-sync"
   tracking: https://tangled.org/chadtmiller.com/pds.js/issues/5
   since: "2026-11-12"
