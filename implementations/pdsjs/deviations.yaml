@@ -1,3 +1,32 @@
 # Seeded from HappyView's interop pins (design ch. 4.6). Each entry is listed
-# only once a run confirms it isn't a harness bug.
-[]
+# only once a run confirms it isn't a harness bug. Confirmed against
+# PDSJS_IMAGE sha256:1725c1f8d2ce on 2026-11-12.
+
+# One cause: space records are encoded from their lex-JSON as-is.
+- assertion: digest.cid-drisl-typed
+  cause: space-record-encoding
+  reason: >-
+    Space record CIDs differ from DRISL for $link, $bytes and integers past 32 bits.
+    $link and $bytes are encoded as maps, not as a CID and a byte string. An integer
+    past 32 bits is left out of the encoding entirely, so the stored map is malformed.
+  spec: "#commit-digest"
+  tracking: https://tangled.org/chadtmiller.com/pds.js/issues/4
+  since: "2026-11-12"
+
+# One cause: listRepoOps reads only `since`, and its cursor is a rev.
+- assertion: oplog.pagination-complete
+  cause: oplog-cursor-ignored
+  reason: >-
+    listRepoOps ignores cursor, so following it repeats the first page. The lexicon
+    says cursor takes precedence over since.
+  spec: "#incremental-sync"
+  tracking: https://tangled.org/chadtmiller.com/pds.js/issues/5
+  since: "2026-11-12"
+- assertion: oplog.pagination-batch-boundary
+  cause: oplog-cursor-ignored
+  reason: >-
+    listRepoOps ignores cursor, and a rev-only position can't resume inside a batch
+    whose ops share one rev, so paging across such a batch loses or repeats ops.
+  spec: "#incremental-sync"
+  tracking: https://tangled.org/chadtmiller.com/pds.js/issues/5
+  since: "2026-11-12"
