@@ -428,8 +428,8 @@ assertions:
     roles: [repo-host]
     areas: [mac, httpsig, jwt]
     checks: >-
-      A MAC requested with a key_share whose shared secret the harness derived against another
-      account's KEM key doesn't verify, i.e. the host uses the author's own KEM key.
+      Read by a caller who isn't the author, the commit MAC verifies against the author's
+      #atproto_kem key and not the caller's, i.e. the host does ECDH with the author's key.
 
   - id: mac.list-repo-ops-final-page
     suite: mac

@@ -1,12 +1,15 @@
 // MAC reads use the owner's own session with Atproto-Space-Want-Mac, as
-// HappyView's interop tests do. 0016 requires the MAC with a space
-// credential; the read auth is setup here, and the credential path comes in
-// phase 7. Evidence names the read auth used.
+// HappyView's interop tests do. 0016 requires the MAC only "when called with
+// a space credential" (#authenticity-headers), and the harness's credential
+// path comes in phase 7. So until then:
+//   - no Atproto-Space-Mac on a session read is `error` (a precondition the
+//     harness can't meet yet), never `fail`;
+//   - a MAC that is present but wrong (type, ver, or doesn't verify) is `fail`.
+// Evidence names the read auth used.
 
-import { assertion, fail } from '../../harness/assert.ts';
+import type { MacCheck } from '../../harness/actors/syncer.ts';
+import { assertion, fail, SetupError, setup } from '../../harness/assert.ts';
 import { parseMultikey } from '../../harness/crypto/keys.ts';
-import { setup } from '../../harness/assert.ts';
-import { generate } from '../../harness/crypto/keys.ts';
 import { REPO_TYPE, parseMacHeader } from '../../harness/crypto/mac.ts';
 import { ownerSpace } from '../fixtures.ts';
 import { commitOrFail, freshRepo, note, type Repo, setupWrites, syncerFor } from '../repo.ts';
@@ -18,6 +21,14 @@ async function repoWithRecord(ctx: Parameters<typeof freshRepo>[0]): Promise<Rep
 }
 
 const readAuth = (repo: Repo) => ({ read_auth: repo.owner.auth.mode });
+
+const CREDENTIAL_PENDING = 'precondition: 0016 requires the MAC only on space-credential reads, and the harness has no credential path yet (phase 7)';
+
+/** No MAC on a session read isn't the host's fault under 0016: record error. */
+function requireMacHeader(mac: MacCheck): string {
+  if (!mac.header) throw new SetupError('MAC on a session read', new Error(CREDENTIAL_PENDING));
+  return mac.header;
+}
 
 assertion('mac.kem-key-published', async (ctx) => {
   const { owner } = await ownerSpace(ctx);
@@ -43,10 +54,10 @@ assertion('mac.commit-header-present', async (ctx) => {
   const { response, mac } = await syncer.commit(target);
   const evidence = { ...readAuth(repo), status: response.status, header: mac.header ?? null, vary: mac.vary };
   if (response.status !== 200) fail(`getLatestCommit answered ${response.status}`, evidence);
-  if (!mac.header) fail('getLatestCommit with Atproto-Space-Want-Mac returned no Atproto-Space-Mac', evidence);
+  const header = requireMacHeader(mac);
   let m;
   try {
-    m = parseMacHeader(mac.header!);
+    m = parseMacHeader(header);
   } catch (e) {
     return fail(`Atproto-Space-Mac doesn't parse: ${(e as Error).message}`, evidence);
   }
@@ -59,22 +70,16 @@ assertion('mac.commit-valid', async (ctx) => {
   if (!target.authorKem) fail('the author publishes no #atproto_kem key, so no MAC can be checked', readAuth(repo));
   const { response, mac } = await syncer.commit(target);
   if (response.status !== 200) fail(`getLatestCommit answered ${response.status}`, { status: response.status });
+  requireMacHeader(mac);
   commitOrFail(response.body?.commit);
   if (!mac.verified) fail(`the commit MAC doesn't verify: ${mac.reason}`, { ...readAuth(repo), header: mac.header ?? null, commit: JSON.stringify(response.body?.commit).slice(0, 1000) });
 });
 
-assertion('mac.commit-bound-to-repo', async (ctx) => {
-  const repo = await repoWithRecord(ctx);
-  const { syncer, target } = await syncerFor(repo);
-  if (!target.authorKem) fail('the author publishes no #atproto_kem key, so no MAC can be checked', readAuth(repo));
-  // Control: with the author's key the MAC verifies. Without that, a non-verifying MAC below proves nothing.
-  const control = await syncer.commit(target);
-  if (control.response.status !== 200) fail(`getLatestCommit answered ${control.response.status}`, { status: control.response.status });
-  commitOrFail(control.response.body?.commit);
-  if (!control.mac.verified) fail(`the MAC doesn't verify even against the author's own key (${control.mac.reason}), so binding can't be shown`, readAuth(repo));
-  // Another account's KEM key: the host must still use the author's, so this MAC must not verify.
-  const other = generate('p256');
-  const wrong = await syncer.commit({ ...target, authorKem: other });
-  if (!wrong.mac.header) fail('no Atproto-Space-Mac for the second request', readAuth(repo));
-  if (wrong.mac.verified) fail('a MAC keyed to another account\'s KEM key verified: the host did not use the author\'s key', { ...readAuth(repo), header: wrong.mac.header ?? null });
+// A real check reads the author's repo as another account (caller != author)
+// and verifies the MAC against the author's #atproto_kem, not the caller's.
+// Reading as a non-author needs a space credential (phase 7). Asking for a MAC
+// keyed to some other key, as the author, proves nothing: the host never sees
+// that key, so such a MAC can never verify.
+assertion('mac.commit-bound-to-repo', async () => {
+  throw new SetupError('non-author reader', new Error('precondition: needs a reader who is not the author, which needs the space-credential path (phase 7)'));
 });
