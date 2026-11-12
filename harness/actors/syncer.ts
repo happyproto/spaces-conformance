@@ -20,8 +20,11 @@ export interface Target {
   repoHost: string;
   space: string;
   repo: string;
-  /** The author's #atproto_kem key, from their DID document. */
-  authorKem: PublicKey;
+  /**
+   * The author's #atproto_kem key, from their DID document. Without one the
+   * syncer sends no Atproto-Space-Want-Mac, and every MAC check says why.
+   */
+  authorKem?: PublicKey;
 }
 
 export interface Commit {
@@ -62,9 +65,10 @@ export function parseCommit(c: unknown): Commit | null {
  * this request. The header's type and ver must be the ones the request asked
  * for (#authenticity-headers); the syncer always asks for ver=1.
  */
-export function checkCommitMac(r: HttpResponse, commit: Commit | null, sharedSecret: Uint8Array, requestedVer = 1): MacCheck {
+export function checkCommitMac(r: HttpResponse, commit: Commit | null, sharedSecret: Uint8Array | undefined, requestedVer = 1): MacCheck {
   const header = r.headers.get('atproto-space-mac') ?? undefined;
   const vary = (r.headers.get('vary') ?? '').toLowerCase().split(',').map((s) => s.trim()).includes('atproto-space-want-mac');
+  if (!sharedSecret) return { present: !!header, verified: false, reason: 'the author publishes no #atproto_kem key, so no MAC was requested', vary, header };
   if (!header) return { present: false, verified: false, reason: 'no Atproto-Space-Mac header', vary };
   if (!commit) return { present: true, verified: false, reason: 'no 0016 commit to check the MAC against', vary, header };
   try {
@@ -84,14 +88,15 @@ export class Syncer {
   }
 
   /** A fresh key share for every request, as #shared-secret requires. */
-  private keyShare(t: Target) {
+  private keyShare(t: Target): { headers: Record<string, string>; secret?: Uint8Array } {
+    if (!t.authorKem) return { headers: {} };
     const eph = generate('p256');
-    return { header: wantMacHeader(REPO_TYPE, 1, eph), secret: syncerSharedSecret(eph, t.authorKem) };
+    return { headers: { 'atproto-space-want-mac': wantMacHeader(REPO_TYPE, 1, eph) }, secret: syncerSharedSecret(eph, t.authorKem) };
   }
 
   async commit(t: Target) {
     const ks = this.keyShare(t);
-    const r = await this.fetch(xrpc(t, 'com.atproto.space.getLatestCommit'), { 'atproto-space-want-mac': ks.header });
+    const r = await this.fetch(xrpc(t, 'com.atproto.space.getLatestCommit'), ks.headers);
     const commit = r.status === 200 ? parseCommit(r.body?.commit) : null;
     return { response: r, commit, mac: checkCommitMac(r, commit, ks.secret) };
   }
@@ -108,7 +113,7 @@ export class Syncer {
       if (opts.limit) params.limit = String(opts.limit);
       if (cursor) params.cursor = cursor;
       const ks = this.keyShare(t);
-      const r = await this.fetch(xrpc(t, 'com.atproto.space.listRepoOps', params), { 'atproto-space-want-mac': ks.header });
+      const r = await this.fetch(xrpc(t, 'com.atproto.space.listRepoOps', params), ks.headers);
       if (r.status !== 200) {
         pages.push({ status: r.status, ops: 0, commit: false, mac: { present: false, verified: false, vary: false } });
         return { ops, pages, final, error: { status: r.status, body: r.body } };
@@ -144,7 +149,7 @@ export class Syncer {
 
   async archive(t: Target) {
     const ks = this.keyShare(t);
-    const r = await this.fetch(xrpc(t, 'com.atproto.space.getRepo'), { 'atproto-space-want-mac': ks.header, accept: 'application/vnd.atproto.star' });
+    const r = await this.fetch(xrpc(t, 'com.atproto.space.getRepo'), { ...ks.headers, accept: 'application/vnd.atproto.star' });
     if (r.status !== 200) return { response: r, error: `getRepo answered ${r.status}` };
     let check;
     try {
