@@ -3,12 +3,15 @@
 //   node cli/run.ts reference                 run every suite, then tear down
 //   node cli/run.ts happyview --keep          leave the stack up afterwards
 //   node cli/run.ts pdsjs --suites digest,records --deviations path.yaml
+//   node cli/run.ts zds --setup-mode oct29    space creation through Oct 29 createSpace
 //
 // It brings up base + the implementation's fragment (+ its partner's), runs
 // the implementation's bootstrap.sh if it has one, runs the suites inside the
 // harness container, and writes results-local/<run-id>.json. A run with any
 // `error` result, or whose stack or bootstrap failed, is rerun once on a fresh
-// stack. The second attempt stands, but it keeps the first attempt's failing
+// stack. --setup-mode picks how spaces are created (oct29, simplespace or
+// auto; default: the manifest's spaces.create), and the run records it as
+// setup_mode. The second attempt stands, but it keeps the first attempt's failing
 // ids, and a fail-to-pass flip is marked flaky (it warns, never gates). Two
 // infrastructure failures in a row exit 3 with the step that failed.
 
@@ -31,14 +34,23 @@ const { values, positionals } = parseArgs({
     deviations: { type: 'string' },
     kind: { type: 'string', default: 'local' },
     'no-retry': { type: 'boolean', default: false },
+    'setup-mode': { type: 'string' },
   },
 });
 const impl = positionals[0];
 if (!impl) {
-  console.error('usage: node cli/run.ts <implementation> [--keep] [--suites a,b] [--deviations file] [--kind local]');
+  console.error('usage: node cli/run.ts <implementation> [--keep] [--suites a,b] [--deviations file] [--setup-mode oct29|simplespace|auto] [--kind local]');
   process.exit(2);
 }
 const manifest = loadManifest(join(ROOT, 'implementations', impl, 'manifest.yaml'));
+const setupMode = values['setup-mode'];
+if (setupMode) {
+  const modes = manifest.spaces.modes ?? [manifest.spaces.create];
+  if (!modes.includes(setupMode)) {
+    console.error(`${impl}'s adapter supports setup modes ${modes.join(', ')}, not ${setupMode}`);
+    process.exit(2);
+  }
+}
 const pins = Object.fromEntries(
   readFileSync(join(ROOT, 'pins', 'images.env'), 'utf8')
     .split('\n')
@@ -106,6 +118,7 @@ function attempt(n: number): Outcome {
       CONFORMANCE_PEERS: JSON.stringify(peers),
       SUITE_COMMIT: suiteCommit,
       ...(values.suites ? { CONFORMANCE_SUITES: values.suites } : {}),
+      ...(setupMode ? { CONFORMANCE_SPACES_MODE: setupMode } : {}),
       ...(deviations ? { CONFORMANCE_DEVIATIONS: `/suite/${deviations}` } : {}),
       ...(process.env.CONFORMANCE_CI_URL ? { CONFORMANCE_CI_URL: process.env.CONFORMANCE_CI_URL } : {}),
     };

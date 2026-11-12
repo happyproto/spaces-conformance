@@ -21,6 +21,8 @@ export interface Manifest {
   bootstrap?: string;
   image: { repository: string; pin: string };
   accounts: { mode: string; partner?: string; write_auth: string };
+  /** create is the default setup mode; modes lists every one the adapter supports (cli/run.ts --setup-mode). */
+  spaces: { authority?: string; create: string; modes?: string[] };
   deviations?: string | { repo: string; path: string };
   [key: string]: unknown;
 }
@@ -68,6 +70,7 @@ export function validateManifest(data: unknown, file: string, opts: { revisions:
   if (!opts.pins.has(m.image.pin)) at(`image.pin ${m.image.pin} has no line in pins/images.env`);
   if (!existsSync(join(dir, m.compose))) at(`compose file ${m.compose} doesn't exist`);
   if (m.accounts.partner && !opts.ids.has(m.accounts.partner)) at(`accounts.partner ${m.accounts.partner} is not an implementation`);
+  if (m.spaces.modes && !m.spaces.modes.includes(m.spaces.create)) at(`spaces.create ${m.spaces.create} is not in spaces.modes`);
   if (m.profile === 'bespoke-space-host' && m.roles.includes('pds')) at('a bespoke-space-host does not claim the pds role');
   if (typeof m.deviations === 'string' && !existsSync(join(dir, m.deviations))) at(`deviations file ${m.deviations} doesn't exist`);
   return problems;

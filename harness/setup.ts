@@ -1,7 +1,8 @@
 // Shared setup for adapters (ungraded, design ch. 3.1). Account creation,
-// password sessions and space creation in the two lifecycles the pinned
-// images serve: Oct 29 com.atproto.space.createSpace and the Oct 22
-// com.atproto.simplespace.createSpace.
+// password sessions and space creation in either lifecycle: the Oct 29
+// com.atproto.space.createSpace or the Oct 22
+// com.atproto.simplespace.createSpace. (On Nov 11 every pinned PDS image
+// served only the Oct 22 method.)
 //
 // The spaces mode comes from CONFORMANCE_SPACES_MODE (cli/run.ts
 // --setup-mode), else the manifest's spaces.create. `auto` asks the host for
@@ -23,7 +24,7 @@ export const SPACES_MODES: readonly SpacesMode[] = ['oct29', 'simplespace', 'aut
 
 /** The mode this run asked for: --setup-mode, else the manifest's default. */
 export function requestedMode(manifest: Manifest, env = process.env): SpacesMode {
-  const m = (env.CONFORMANCE_SPACES_MODE ?? (manifest.spaces as { create: string }).create) as SpacesMode;
+  const m = (env.CONFORMANCE_SPACES_MODE ?? manifest.spaces.create) as SpacesMode;
   if (!SPACES_MODES.includes(m)) throw new Error(`spaces mode ${m} is not one of ${SPACES_MODES.join(', ')}`);
   return m;
 }
