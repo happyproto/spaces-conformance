@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { HARNESS_DID, MANAGING_APP_SERVICE, Resolver, SYNCER_SERVICE, verifyServiceAuth } from '../harness/actors/identity.ts';
 import type { DidDocument, Plc } from '../harness/actors/plc.ts';
 import { Receiver } from '../harness/actors/receiver.ts';
-import { Syncer } from '../harness/actors/syncer.ts';
+import { checkCommitMac, Syncer } from '../harness/actors/syncer.ts';
 import { b64, hex } from '../harness/crypto/bytes.ts';
 import { recordCid, encode, fromLexJson } from '../harness/crypto/drisl.ts';
 import { signJwt } from '../harness/crypto/jwt.ts';
@@ -63,6 +63,17 @@ async function listen(s: Server) {
   await new Promise<void>((r) => s.listen(0, '127.0.0.1', r));
   return `http://127.0.0.1:${(s.address() as AddressInfo).port}`;
 }
+
+describe('checkCommitMac', () => {
+  it('requires the ver the request asked for, not the commit\'s own', () => {
+    const secret = new Uint8Array(32).fill(7);
+    const commit = { ver: 1, repo: REPO, space: SPACE, rev: '3mzu00000002', data: new Uint8Array(32) };
+    const resp = (ver: number) => ({ status: 200, headers: new Headers({ 'atproto-space-mac': macHeader('atproto-space-repo', ver, commitMac(secret, commit)) }), body: {}, bytes: new Uint8Array() });
+    expect(checkCommitMac(resp(1), commit, secret)).toMatchObject({ verified: true });
+    expect(checkCommitMac(resp(2), commit, secret)).toMatchObject({ verified: false, reason: expect.stringMatching(/ver 2/) });
+    expect(checkCommitMac(resp(2), { ...commit, ver: 2 }, secret)).toMatchObject({ verified: false });
+  });
+});
 
 describe('syncer', () => {
   const kem = generate('p256');
@@ -146,6 +157,12 @@ describe('service auth and the receiver', () => {
     expect((await verifyServiceAuth(undefined, want, resolver)).reason).toMatch(/no Bearer/);
   });
 
+  it('reports the token\'s lxm and aud forms', async () => {
+    const want = { aud: SYNCER_SERVICE, lxm: 'com.atproto.space.notifyWrite' };
+    expect(await verifyServiceAuth(`Bearer ${token({})}`, want, resolver)).toMatchObject({ ok: true, lxm_present: true, aud_form: 'did#service' });
+    expect(await verifyServiceAuth(`Bearer ${token({ aud: HARNESS_DID, lxm: undefined })}`, want, resolver)).toMatchObject({ ok: true, lxm_present: false, aud_form: 'did' });
+  });
+
   let rx: Receiver, url: string;
   beforeAll(async () => {
     rx = new Receiver(resolver);
@@ -189,6 +206,13 @@ describe('service auth and the receiver', () => {
     expect((await ask('did:plc:member', 'write')).body).toEqual({ authorized: false });
     const e = await rx.waitFor((x) => x.method === 'com.atproto.managedspace.checkUserAccess' && x.input.access === 'write');
     expect(e.auth.ok).toBe(true);
+  });
+
+  it('waitFor from a mark ignores earlier events', async () => {
+    const from = rx.mark();
+    await expect(rx.waitFor((x) => x.method === 'com.atproto.space.notifyWrite', 50, from)).rejects.toThrow(/within 50 ms/);
+    await post('com.atproto.space.notifyWrite', { space: SPACE, repo: REPO, repoRev: '3mzu00000003' });
+    expect((await rx.waitFor((x) => x.method === 'com.atproto.space.notifyWrite', 1000, from)).input.repoRev).toBe('3mzu00000003');
   });
 
   it('times out waiting for an event that never comes', async () => {

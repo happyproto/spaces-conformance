@@ -99,9 +99,19 @@ export class Receiver {
     await new Promise<void>((r) => this.server!.listen(port, host, r));
   }
 
-  /** Resolve with the first event (already received or future) matching pred, or reject after timeoutMs. */
-  waitFor(pred: (e: Received) => boolean, timeoutMs = 15_000): Promise<Received> {
-    const hit = this.events.find(pred);
+  /** A position in the event log, to pass as waitFor's `from`. */
+  mark(): number {
+    return this.events.length;
+  }
+
+  /**
+   * Resolve with the first event matching pred, or reject after timeoutMs.
+   * The receiver lives for the whole run, so events from earlier tests are
+   * still here: pass `from` (a mark() taken before the action) to look only at
+   * later events, or make pred specific to this test's space and repo.
+   */
+  waitFor(pred: (e: Received) => boolean, timeoutMs = 15_000, from = 0): Promise<Received> {
+    const hit = this.events.slice(from).find(pred);
     if (hit) return Promise.resolve(hit);
     return new Promise((resolve, reject) => {
       const w = { pred, resolve };

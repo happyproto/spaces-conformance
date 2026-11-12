@@ -40,6 +40,11 @@ jobs:
       - name: Type check
         run: bun run typecheck
 
+      # First, so a broken primitive shows as itself rather than as a
+      # downstream failure.
+      - name: Crypto vectors
+        run: bun x vitest run test/vectors.test.ts
+
       - name: Unit tests
         run: bun run test
 

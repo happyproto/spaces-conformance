@@ -57,15 +57,19 @@ export function parseCommit(c: unknown): Commit | null {
   }
 }
 
-/** Check a response's MAC header against `commit`, with the shared secret for this request. */
-export function checkCommitMac(r: HttpResponse, commit: Commit | null, sharedSecret: Uint8Array): MacCheck {
+/**
+ * Check a response's MAC header against `commit`, with the shared secret for
+ * this request. The header's type and ver must be the ones the request asked
+ * for (#authenticity-headers); the syncer always asks for ver=1.
+ */
+export function checkCommitMac(r: HttpResponse, commit: Commit | null, sharedSecret: Uint8Array, requestedVer = 1): MacCheck {
   const header = r.headers.get('atproto-space-mac') ?? undefined;
   const vary = (r.headers.get('vary') ?? '').toLowerCase().split(',').map((s) => s.trim()).includes('atproto-space-want-mac');
   if (!header) return { present: false, verified: false, reason: 'no Atproto-Space-Mac header', vary };
   if (!commit) return { present: true, verified: false, reason: 'no 0016 commit to check the MAC against', vary, header };
   try {
     const m = parseMacHeader(header);
-    if (m.type !== REPO_TYPE || m.ver !== commit.ver) return { present: true, verified: false, reason: `MAC type ${m.type} ver ${m.ver} doesn't match the request`, vary, header };
+    if (m.type !== REPO_TYPE || m.ver !== requestedVer) return { present: true, verified: false, reason: `MAC type ${m.type} ver ${m.ver} doesn't match the request`, vary, header };
     const ok = macEquals(commitMac(sharedSecret, commit), m.mac);
     return { present: true, verified: ok, reason: ok ? undefined : 'MAC does not verify', vary, header };
   } catch (e) {

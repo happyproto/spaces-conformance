@@ -48,6 +48,10 @@ export interface ServiceAuthCheck {
   reason?: string;
   iss?: string;
   claims?: Record<string, unknown>;
+  /** Whether the token names its method. 0016 doesn't require lxm here, so a missing one is accepted but visible. */
+  lxm_present?: boolean;
+  /** Which form of `aud` the token used: the bare DID, or DID#service. */
+  aud_form?: 'did' | 'did#service';
 }
 
 /**
@@ -67,17 +71,18 @@ export async function verifyServiceAuth(authorization: string | undefined, want:
   const c = jwt.payload;
   const iss = String(c.iss ?? '');
   const audOk = c.aud === want.aud || c.aud === want.aud.split('#')[0];
-  if (!audOk) return { ok: false, reason: `aud ${String(c.aud)} is not ${want.aud}`, iss, claims: c };
-  if (c.lxm !== undefined && c.lxm !== want.lxm) return { ok: false, reason: `lxm ${String(c.lxm)} is not ${want.lxm}`, iss, claims: c };
-  if (typeof c.exp !== 'number' || c.exp * 1000 < Date.now()) return { ok: false, reason: 'expired or no exp', iss, claims: c };
+  const shape = { lxm_present: c.lxm !== undefined, ...(audOk ? { aud_form: (String(c.aud).includes('#') ? 'did#service' : 'did') as ServiceAuthCheck['aud_form'] } : {}) };
+  if (!audOk) return { ok: false, reason: `aud ${String(c.aud)} is not ${want.aud}`, iss, claims: c, ...shape };
+  if (c.lxm !== undefined && c.lxm !== want.lxm) return { ok: false, reason: `lxm ${String(c.lxm)} is not ${want.lxm}`, iss, claims: c, ...shape };
+  if (typeof c.exp !== 'number' || c.exp * 1000 < Date.now()) return { ok: false, reason: 'expired or no exp', iss, claims: c, ...shape };
   const issDid = iss.split('#')[0];
   let key;
   try {
     key = verificationKey(await resolver.resolve(issDid), 'atproto');
     if (!key || !verifyJwt(jwt, key)) key = verificationKey(await resolver.resolve(issDid, true), 'atproto'); // key rotation
   } catch (e) {
-    return { ok: false, reason: `can't resolve ${issDid}: ${(e as Error).message}`, iss, claims: c };
+    return { ok: false, reason: `can't resolve ${issDid}: ${(e as Error).message}`, iss, claims: c, ...shape };
   }
-  if (!key) return { ok: false, reason: `${issDid} has no #atproto key`, iss, claims: c };
-  return verifyJwt(jwt, key) ? { ok: true, iss, claims: c } : { ok: false, reason: `signature doesn't verify against ${issDid}#atproto`, iss, claims: c };
+  if (!key) return { ok: false, reason: `${issDid} has no #atproto key`, iss, claims: c, ...shape };
+  return verifyJwt(jwt, key) ? { ok: true, iss, claims: c, ...shape } : { ok: false, reason: `signature doesn't verify against ${issDid}#atproto`, iss, claims: c, ...shape };
 }
