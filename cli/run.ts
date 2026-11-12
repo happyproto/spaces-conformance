@@ -117,7 +117,12 @@ function attempt(n: number): Outcome {
     if (!values.keep) dc(['down', '-v'], { stdio: 'pipe' });
   }
   const out = join(ROOT, 'results-local', `${runId}.json`);
-  if (!existsSync(out)) return { kind: 'infrastructure', runId, step: 'harness: no valid results file was written (see the .invalid.json, if any)' };
+  if (!existsSync(out)) {
+    const bad = join(ROOT, 'results-local', `${runId}.invalid.json`);
+    return existsSync(bad)
+      ? { kind: 'infrastructure', runId, step: `harness: results failed validation (${bad})` }
+      : { kind: 'infrastructure', runId, step: 'harness: no results file was written (the reporter did not run)' };
+  }
   const file = JSON.parse(readFileSync(out, 'utf8'));
   const problems = validateResults(file, out, loadCatalogue(join(ROOT, 'spec', 'assertions.yaml')));
   if (problems.length) return { kind: 'infrastructure', runId, step: `harness: results failed validation: ${problems.map(formatProblem).join('; ')}` };

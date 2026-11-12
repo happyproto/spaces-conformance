@@ -6,6 +6,7 @@
 //   - A throw from setup(), or from anything before fn's own checks: error.
 //   - A failed check (fail(), or a Vitest expect): fail, with evidence.
 
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { appendFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'vitest';
@@ -13,6 +14,9 @@ import { type RunContext, runContext } from './context.ts';
 import { notApplicable } from './manifest.ts';
 import { EVIDENCE_LIMIT } from './results.ts';
 import { ROOT } from './schema.ts';
+import { ASSERTION_DEADLINE_MS, SETUP_TIMEOUT_MS } from './timeouts.ts';
+
+export { ASSERTION_DEADLINE_MS, SETUP_TIMEOUT_MS };
 
 export interface RawResult {
   id: string;
@@ -48,12 +52,41 @@ export const fail = (message: string, evidence?: Record<string, unknown>): never
   throw new AssertionFailure(message, evidence);
 };
 
-/** Run a setup step; any throw becomes a SetupError. */
-export async function setup<T>(step: string, fn: () => Promise<T> | T): Promise<T> {
+/** The assertion whose test is running, so setup() can mark its steps. */
+const current = new AsyncLocalStorage<string>();
+
+/** Setup steps open right now, per assertion id, in start order. */
+const openSteps = new Map<string, string[]>();
+/** Mark a setup step's start and end: in memory for runAssertion(), on disk for reconcile(). */
+function mark(phase: 'start' | 'end', step: string) {
+  const id = current.getStore();
+  if (!id) return;
+  const open = openSteps.get(id) ?? [];
+  if (phase === 'start') open.push(step);
+  else {
+    const i = open.lastIndexOf(step);
+    if (i >= 0) open.splice(i, 1);
+  }
+  openSteps.set(id, open);
+  const dir = rawDir();
+  mkdirSync(dir, { recursive: true });
+  appendFileSync(join(dir, `${process.pid}.setup.jsonl`), `${JSON.stringify({ id, step, phase })}\n`);
+}
+
+/** Run a setup step: a throw, or running past SETUP_TIMEOUT_MS, becomes a SetupError. */
+export async function setup<T>(step: string, fn: () => Promise<T> | T, timeoutMs = SETUP_TIMEOUT_MS): Promise<T> {
+  mark('start', step);
+  let timer: NodeJS.Timeout | undefined;
   try {
-    return await fn();
+    const deadline = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`still running after ${timeoutMs} ms`)), timeoutMs);
+    });
+    return await Promise.race([Promise.resolve().then(fn), deadline]);
   } catch (e) {
     throw e instanceof SetupError ? e : new SetupError(step, e);
+  } finally {
+    clearTimeout(timer);
+    mark('end', step);
   }
 }
 
@@ -84,6 +117,47 @@ export function capEvidence(e: Record<string, unknown>): Record<string, unknown>
   return out;
 }
 
+/** Thrown when an assertion outlasts ASSERTION_DEADLINE_MS, after its result is recorded. */
+export class DeadlineExceeded extends Error {}
+
+/**
+ * Run one applicable assertion and record its result. Past `deadlineMs` it
+ * records at once: `error` if a setup step is open (ungraded), else `fail`
+ * (the host was too slow). The orphaned fn may finish later, but nothing
+ * records it: only the race's winner reaches a record() call. Setup steps are
+ * deadlined below this (harness/timeouts.ts), and this below Vitest's timeout.
+ */
+export function runAssertion<C>(id: string, suite: string, ctx: C, fn: (ctx: C) => Promise<void | string>, deadlineMs = ASSERTION_DEADLINE_MS): Promise<void> {
+  return current.run(id, async () => {
+    const start = Date.now();
+    let timer: NodeJS.Timeout | undefined;
+    const deadline = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        const step = openSteps.get(id)?.at(-1);
+        const message = step
+          ? `ran past ${deadlineMs} ms during setup step ${step}`
+          : `ran past ${deadlineMs} ms with no setup step open`;
+        record({ id, suite, status: step ? 'error' : 'fail', ms: Date.now() - start, message, ...(step ? { evidence: { step } } : {}) });
+        reject(new DeadlineExceeded(message));
+      }, deadlineMs);
+    });
+    try {
+      const observed = await Promise.race([fn(ctx), deadline]);
+      record({ id, suite, status: 'pass', ms: Date.now() - start, ...(observed ? { message: observed } : {}) });
+    } catch (e) {
+      if (e instanceof DeadlineExceeded) throw e;
+      const ms = Date.now() - start;
+      const err = e as Error & { evidence?: Record<string, unknown> };
+      const status = e instanceof SetupError ? 'error' : 'fail';
+      const evidence = err.evidence ?? (e instanceof SetupError ? { step: e.step } : undefined);
+      record({ id, suite, status, ms, message: err.message.slice(0, 500), evidence: evidence && capEvidence(evidence) });
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
+  });
+}
+
 /** fn may return a string: the observation, recorded as the result message (how info rows report). */
 export function assertion(id: string, fn: (ctx: RunContext) => Promise<void | string>) {
   test(id, async (t) => {
@@ -96,17 +170,6 @@ export function assertion(id: string, fn: (ctx: RunContext) => Promise<void | st
       t.skip(reason);
       return;
     }
-    const start = Date.now();
-    try {
-      const observed = await fn(ctx);
-      record({ id, suite: a.suite, status: 'pass', ms: Date.now() - start, ...(observed ? { message: observed } : {}) });
-    } catch (e) {
-      const ms = Date.now() - start;
-      const err = e as Error & { evidence?: Record<string, unknown> };
-      const status = e instanceof SetupError ? 'error' : 'fail';
-      const evidence = err.evidence ?? (e instanceof SetupError ? { step: e.step } : undefined);
-      record({ id, suite: a.suite, status, ms, message: err.message.slice(0, 500), evidence: evidence && capEvidence(evidence) });
-      throw e;
-    }
+    await runAssertion(id, a.suite, ctx, fn);
   });
 }

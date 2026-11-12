@@ -29,9 +29,24 @@ import { judgeAll } from './verdict.ts';
 export function readRaw(dir = rawDir()): RawResult[] {
   if (!existsSync(dir)) return [];
   const out: RawResult[] = [];
-  for (const f of readdirSync(dir).filter((f) => f.endsWith('.jsonl')).sort())
+  for (const f of readdirSync(dir).filter((f) => f.endsWith('.jsonl') && !f.endsWith('.setup.jsonl')).sort())
     for (const line of readFileSync(join(dir, f), 'utf8').split('\n').filter(Boolean)) out.push(JSON.parse(line));
   return out;
+}
+
+/** Setup steps each assertion started but never finished, from setup()'s markers. */
+export function openSetupSteps(dir = rawDir()): Map<string, string> {
+  const open = new Map<string, string[]>();
+  if (!existsSync(dir)) return new Map();
+  for (const f of readdirSync(dir).filter((f) => f.endsWith('.setup.jsonl')).sort())
+    for (const line of readFileSync(join(dir, f), 'utf8').split('\n').filter(Boolean)) {
+      const m: { id: string; step: string; phase: 'start' | 'end' } = JSON.parse(line);
+      const steps = open.get(m.id) ?? [];
+      if (m.phase === 'start') steps.push(m.step);
+      else steps.splice(steps.lastIndexOf(m.step), 1);
+      open.set(m.id, steps);
+    }
+  return new Map([...open].filter(([, s]) => s.length).map(([id, s]) => [id, s[s.length - 1]]));
 }
 
 /** What Vitest says happened to one test, keyed by test name (the assertion id). */
@@ -58,6 +73,7 @@ export function reconcile(
   moduleErrors: Map<string, string>,
   skipReason: (id: string) => string | null,
   suiteOf: (id: string) => string,
+  openSetup: Map<string, string> = new Map(),
 ): RawResult[] {
   const byId = new Map<string, RawResult>();
   const dupes = new Set<string>();
@@ -77,7 +93,10 @@ export function reconcile(
     }
     if (c?.state === 'failed' && (!rec || rec.status === 'pass' || rec.status === 'skip')) {
       const msg = c.errors.join('; ').slice(0, 500) || 'the test failed without recording a result';
-      out.push({ id, suite, status: TIMEOUT.test(msg) ? 'fail' : 'error', ms: rec?.ms, message: msg });
+      const step = openSetup.get(id);
+      // A timeout is the host's fault (fail) unless it hit during ungraded setup.
+      if (step) out.push({ id, suite, status: 'error', ms: rec?.ms, message: `timed out during setup step ${step}: ${msg}`.slice(0, 500), evidence: { step } });
+      else out.push({ id, suite, status: TIMEOUT.test(msg) ? 'fail' : 'error', ms: rec?.ms, message: msg });
       continue;
     }
     if (rec) {
@@ -175,6 +194,7 @@ export default class ConformanceReporter implements Reporter {
         return a ? notApplicable(a, manifest) : null;
       },
       (id) => byId.get(id)?.suite ?? 'records',
+      openSetupSteps(),
     );
     const file = assemble(env, adapter.setupMode, results);
     const problems = validateResults(file, 'results', catalogue);
@@ -182,10 +202,10 @@ export default class ConformanceReporter implements Reporter {
     mkdirSync(outDir, { recursive: true });
     if (problems.length) {
       // Never leave an invalid file where verdict or the site would read it.
+      // Vitest exits 1 regardless; cli/run.ts finds the .invalid.json and names the step.
       const bad = join(outDir, `${env.CONFORMANCE_RUN_ID}.invalid.json`);
       writeFileSync(bad, `${JSON.stringify(file, null, 2)}\n`);
       for (const p of problems) console.error(formatProblem(p));
-      process.exitCode = 3;
       throw new Error(`results failed validation (${problems.length} problems); wrote ${bad}`);
     }
     const out = join(outDir, `${env.CONFORMANCE_RUN_ID}.json`);

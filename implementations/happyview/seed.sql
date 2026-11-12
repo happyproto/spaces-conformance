@@ -1,12 +1,8 @@
 -- HappyView bootstrap: ungraded setup, recorded as setup_mode.bootstrap.
--- Applied once /health answers (migrations have run). HappyView reads feature
--- flags from the database per request, so no restart is needed.
+-- Applied once /health answers (migrations have run). Spaces are switched on
+-- by FEATURE_SPACES_ENABLED in compose.yml; this only registers the
+-- harness's API client, which has no env path.
 -- psql variables: client_id (loopback OAuth client id), scopes, secret.
-
--- TODO(HAP-415): drop this row once HappyView has an env var for spaces.
-INSERT INTO happyview_instance_settings (key, value)
-VALUES ('feature.spaces_enabled', 'true')
-ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 
 -- The harness's API client. A loopback client id, so no metadata document
 -- has to be hosted: pds.js generates it from the id's query.

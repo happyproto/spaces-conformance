@@ -4,7 +4,11 @@ import type { RawResult } from '../harness/assert.ts';
 import { capEvidence } from '../harness/assert.ts';
 import { loadCatalogue } from '../harness/catalogue.ts';
 import { vectorStatus } from '../harness/provisional.ts';
-import { assemble, reconcile } from '../harness/reporter.ts';
+import { assemble, openSetupSteps, readRaw, reconcile } from '../harness/reporter.ts';
+import { DeadlineExceeded, fail, runAssertion, setup, SetupError } from '../harness/assert.ts';
+import { checkTimeouts } from '../harness/timeouts.ts';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { declaredAssertions } from '../harness/coverage.ts';
 import { validateResults } from '../harness/results.ts';
 import { ROOT } from '../harness/schema.ts';
@@ -65,6 +69,133 @@ describe('reconciling Vitest with the raw records', () => {
     expect(out.get('b.lost')).toMatchObject({ status: 'error', message: expect.stringMatching(/b\.test\.ts failed to load: SyntaxError/) }));
   it('records an unrun but inapplicable assertion as skip', () => expect(out.get('b.notapplicable')).toMatchObject({ status: 'skip' }));
   it('turns a duplicate record into error', () => expect(out.get('c.twice')).toMatchObject({ status: 'error', message: 'recorded more than once in one run' }));
+});
+
+describe('setup hangs', () => {
+  it('a setup step past its deadline throws SetupError, so it records error', async () => {
+    const hung = setup('createAccount', () => new Promise(() => {}), 20);
+    await expect(hung).rejects.toBeInstanceOf(SetupError);
+    await expect(setup('fine', async () => 7, 1000)).resolves.toBe(7);
+  });
+
+  it('steps that each fit but together outlast the deadline record error, and the next test is unaffected', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'raw-'));
+    const prev = process.env.CONFORMANCE_RAW_DIR;
+    process.env.CONFORMANCE_RAW_DIR = dir;
+    try {
+      const step = (ms: number) => () => new Promise<void>((r) => setTimeout(r, ms));
+      let finished = false;
+      const slow = runAssertion('a.slow', 'x', {}, async () => {
+        for (const n of [1, 2, 3]) await setup(`step ${n}`, step(350), 1000);
+        finished = true;
+      }, 900);
+      await expect(slow).rejects.toBeInstanceOf(DeadlineExceeded);
+      await runAssertion('a.next', 'x', {}, async () => {}, 900);
+      // Let the orphaned fn finish: its late pass must not be recorded.
+      await new Promise((r) => setTimeout(r, 400));
+      expect(finished).toBe(true);
+      const recs = readRaw(dir);
+      expect(recs.filter((r) => r.id === 'a.slow')).toEqual([expect.objectContaining({ status: 'error', evidence: { step: 'step 3' } })]);
+      expect(recs.find((r) => r.id === 'a.next')).toMatchObject({ status: 'pass' });
+      const cases = new Map([
+        ['a.slow', { state: 'failed' as const, errors: ['ran past 900 ms during setup step step 3'] }],
+        ['a.next', { state: 'passed' as const, errors: [] }],
+      ]);
+      const out = reconcile(recs, cases, new Map(), new Map(), () => null, () => 'x', openSetupSteps(dir));
+      expect(out.find((r) => r.id === 'a.slow')).toMatchObject({ status: 'error' });
+    } finally {
+      if (prev === undefined) delete process.env.CONFORMANCE_RAW_DIR;
+      else process.env.CONFORMANCE_RAW_DIR = prev;
+    }
+  });
+
+  it('outlasting the deadline with no setup step open is a scored fail', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'raw-'));
+    const prev = process.env.CONFORMANCE_RAW_DIR;
+    process.env.CONFORMANCE_RAW_DIR = dir;
+    try {
+      const slow = runAssertion('a.slowhost', 'x', {}, async () => {
+        await setup('fast', async () => {}, 1000);
+        await new Promise((r) => setTimeout(r, 300));
+      }, 100);
+      await expect(slow).rejects.toBeInstanceOf(DeadlineExceeded);
+      await new Promise((r) => setTimeout(r, 300));
+      expect(readRaw(dir)).toEqual([expect.objectContaining({ id: 'a.slowhost', status: 'fail' })]);
+    } finally {
+      if (prev === undefined) delete process.env.CONFORMANCE_RAW_DIR;
+      else process.env.CONFORMANCE_RAW_DIR = prev;
+    }
+  });
+
+  it('a slow host that finishes after the deadline, either way, leaves exactly one fail', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'raw-'));
+    const prev = process.env.CONFORMANCE_RAW_DIR;
+    process.env.CONFORMANCE_RAW_DIR = dir;
+    try {
+      const late = (outcome: 'resolve' | 'reject') => async () => {
+        await new Promise((r) => setTimeout(r, 200));
+        if (outcome === 'reject') fail('the host answered wrongly, late');
+      };
+      await expect(runAssertion('a.lateok', 'x', {}, late('resolve'), 50)).rejects.toBeInstanceOf(DeadlineExceeded);
+      await expect(runAssertion('a.latebad', 'x', {}, late('reject'), 50)).rejects.toBeInstanceOf(DeadlineExceeded);
+      await new Promise((r) => setTimeout(r, 300));
+      const recs = readRaw(dir);
+      expect(recs.filter((r) => r.id === 'a.lateok')).toEqual([expect.objectContaining({ status: 'fail' })]);
+      expect(recs.filter((r) => r.id === 'a.latebad')).toEqual([expect.objectContaining({ status: 'fail' })]);
+      const out = reconcile(recs, new Map(), new Map(), new Map(), () => null, () => 'x');
+      expect(out.map((r) => r.status)).toEqual(['fail', 'fail']);
+    } finally {
+      if (prev === undefined) delete process.env.CONFORMANCE_RAW_DIR;
+      else process.env.CONFORMANCE_RAW_DIR = prev;
+    }
+  });
+
+  it('a duplicate assertion id in one file still records twice, so reconcile flags it', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'raw-'));
+    const prev = process.env.CONFORMANCE_RAW_DIR;
+    process.env.CONFORMANCE_RAW_DIR = dir;
+    try {
+      await runAssertion('a.twice', 'x', {}, async () => {}, 1000);
+      await runAssertion('a.twice', 'x', {}, async () => {}, 1000);
+      const [r] = reconcile(readRaw(dir), new Map(), new Map(), new Map(), () => null, () => 'x');
+      expect(r).toMatchObject({ id: 'a.twice', status: 'error', message: 'recorded more than once in one run' });
+    } finally {
+      if (prev === undefined) delete process.env.CONFORMANCE_RAW_DIR;
+      else process.env.CONFORMANCE_RAW_DIR = prev;
+    }
+  });
+
+  it('refuses a deadline at or past the test timeout, or a setup timeout at or past the deadline', () => {
+    expect(() => checkTimeouts({ test: 60_000, deadline: 58_000, setup: 45_000 })).not.toThrow();
+    expect(() => checkTimeouts({ test: 60_000, deadline: 60_000, setup: 45_000 })).toThrow(/below the test timeout/);
+    expect(() => checkTimeouts({ test: 30_000, deadline: 58_000, setup: 45_000 })).toThrow(/below the test timeout/);
+    expect(() => checkTimeouts({ test: 60_000, deadline: 40_000, setup: 45_000 })).toThrow(/below the assertion deadline/);
+  });
+
+  it('a test timeout during an open setup step is error, not a scored fail', () => {
+    const cases = new Map([['a.hung', { state: 'failed' as const, errors: ['Test timed out in 60000ms.'] }]]);
+    const declared = new Map([['a.hung', 'suites/x/a.test.ts']]);
+    const [r] = reconcile([], cases, declared, new Map(), () => null, () => 'x', new Map([['a.hung', 'createSpace']]));
+    expect(r).toMatchObject({ status: 'error', message: expect.stringMatching(/during setup step createSpace/), evidence: { step: 'createSpace' } });
+  });
+
+  it('reads open setup steps from the markers', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'raw-'));
+    writeFileSync(
+      join(dir, '1.setup.jsonl'),
+      [
+        { id: 'a', step: 'createAccount', phase: 'start' },
+        { id: 'a', step: 'createAccount', phase: 'end' },
+        { id: 'a', step: 'createSpace', phase: 'start' },
+        { id: 'b', step: 'createAccount', phase: 'start' },
+        { id: 'b', step: 'createAccount', phase: 'end' },
+      ].map((x) => JSON.stringify(x)).join('\n'),
+    );
+    expect([...openSetupSteps(dir)]).toEqual([['a', 'createSpace']]);
+    // Setup markers aren't results.
+    writeFileSync(join(dir, '1.jsonl'), JSON.stringify({ id: 'a', suite: 'x', status: 'pass' }));
+    expect(readRaw(dir).map((r) => r.id)).toEqual(['a']);
+  });
 });
 
 describe('declared assertions', () => {
