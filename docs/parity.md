@@ -14,7 +14,7 @@ This page explains each difference, test by test. The per-test tables map each H
 
 | | HappyView | This suite |
 |---|---|---|
-| Run | [interop.yml run 42557152439](https://github.com/gamesgamesgamesgamesgames/happyview/actions/runs/42557152439), a push to `beta` at `9f084f5c` | `node cli/run.ts <id>` for each implementation, at the commit that adds this page |
+| Run | [interop.yml run 42557152439](https://github.com/gamesgamesgamesgamesgames/happyview/actions/runs/42557152439), a push to `beta` at `9f084f5c` | `node cli/run.ts <id>` for each implementation, at the suite commit each results file records |
 | Result | 42 interop tests and the migration end-to-end test, all passed | per row below |
 | Setup | `simplespace.createSpace`, password sessions | the same: `setup_mode.spaces: simplespace`, `write_auth: password-session` |
 
