@@ -66,21 +66,19 @@ HappyView's `pdsjs_drops_ops_when_a_page_ends_inside_a_batch` pins the same bug 
 
 The tables below show raw results. Scoring also applies the lineage rule (`docs/catalogue.md`): a row that uses harness crypto counts only once it has passed on two implementations whose libraries for that crypto differ.
 
-- **Still provisional, so not scored:** the cause A and B rows that fail everywhere: the digest rows, `oplog.fold-matches-commit`, `records.commit-repo-space-match` and `mac.kem-key-published`.
-  - No implementation passes the first three groups at these pins.
-  - Only pds.js passes `mac.kem-key-published`, and no second implementation has passed it yet.
-  - They show as "fail (provisional)" and only warn in gated CI.
+- **Still provisional, so not scored:** the digest rows and `oplog.fold-matches-commit` (cause A). No implementation passes them at these pins. They show as "fail (provisional)" and only warn in gated CI.
 - **Cleared:** `digest.cid-drisl-plain`, `digest.cid-drisl-typed` and `oplog.pagination-batch-boundary`. Each passed on implementations whose CBOR and LtHash code comes from different libraries.
-- **Scored fails that remain:** five rows that use no harness crypto, so the lineage rule doesn't apply:
-  - `records.commit-fields` and `records.commit-bytes-encoding` (cause A);
+- **Scored fails that remain:** rows that use no harness crypto, so the lineage rule doesn't apply:
+  - `records.commit-fields`, `records.commit-bytes-encoding` and `records.commit-repo-space-match` (cause A);
+  - `mac.kem-key-published` (cause B), except on pds.js, where it passes;
   - the three policy rows (cause D).
 
 | Implementation | pds must | repo-host must | space-host must | Unexpected |
 |---|---|---|---|---|
-| ZDS | 3/6 | 10/12 | 0/3 | 5 |
-| pds.js (deviations applied) | 3/6 | 7/12 | 0/3 | 5 |
-| atproto-pds | 3/6 | 10/12 | 0/3 | 5 |
-| reference | 3/6 | 10/12 | 0/3 | 5 |
+| ZDS | 3/6 | 10/14 | 0/3 | 7 |
+| pds.js (deviations applied) | 3/6 | 8/14 | 0/3 | 6 |
+| atproto-pds | 3/6 | 10/14 | 0/3 | 7 |
+| reference | 3/6 | 10/14 | 0/3 | 7 |
 
 ## Per test
 
