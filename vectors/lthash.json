@@ -52,12 +52,17 @@
       ],
       "digest": "5a7c85a9485926264b43aa96494b794c3f0a8ccc36ccb22030b09d5463b7d88b",
       "sources": [
-        "harness"
+        "harness",
+        "HappyView 9f084f5c spaces::lthash record_element + LtHashState (run)",
+        "atproto#5187 98ef3a6b packages/space formatSetHashElement + LtHash (run)"
       ],
       "cross_check": {
         "area": "lthash",
-        "status": "pending",
-        "against": []
+        "status": "cross-checked",
+        "against": [
+          "HappyView 9f084f5c spaces::lthash record_element + LtHashState (run)",
+          "atproto#5187 98ef3a6b packages/space formatSetHashElement + LtHash (run)"
+        ]
       }
     }
   ],
