@@ -46,7 +46,7 @@ The digest itself agrees. In each digest fail, the evidence compares the old com
 - When a session read gets no `Atproto-Space-Mac`, `mac.commit-header-present` and `mac.commit-valid` record `skip` with a "pending" reason, not a fail. That's what pds.js does.
 - `mac.commit-bound-to-repo` needs a reader who isn't the author. It requires the `harness.credential_reads` capability, so it's not applicable everywhere for now.
 
-Part of HappyView's `a_commit_from_another_repo_does_not_verify_as_ours` checks a 0016 MAC against another account's KEM key. The host never sees that key, so that part can't fail, and the suite doesn't grade it. The test's other half presents Alice's commit as Bob's, a real repo-binding check. That half maps to `records.commit-repo-space-match`. At these pins it checks Bob's signing key against the old signed commit.
+Part of HappyView's `a_commit_from_another_repo_does_not_verify_as_ours` checks a commit against another account's keys. At these pins that's Bob's signing key against the old signed commit. With a 0016 commit, it would be a MAC checked against Bob's KEM key. The host never sees that key, so that part can't fail, and the suite doesn't grade it. The test's other half presents Alice's commit as Bob's, a real repo-binding check. That half maps to `records.commit-repo-space-match`.
 
 **D. 0016's policy methods.** The policy rows grade the Oct 29 methods: `space.getSpace` returning the `policy` object, and `memberspace.putMember`, `listMembers` and `removeMember`. HappyView's tests use the Oct 22 `simplespace.*` methods on these images (on ZDS, its test picks whichever the image serves). None of the four images serves `memberspace.*` or an Oct 29 `getSpace`:
 - `policy.create-get-roundtrip` fails on all four;
