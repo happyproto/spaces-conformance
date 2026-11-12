@@ -165,6 +165,12 @@ describe('manifests', () => {
     expect(p.map((x) => x.message).join()).toMatch(/partner/);
   });
 
+  it('reserves the harness capability namespace', () => {
+    const m = loadManifest(file('zds'));
+    const p = validateManifest({ ...m, capabilities: { ...m.capabilities, harness: { credential_reads: true } } }, file('zds'), { revisions: revKeys, pins, ids });
+    expect(p.map((x) => x.message).join()).toMatch(/property name/);
+  });
+
   it('resolves capability paths through objects and arrays', () => {
     const caps = { policies: ['memberspace', 'managedspace'], repo_host: { foreign_authorities: false }, oauth: { scripted: true } };
     expect(claims(caps, 'policies.managedspace')).toBe(true);

@@ -26,8 +26,9 @@
     "roles": { "type": "array", "items": { "enum": ["repo-host", "space-host", "pds"] }, "minItems": 1, "uniqueItems": true },
     "profile": { "enum": ["pds", "bespoke-space-host"] },
     "capabilities": {
-      "description": "Free-form; matched by an assertion's requires paths.",
+      "description": "Free-form; matched by an assertion's requires paths. The harness.* namespace is reserved for what the harness itself can do, so no implementation may claim it.",
       "type": "object",
+      "propertyNames": { "not": { "const": "harness" } },
       "properties": {
         "policies": { "type": "array", "items": { "enum": ["personalspace", "memberspace", "managedspace"] }, "uniqueItems": true },
         "credentials": {
