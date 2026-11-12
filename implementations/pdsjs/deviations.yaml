@@ -1,3 +1,32 @@
 # Seeded from HappyView's interop pins (design ch. 4.6). Each entry is listed
-# only once a run confirms it isn't a harness bug.
-[]
+# only once a run confirms it isn't a harness bug. Confirmed against
+# PDSJS_IMAGE sha256:1725c1f8d2ce on 2026-11-12.
+
+# One cause: how space record values are encoded (pds.js#4).
+- assertion: digest.cid-drisl-typed
+  cause: space-record-encoding
+  reason: >-
+    createRecord and getRecord return CIDs that differ from DRISL for all four typed
+    fixture records: a $link, a $bytes, and integers past 32 bits. Plain-JSON records
+    match.
+  spec: "#commit-digest"
+  tracking: https://tangled.org/chadtmiller.com/pds.js/issues/4
+  since: "2026-11-12"
+
+# One cause: listRepoOps doesn't follow cursor (pds.js#5).
+- assertion: oplog.pagination-complete
+  cause: oplog-cursor-ignored
+  reason: >-
+    listRepoOps ignores cursor, so following it repeats the first page. The lexicon
+    says cursor takes precedence over since.
+  spec: "#incremental-sync"
+  tracking: https://tangled.org/chadtmiller.com/pds.js/issues/5
+  since: "2026-11-12"
+- assertion: oplog.pagination-batch-boundary
+  cause: oplog-cursor-ignored
+  reason: >-
+    Paging with limit=2 across one three-op applyWrites batch, following cursor,
+    returned m1, m2, m1, m2: the first page twice, and m3 never.
+  spec: "#incremental-sync"
+  tracking: https://tangled.org/chadtmiller.com/pds.js/issues/5
+  since: "2026-11-12"

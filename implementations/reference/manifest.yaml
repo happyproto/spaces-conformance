@@ -10,9 +10,12 @@ spec_revision: "2026-10-29"
 roles: [pds, repo-host, space-host]
 profile: pds
 capabilities:
-  # The pinned image (built 2026-10-01) predates the Oct 29 policy objects:
-  # it serves com.atproto.simplespace.* and no memberspace/managedspace methods.
-  policies: []
+  # Every PDS must serve the three baseline policies (#baseline-policies), so
+  # the reference is graded on them like the other PDSes. The pinned image
+  # (built 2026-10-01) predates the Oct 29 policy objects: it serves
+  # com.atproto.simplespace.* and no memberspace/managedspace methods, so
+  # those rows fail at this pin.
+  policies: [personalspace, memberspace, managedspace]
   repo_host:
     foreign_authorities: true
   oauth:

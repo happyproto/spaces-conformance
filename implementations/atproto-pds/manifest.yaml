@@ -9,7 +9,8 @@ spec_revision: "2026-10-29"
 roles: [pds, repo-host, space-host]
 profile: pds
 capabilities:
-  # Claimed from the spec's baseline; phase 3 confirms each against a run.
+  # The spec's baseline: every PDS must serve these (#baseline-policies).
+  # At the Nov 2026 pin it serves none of the Oct 29 memberspace methods.
   policies: [personalspace, memberspace, managedspace]
   repo_host:
     foreign_authorities: true
