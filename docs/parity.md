@@ -14,7 +14,7 @@ This page explains each difference, test by test. The per-test tables map each H
 
 | | HappyView | This suite |
 |---|---|---|
-| Run | [interop.yml run 42557152439](https://github.com/gamesgamesgamesgamesgames/happyview/actions/runs/42557152439), a push to `beta` at `9f084f5c` | `node cli/run.ts <id>` for each implementation, at the commit that adds this page |
+| Run | [interop.yml run 42557152439](https://github.com/gamesgamesgamesgamesgames/happyview/actions/runs/42557152439), a push to `beta` at `9f084f5c` | `node cli/run.ts <id>` for each implementation, at the suite commit each results file records |
 | Result | 42 interop tests and the migration end-to-end test, all passed | per row below |
 | Setup | `simplespace.createSpace`, password sessions | the same: `setup_mode.spaces: simplespace`, `write_auth: password-session` |
 
@@ -61,6 +61,24 @@ Every PDS must serve the three baseline policies (`#baseline-policies`), so all 
 HappyView's `pdsjs_drops_ops_when_a_page_ends_inside_a_batch` pins the same bug from the other side.
 
 **F. pds.js's typed-record CIDs.** `digest.cid-drisl-typed` fails on pds.js: all four typed fixture records (a `$link`, a `$bytes`, and integers past 32 bits) get CIDs that differ from DRISL. HappyView's `pdsjs_encodes_large_integers_differently_from_the_reference` pins the same divergence. It's a listed deviation, tracked by [pds.js#4](https://tangled.org/chadtmiller.com/pds.js/issues/4).
+
+## How these results are scored
+
+The tables below show raw results. Scoring also applies the lineage rule (`docs/catalogue.md`): a row that uses harness crypto counts only once it has passed on two implementations whose libraries for that crypto differ.
+
+- **Still provisional, so not scored:** the digest rows and `oplog.fold-matches-commit` (cause A). No implementation passes them at these pins. They show as "fail (provisional)" and only warn in gated CI.
+- **Cleared:** `digest.cid-drisl-plain`, `digest.cid-drisl-typed` and `oplog.pagination-batch-boundary`. Each passed on implementations whose CBOR and LtHash code comes from different libraries.
+- **Scored fails that remain:** rows that use no harness crypto, so the lineage rule doesn't apply:
+  - `records.commit-fields`, `records.commit-bytes-encoding` and `records.commit-repo-space-match` (cause A);
+  - `mac.kem-key-published` (cause B), except on pds.js, where it passes;
+  - the three policy rows (cause D).
+
+| Implementation | pds must | repo-host must | space-host must | Unexpected |
+|---|---|---|---|---|
+| ZDS | 3/6 | 10/14 | 0/3 | 7 |
+| pds.js (deviations applied) | 3/6 | 8/14 | 0/3 | 6 |
+| atproto-pds | 3/6 | 10/14 | 0/3 | 7 |
+| reference | 3/6 | 10/14 | 0/3 | 7 |
 
 ## Per test
 

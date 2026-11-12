@@ -20,8 +20,8 @@ Each row ties one check to one sentence of Proposal 0016 at the revision `spec/r
 | `params` | Parameter or input-field names the row relies on. Every listed lexicon must define each one. |
 | `error` | For `xrpc.error.<Name>` rows, the error name. It must equal `<Name>` and be declared by the listed lexicon. |
 | `since`, `until` | Revision keys from `spec/revisions.json`. |
-| `provisional` | Set until two implementations with different lineage pass it. |
-| `areas` | Required on every row. It lists the harness crypto areas the check runs through (`cbor`, `lthash`, `mac`, `httpsig`, `jwt`, `star`), or is `[]` to acknowledge it uses none, so no row can be left unfenced by omission. It can't be empty in the `digest`, `mac` and `export` suites. While any listed area has a pending vector cross-check (`vectors/README.md`), the assertion is provisional. |
+| `provisional` | Marks a row provisional by hand, whatever the evidence. The lineage rule below applies to every row regardless. |
+| `areas` | Required on every row. It lists the harness crypto areas the check runs through (`cbor`, `lthash`, `mac`, `httpsig`, `jwt`, `star`), or is `[]` to acknowledge it uses none, so no row can be left unfenced by omission. It can't be empty in the `digest`, `mac` and `export` suites, unless the row's `no_crypto` says why it uses none. While any listed area has a pending vector cross-check (`vectors/README.md`), the assertion is provisional. After that, it stays provisional until the lineage rule below clears it. |
 
 **Level rule.**
 
@@ -46,6 +46,8 @@ The schema follows design ch. 4.1. The validator also checks these:
 - a `bespoke-space-host` doesn't claim the `pds` role;
 - a local `deviations` file exists.
 
+**Lineage.** `lineage` names, per crypto area (`cbor`, `lthash`, `mac`, `httpsig`, `jwt`, `star`), the library or codebase that implements it in the pinned image. Each value needs a comment citing the file at the image's revision that shows it. Leave out an area the image doesn't implement, or that can't be verified: a missing lineage is unknown.
+
 **Capability paths.** `requires: [policies.managedspace]` holds when `capabilities.policies` is an array containing `managedspace`. `requires: [repo_host.foreign_authorities]` holds when that value is truthy. An assertion doesn't apply when the implementation lacks one of its roles, its profile is excluded, or a required capability isn't claimed. It then shows as *not applicable*.
 
 ## Deviations
@@ -63,6 +65,25 @@ To check a list that lives in another repo, such as HappyView's:
 ```sh
 node cli/validate.ts --deviations ../happyview/interop/conformance-deviations.yaml
 ```
+
+## Independence: the lineage rule
+
+A row with harness crypto (`areas` not empty) is provisional until all of these hold:
+- every area it lists has its vectors cross-checked;
+- it has passed on two implementations;
+- those two declare a lineage for every area the row lists;
+- for each such area, their two lineages differ.
+
+Equal lineage strings count as one, so two hosts built on the same `@atproto/*` package don't clear a row, and an unknown lineage never does. The harness's own vectors don't count as a pass. A row with `areas: []` uses no harness crypto, so this rule doesn't apply to it. A provisional fail shows as "fail (provisional)", isn't scored, and only warns in gated CI. A provisional pass isn't scored either.
+
+The passes come from `evidence/passes.json`, which maps each assertion to the implementations it passed on, plus the results files it was built from:
+- Rebuild it with `node cli/passes.ts <results.json>...`. With no arguments, it rebuilds from the index's current sources.
+- Every source must be a committed results file of a real run, and must validate. Today the sources are `test/fixtures/results/parity-*`.
+- `bun run validate` rebuilds the index from its sources and refuses any difference, so a pass can't be added by hand.
+- Every file in `test/fixtures/results/` must be either a source or listed under `excluded`, with a reason. `cli/passes.ts` keeps the exclusions.
+- Each source records the `assertions_digest` its run used. When that differs from the current catalogue, `bun run validate` names the source. It still counts, because most catalogue edits don't change what a row checks. Rerun the source after changing a row's check.
+
+`harness/independence.ts` implements the rule, and both the reporter and `verdict` apply it.
 
 ## Results
 

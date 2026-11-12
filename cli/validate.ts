@@ -5,6 +5,7 @@
 //   implementations/*/manifest.yaml    schema, pins, compose, partners
 //   implementations/*/deviations.yaml  schema, ids exist, anchors
 //   test/fixtures/results/*.json       results schema (examples of the format)
+//   evidence/passes.json               matches what its source results files rebuild to (design S5)
 //
 // Pass more deviation or results files as arguments, e.g. HappyView's list:
 //   node cli/validate.ts --deviations ../happyview/interop/conformance-deviations.yaml
@@ -17,6 +18,7 @@ import { loadDeviations, validateDeviations } from '../harness/deviations.ts';
 import { loadLexicons } from '../harness/lexicons.ts';
 import { loadManifest, loadPins, validateManifest } from '../harness/manifest.ts';
 import { formatProblem, type Problem } from '../harness/problems.ts';
+import { staleSources, validatePassIndex } from '../harness/independence.ts';
 import { validateResults } from '../harness/results.ts';
 import { ROOT } from '../harness/schema.ts';
 import { anchors, loadRevisions, loadSpecText } from '../harness/spec.ts';
@@ -74,6 +76,12 @@ const resultFiles = [
 ];
 for (const file of resultFiles) problems.push(...validateResults(JSON.parse(readFileSync(file, 'utf8')), rel(file), cat));
 counts.push(`${resultFiles.length} result files`);
+
+problems.push(...validatePassIndex(cat));
+counts.push('the pass index');
+const stale = staleSources();
+if (stale.length)
+  console.log(`note: ${stale.length} pass-index source(s) ran against an older catalogue (${stale.map((s) => s.implementation).join(', ')}); rerun them if a row's check changed since`);
 
 for (const p of problems) console.error(formatProblem(p));
 console.log(`${problems.length ? 'FAIL' : 'ok'}: ${counts.join(', ')}, ${problems.length} problem(s)`);

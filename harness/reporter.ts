@@ -19,6 +19,7 @@ import { type Deviation, loadDeviations } from './deviations.ts';
 import { loadManifest, notApplicable } from './manifest.ts';
 import { declaredAssertions } from './coverage.ts';
 import { formatProblem } from './problems.ts';
+import { loadIndependence } from './independence.ts';
 import { vectorStatus } from './provisional.ts';
 import { validateResults } from './results.ts';
 import { ROOT } from './schema.ts';
@@ -133,6 +134,7 @@ export function assemble(env: NodeJS.ProcessEnv, setupMode: SetupMode, raw: RawR
     new Set(applied.map((d) => d.assertion)),
     vectorStatus(),
     manifest.roles,
+    loadIndependence(),
   );
   return {
     schema: 1,

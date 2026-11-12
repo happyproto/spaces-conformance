@@ -17,6 +17,15 @@ capabilities:
   oauth:
     # The consent form takes the account password and returns JSON.
     scripted: true
+# Per area, from the pinned image's own source (/app, revision ae6afc78):
+# @pdsjs/core has no dependencies, and every area is pds.js's own code.
+#   cbor    packages/core/src (cborEncodeDagCbor)
+#   lthash  packages/spaces/src/lthash.js, with its own blake3.js
+#   mac     packages/spaces/src/mac.js
+#   httpsig packages/spaces/src/http-signature.js
+#   jwt     packages/spaces/src/token.js
+#   star    none: getRepo serves a CAR (packages/spaces/src/car.js), so unknown
+lineage: { cbor: pdsjs, lthash: pdsjs, mac: pdsjs, httpsig: pdsjs, jwt: pdsjs }
 compose: compose.yml
 base_url: http://pdsjs-alice.test
 health: /xrpc/_health

@@ -7,6 +7,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Assertion } from './catalogue.ts';
+import { type Independence, independenceReason } from './independence.ts';
 import { ROOT } from './schema.ts';
 
 export const AREAS = ['cbor', 'lthash', 'mac', 'httpsig', 'jwt', 'star'] as const;
@@ -57,9 +58,15 @@ export function vectorStatus(dir = join(ROOT, 'vectors')): Map<Area, AreaStatus>
   return status;
 }
 
-/** Why an assertion is provisional, or null if it isn't. */
-export function provisionalReason(a: Assertion, status: Map<Area, AreaStatus>): string | null {
+/**
+ * Why an assertion is provisional, or null if it isn't. In order: the
+ * catalogue flag; a vector area still pending; and, given the independence
+ * evidence (harness/independence.ts), no pass yet on two implementations of
+ * differing lineage (design S5).
+ */
+export function provisionalReason(a: Assertion, status: Map<Area, AreaStatus>, independence?: Independence): string | null {
   if (a.provisional) return 'flagged provisional in the catalogue';
   const pending = (a.areas ?? []).filter((x) => status.get(x)?.pending);
-  return pending.length ? `harness ${pending.join(', ')} not yet cross-checked` : null;
+  if (pending.length) return `harness ${pending.join(', ')} not yet cross-checked`;
+  return independence ? independenceReason(a, independence) : null;
 }

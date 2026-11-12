@@ -72,7 +72,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
-    areas: [mac]
+    areas: []
     checks: >-
       The commit's repo and space equal the request's repo and space.
 
@@ -360,7 +360,8 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
-    areas: [mac]
+    areas: []
+    no_crypto: The check reads the DID document and parses the key with the multikey format, but runs no MAC, KEM or HKDF code.
     checks: >-
       The author's DID document has {authorDid}#atproto_kem, controller the author, type
       Multikey, and a P-256 publicKeyMultibase.

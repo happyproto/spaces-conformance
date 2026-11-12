@@ -1,15 +1,15 @@
 {
   "schema": 1,
   "run": {
-    "id": "2026-11-12T16-37-39Z-zds-b097",
+    "id": "2026-11-12T18-02-35Z-zds-5ca6",
     "kind": "local",
-    "started_at": "2026-11-12T16:37:39.643Z",
-    "finished_at": "2026-11-12T16:37:52.604Z",
+    "started_at": "2026-11-12T18:02:35.107Z",
+    "finished_at": "2026-11-12T18:02:58.315Z",
     "attempt": 1
   },
   "suite": {
-    "commit": "17a0e87161",
-    "assertions_digest": "sha256:0df506daa8f7b436f49005ed1ad08212dab65132120624ac1816d026b18814ef"
+    "commit": "42a99dc9e1",
+    "assertions_digest": "sha256:fa1c42076a585234f089877bbfe0d38bb81eedee883d50bb18f1e5cd4b1e9f24"
   },
   "spec": {
     "proposal": "0016",
@@ -44,22 +44,22 @@
       "id": "digest.cid-drisl-plain",
       "suite": "digest",
       "status": "pass",
-      "ms": 244
+      "ms": 483
     },
     {
       "id": "digest.cid-drisl-typed",
       "suite": "digest",
       "status": "pass",
-      "ms": 25
+      "ms": 48
     },
     {
       "id": "digest.covers-overwrite-and-delete",
       "suite": "digest",
       "status": "fail",
-      "ms": 21,
+      "ms": 62,
       "message": "the host served a pre-0016 signed commit (hash, ikm, mac, sig), not a 0016 commit; its pre-0016 hash equals the expected digest",
       "evidence": {
-        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"mV97vHpFMpf8eQbwPjpUyvBl8wEdysBSbr7WacGhqkY=\"},\"mac\":{\"$bytes\":\"/n1v0hwPmWol0XNZg28KykREc1kdJT+kMLvhxfRIA2g=\"},\"ikm\":{\"$bytes\":\"8dk9qRDLDGlOXkJmsj5S32N1H6NK4ggpIgKA0qmGvSI=\"},\"sig\":{\"$bytes\":\"HekHvcg8kndsQar7YY9VoOvdgPddx5K7EsXChv2A/z0PhSVN6LIOS0KcMD2kW/oUoYuxaUdMM7GdhdreCWeFSA==\"},\"rev\":\"3n24vrfgvaq3z\"}",
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"mV97vHpFMpf8eQbwPjpUyvBl8wEdysBSbr7WacGhqkY=\"},\"mac\":{\"$bytes\":\"egMuNxCxl/2dvT3JnJB9DRGrCVSJePvB9Qs25tKIwxM=\"},\"ikm\":{\"$bytes\":\"sxrk37qOQOFD6KudpygqLXbf7cGwhSc4fczR+5Knhio=\"},\"sig\":{\"$bytes\":\"YFOal25H2oM3sucbN6LZkQ3sVpUDQM65YdztfpQQBWFkg7VekQp0Wnct8WDHLqu4zCp3Z+ZB1LX7XTX4oYsJ2w==\"},\"rev\":\"3n252jhmn6j3z\"}",
         "legacy_hash": "995f7bbc7a453297fc7906f03e3a54caf065f3011dcac0526ebed669c1a1aa46",
         "expected": "995f7bbc7a453297fc7906f03e3a54caf065f3011dcac0526ebed669c1a1aa46"
       }
@@ -68,10 +68,10 @@
       "id": "digest.matches-record-set",
       "suite": "digest",
       "status": "fail",
-      "ms": 252,
+      "ms": 440,
       "message": "the host served a pre-0016 signed commit (hash, ikm, mac, sig), not a 0016 commit; its pre-0016 hash equals the expected digest",
       "evidence": {
-        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"FtSKFAdJyveH+Yso4+SYHB/ey3XN+zJSC+A1tn7tttM=\"},\"mac\":{\"$bytes\":\"x/Z/hzJ8ZUU0Tuzyang7J57Fxt+grYePoDpXgz8ebaw=\"},\"ikm\":{\"$bytes\":\"DgsdqW9g2vO87n4C19INxT6+HOWjRbiYRG1iiN/gyCQ=\"},\"sig\":{\"$bytes\":\"UftVFv5PZiiZeQymp99aRdwmrKRrKZNkHokKbKaLxVkDetbHUzzIU6P9MOoWIK1LSAJaBPOsljMOn0H7eKVyOg==\"},\"rev\":\"3n24vrffsu43v\"}",
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"FtSKFAdJyveH+Yso4+SYHB/ey3XN+zJSC+A1tn7tttM=\"},\"mac\":{\"$bytes\":\"UINXf8X/8E8Jhi+K0elMkh2z6plNqZ2D1F5TeLlfI1Q=\"},\"ikm\":{\"$bytes\":\"Zw7HNUtvl9aQGRAjaJ/uzKjGpttXk4vxVaQ/TwbnVY0=\"},\"sig\":{\"$bytes\":\"6WMa/S2f8ZDj/InOMySYVRgegTxxMvrnifxF7jPcBfUGrrAxHiAwCwpYqJkefl/9U1/537KAqihuReVWH5Qdcg==\"},\"rev\":\"3n252jhjynn3v\"}",
         "legacy_hash": "16d48a140749caf787f98b28e3e4981c1fdecb75cdfb32520be035b67eedb6d3",
         "expected": "16d48a140749caf787f98b28e3e4981c1fdecb75cdfb32520be035b67eedb6d3"
       }
@@ -80,10 +80,10 @@
       "id": "digest.multi-batch",
       "suite": "digest",
       "status": "fail",
-      "ms": 32,
+      "ms": 53,
       "message": "the host served a pre-0016 signed commit (hash, ikm, mac, sig), not a 0016 commit; its pre-0016 hash equals the expected digest",
       "evidence": {
-        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"3Id2QfGLQeTHtfByzLFbYuco/Xx8/kteg0D6h641xO4=\"},\"mac\":{\"$bytes\":\"D2YRZLDKQ6fXSDMIYVVUN9ouaZS8O61PsK48Or4tVQM=\"},\"ikm\":{\"$bytes\":\"y2inzTDNNN9Xz1AOQN0qppr3fCWdcNouKSoMaLcq+Ws=\"},\"sig\":{\"$bytes\":\"oBCpM/9lbREklKvvUboMfYyBTOrsb+f/Qcghizj1crFp4ieiNdb5LRC9FoCMcZ17X75z91UQaJ12kFssvg4JTw==\"},\"rev\":\"3n24vrfhkpb44\"}",
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"3Id2QfGLQeTHtfByzLFbYuco/Xx8/kteg0D6h641xO4=\"},\"mac\":{\"$bytes\":\"q3cZMbmTSqsWR7sNzucZBvOkGqOK9LnrCFlT/xT9el0=\"},\"ikm\":{\"$bytes\":\"OrSO3Y+gL1rgtB6b+Ni9JIPBaF2jkL8Yl95aj79mrnU=\"},\"sig\":{\"$bytes\":\"ADQhs/hlFuufKDDgjcvwDxR5FFrTgB9C4WMJGXWNaCY7g9jmfPpwpnRve7N+ll0ZxB3DlShzCnHbSE45P2LGbg==\"},\"rev\":\"3n252jhnul444\"}",
         "legacy_hash": "dc877641f18b41e4c7b5f072ccb15b62e728fd7c7cfe4b5e8340fa87ae35c4ee",
         "expected": "dc877641f18b41e4c7b5f072ccb15b62e728fd7c7cfe4b5e8340fa87ae35c4ee"
       }
@@ -92,21 +92,21 @@
       "id": "info.read-auth-status",
       "suite": "records",
       "status": "pass",
-      "ms": 2,
+      "ms": 10,
       "message": "listRecords with no auth answered 401"
     },
     {
       "id": "info.unknown-method-status",
       "suite": "records",
       "status": "pass",
-      "ms": 2,
+      "ms": 11,
       "message": "an unknown method answered 404"
     },
     {
       "id": "lifecycle.implicit-create",
       "suite": "lifecycle",
       "status": "pass",
-      "ms": 416
+      "ms": 659
     },
     {
       "id": "mac.commit-bound-to-repo",
@@ -130,26 +130,26 @@
       "id": "mac.kem-key-published",
       "suite": "mac",
       "status": "fail",
-      "ms": 233,
-      "message": "did:plc:ymhzpekqpi73dhoezw742c4u's DID document has no #atproto_kem verification method",
+      "ms": 371,
+      "message": "did:plc:x76cpaakxt22l4mc3ac2lhi4's DID document has no #atproto_kem verification method",
       "evidence": {
-        "verificationMethod": "[{\"id\":\"did:plc:ymhzpekqpi73dhoezw742c4u#atproto\",\"type\":\"Multikey\",\"controller\":\"did:plc:ymhzpekqpi73dhoezw742c4u\",\"publicKeyMultibase\":\"zQ3shqYLrgXxk631JfJJ8UVLH3Lfgu3bXvS31XrykRe4PfezM\"}]"
+        "verificationMethod": "[{\"id\":\"did:plc:x76cpaakxt22l4mc3ac2lhi4#atproto\",\"type\":\"Multikey\",\"controller\":\"did:plc:x76cpaakxt22l4mc3ac2lhi4\",\"publicKeyMultibase\":\"zQ3shPumqzsuGJDuaTW8AnpxzEzrXmondotBAQJXTf66RhAmx\"}]"
       }
     },
     {
       "id": "oplog.entry-shape",
       "suite": "oplog",
       "status": "pass",
-      "ms": 315
+      "ms": 738
     },
     {
       "id": "oplog.fold-matches-commit",
       "suite": "oplog",
       "status": "fail",
-      "ms": 46,
+      "ms": 86,
       "message": "the host served a pre-0016 signed commit (hash, ikm, mac, sig), not a 0016 commit; its pre-0016 hash equals the expected digest",
       "evidence": {
-        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"sqkLD2pB3gEcDc9uigKrdKJDqyuV8VtROQPvFOn8qGo=\"},\"mac\":{\"$bytes\":\"5MqZuFBLEcQMYEmRrKqaSDhIU5J9cw/Sk3r+w6GqQGg=\"},\"ikm\":{\"$bytes\":\"SJaqHsh+ijyxaW2+BELlBLSskaDxcO6/2GuYFm8+BgI=\"},\"sig\":{\"$bytes\":\"9pxXADznV7xRzCNoo5zF67dolGI3OddgVWjHYAuK1Is7hbhYR7lDboZLNBgRrNX08s88TyFnqY41wmD5odwzFQ==\"},\"rev\":\"3n24vrdpfw62x\"}",
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"sqkLD2pB3gEcDc9uigKrdKJDqyuV8VtROQPvFOn8qGo=\"},\"mac\":{\"$bytes\":\"DLv+qwHO9j6UpVtjEng/Uu6NExbVzua1J88Exz0FWdo=\"},\"ikm\":{\"$bytes\":\"0IpkRVmn0ErwpjIwzAtuUwQk42WPXk1yVystIBpCkjU=\"},\"sig\":{\"$bytes\":\"gA8Smdo8o198q2VhEazsYa0wDWP+e9GNceMVwA9p2h8OYEBTs/+PMNQQCc/NAmNjQXwAx/mjqjuMHx8Be/ICGA==\"},\"rev\":\"3n252jdxg5l2x\"}",
         "legacy_hash": "b2a90b0f6a41de011c0dcf6e8a02ab74a243ab2b95f15b513903ef14e9fca86a",
         "expected": "b2a90b0f6a41de011c0dcf6e8a02ab74a243ab2b95f15b513903ef14e9fca86a"
       }
@@ -158,42 +158,42 @@
       "id": "oplog.pagination-batch-boundary",
       "suite": "oplog",
       "status": "pass",
-      "ms": 13
+      "ms": 53
     },
     {
       "id": "oplog.pagination-complete",
       "suite": "oplog",
       "status": "pass",
-      "ms": 57
+      "ms": 144
     },
     {
       "id": "oplog.since-exclusive",
       "suite": "oplog",
       "status": "pass",
-      "ms": 22
+      "ms": 81
     },
     {
       "id": "oplog.stale-values-omitted",
       "suite": "oplog",
       "status": "pass",
-      "ms": 44
+      "ms": 85
     },
     {
       "id": "policy.create-get-roundtrip",
       "suite": "policy",
       "status": "fail",
-      "ms": 227,
+      "ms": 418,
       "message": "getSpace returned no policy object",
       "evidence": {
         "status": 200,
-        "body": "{\"uri\":\"at://did:plc:dift6ntwmc23oqnan4bew46b/space/com.example.conformance.space/8e927b752e50\",\"readPolicy\":{\"$type\":\"com.atproto.simplespace.defs#publicPolicy\"},\"writePolicy\":{\"$type\":\"com.atproto.simplespace.defs#memberListPolicy\"},\"appAccess\":{\"$type\":\"com.atproto.simplespace.defs#allowList\",\"allowed\":[\"https://app.example/oauth-client-metadata.json\"]}}"
+        "body": "{\"uri\":\"at://did:plc:uj3i2nn7pyir3fpq2ghksx5k/space/com.example.conformance.space/11285d029b37\",\"readPolicy\":{\"$type\":\"com.atproto.simplespace.defs#publicPolicy\"},\"writePolicy\":{\"$type\":\"com.atproto.simplespace.defs#memberListPolicy\"},\"appAccess\":{\"$type\":\"com.atproto.simplespace.defs#allowList\",\"allowed\":[\"https://app.example/oauth-client-metadata.json\"]}}"
       }
     },
     {
       "id": "policy.member-methods",
       "suite": "policy",
       "status": "fail",
-      "ms": 201,
+      "ms": 296,
       "message": "memberspace.putMember answered 404",
       "evidence": {
         "body": "{\"error\":\"UnknownMethod\",\"message\":\"Unknown XRPC method\"}"
@@ -203,7 +203,7 @@
       "id": "policy.put-member-upsert",
       "suite": "policy",
       "status": "fail",
-      "ms": 2,
+      "ms": 4,
       "message": "memberspace.putMember (write: false) answered 404",
       "evidence": {
         "body": "{\"error\":\"UnknownMethod\",\"message\":\"Unknown XRPC method\"}"
@@ -213,50 +213,50 @@
       "id": "records.apply-writes-atomic",
       "suite": "records",
       "status": "pass",
-      "ms": 22
+      "ms": 36
     },
     {
       "id": "records.commit-bytes-encoding",
       "suite": "records",
       "status": "fail",
-      "ms": 7,
+      "ms": 25,
       "message": "commit.data is not {\"$bytes\": ...}",
       "evidence": {
-        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"MKHsnQXxH2sZBcgccK9DLohWQ7BbMVLf7Mmvzo8oCuw=\"},\"mac\":{\"$bytes\":\"Kab3tMztTFTtRprIyPJLvc0F00hWTYj7KvWjeYwNysY=\"},\"ikm\":{\"$bytes\":\"xNE/01TGtkA49gsHvmgky9LyCJONtPvgFygdgS9u6/g=\"},\"sig\":{\"$bytes\":\"dN7B6IiH/SRfY/gyqUz3jyTIsW18qGmdXqZWeAJve9o1FrHcRPszmV05xY7dVCTWEwWnjWi9utlaGu0XrWrGag==\"},\"rev\":\"3n24vrftlzg4e\"}"
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"pflmez02ZYWeldsehdf7F7jPIO7xEJ2U6VCQrkEIxY4=\"},\"mac\":{\"$bytes\":\"PjCGaIHAwnqEGXu3W9dCmPQeQBs07wuI638/tu33L1o=\"},\"ikm\":{\"$bytes\":\"sVGyAJDPkPgGQbjAUMsJUy1gzNuOD96E2NKtoQBp6V8=\"},\"sig\":{\"$bytes\":\"Y8c+r5dnveRpR39M8VLaP8hualOlvyuQMjJMLDoofcg61EFNqY0UFjshtdQRjR2gjr4c6n07HIB8Q+dZYn2FFQ==\"},\"rev\":\"3n252jigczn4e\"}"
       }
     },
     {
       "id": "records.commit-fields",
       "suite": "records",
       "status": "fail",
-      "ms": 228,
+      "ms": 429,
       "message": "commit fields are [hash, ikm, mac, rev, sig, ver], not exactly [data, repo, rev, space, ver]",
       "evidence": {
-        "body": "{\"commit\":{\"ver\":1,\"hash\":{\"$bytes\":\"gjppyGxAlrO3wRfq999tJCxRRh57K5+cRfOXlazxYAQ=\"},\"mac\":{\"$bytes\":\"o5vaLhl/p4ESzSNmpEfCoI8OVVJLTCXjf6B58LyuDqA=\"},\"ikm\":{\"$bytes\":\"IJghwkJj62VctonKdGRRNJ2ID+QlARFcxCJy1QtTmLw=\"},\"sig\":{\"$bytes\":\"Vn4W8O/UkDFCYvuOxFgVhKRgg9o0TCwtz+MPpFADIuM6LosiRWeNidrmNa2mWo+BmOkn+cQzsTlgcoGNexGFnA==\"},\"rev\":\"3n24vrftad74c\"}}"
+        "body": "{\"commit\":{\"ver\":1,\"hash\":{\"$bytes\":\"lpyPDUL11GmosiTYuz1PnWVVeklzr1NgEbSCaLKa2JA=\"},\"mac\":{\"$bytes\":\"lOvpNzCdWKKxtSFbX39LLBMIPhosJ9lkxXiQ92kSMsw=\"},\"ikm\":{\"$bytes\":\"ZFqsx7s18sVGeEDmYppMVffpu9wB3oymCI7EX0zHPM0=\"},\"sig\":{\"$bytes\":\"RsfB9Xo48ITiyvXy4dGOhIkQkQEooNe1cbwXuJGtg3dXX8l+xHzq+dWj6pcZtVpFMcaZxCNaXXXHEVvQUqkK/A==\"},\"rev\":\"3n252jifiys4c\"}}"
       }
     },
     {
       "id": "records.commit-repo-space-match",
       "suite": "records",
       "status": "fail",
-      "ms": 5,
+      "ms": 32,
       "message": "the commit has no repo or space field",
       "evidence": {
-        "requested": "{\"repo\":\"did:plc:c5br5p3mhslrd6v5ihs7rzr3\",\"space\":\"at://did:plc:c5br5p3mhslrd6v5ihs7rzr3/space/com.example.conformance.space/a4a26ed5f40b\"}",
-        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"cutiKi/Q4nUhWGMZPa8ErRMc2n1+JDNqU5SWovehcyM=\"},\"mac\":{\"$bytes\":\"KrtVzcJVwFklNb8HQvtnYepcquLTxPcWwOuF/HbBCUw=\"},\"ikm\":{\"$bytes\":\"JsVUh5/P4sIjePcmmkL/gYO9ucxvApEX7IWYgHt8o08=\"},\"sig\":{\"$bytes\":\"5KAwvU/hQGxlod1AlaDUlsbMwtjZ8EBSjdGtpOw6tD4+oJN+/TVW7gCFM87MSUoWFarjQIFmInMzpvNn7kYR4Q==\"},\"rev\":\"3n24vrftsr54g\"}"
+        "requested": "{\"repo\":\"did:plc:sm6ikps6f4zuwk6kzqwmfxp6\",\"space\":\"at://did:plc:sm6ikps6f4zuwk6kzqwmfxp6/space/com.example.conformance.space/5616668c211f\"}",
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"m8ktzzkpyzbmeBEuwPoJ4RZY11CU52nUs0lYTkOVZ9w=\"},\"mac\":{\"$bytes\":\"i9jHNMiPWu9WFPyWfACEmWAzcRGEmR6R/EDmyh0YBSQ=\"},\"ikm\":{\"$bytes\":\"Fx8Z2VTYKyOnTL6uhu4/G7QldXna15dqxyGjEPxyFec=\"},\"sig\":{\"$bytes\":\"2V/8zyrB6kcSAwWlNgPsvo5ArB5QQAT6/HWk+CfXzKQtvOnwo6zf2x7bbADvjZ7L5UyYYa1w594mf/lKLoBs7Q==\"},\"rev\":\"3n252jih7eo4g\"}"
       }
     },
     {
       "id": "records.crud-roundtrip",
       "suite": "records",
       "status": "pass",
-      "ms": 274
+      "ms": 442
     },
     {
       "id": "records.read-requires-auth",
       "suite": "records",
       "status": "pass",
-      "ms": 238
+      "ms": 586
     }
   ],
   "summary": {
@@ -268,7 +268,7 @@
         "should_pass": 0
       },
       "repo-host": {
-        "must_applicable": 18,
+        "must_applicable": 14,
         "must_pass": 10,
         "should_applicable": 0,
         "should_pass": 0
@@ -280,6 +280,6 @@
         "should_pass": 0
       }
     },
-    "unexpected": 11
+    "unexpected": 7
   }
 }
