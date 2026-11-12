@@ -66,7 +66,8 @@
       "required": ["create"],
       "properties": {
         "authority": { "enum": ["own-did", "account"] },
-        "create": { "enum": ["oct29", "simplespace", "custom"] }
+        "create": { "description": "The default setup mode; cli/run.ts --setup-mode overrides it.", "enum": ["oct29", "simplespace", "auto", "custom"] },
+        "modes": { "description": "Every setup mode the adapter supports, for --setup-mode.", "type": "array", "items": { "enum": ["oct29", "simplespace", "auto", "custom"] }, "uniqueItems": true }
       }
     },
     "setup": { "description": "Adapter module, relative to the manifest.", "type": "string" },

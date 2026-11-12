@@ -59,4 +59,5 @@ jobs:
           -f implementations/pdsjs/compose.yml
           -f implementations/zds/compose.yml
           -f implementations/reference/compose.yml
+          -f implementations/atproto-pds/compose.yml
           config -q

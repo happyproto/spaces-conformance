@@ -1,0 +1,43 @@
+# atproto-pds, the Rust PDS from atproto-crates, built by happyproto/pds-test.
+# Settings follow HappyView's docker-compose.atproto-pds.yml at 9f084f5c.
+# It advertises an https issuer, so Caddy serves it with TLS.
+services:
+  atproto-pds:
+    image: ${ATPROTO_PDS_IMAGE:?set from pins/images.env}
+    environment:
+      PDS_PORT: "3000"
+      PDS_HOSTNAME: atproto-pds.test
+      PDS_SERVICE_DID: did:web:atproto-pds.test
+      PDS_DID_PLC_URL: http://plc:2582
+      PDS_JWT_SECRET: conformance-atproto-pds-jwt-secret-0123456789abcdef
+      PDS_ADMIN_PASSWORD: conformance-admin
+      PDS_SERVICE_HANDLE_DOMAINS: .test
+      PDS_INVITE_REQUIRED: "false"
+      # A throwaway secp256k1 key in the did:key private form the server expects.
+      PDS_PLC_ROTATION_KEY_PRIVATE: did:key:z3vLWVWW3rA4nYExwkkR8AQZZxt5Z2vyZRUvPyjR1mFvmmL7
+      # Every account is created from the harness's one address.
+      PDS_RATE_LIMIT_AUTH: "0"
+    tmpfs:
+      - /data
+    depends_on:
+      plc:
+        condition: service_started
+      caddy:
+        condition: service_healthy
+
+  # The image is distroless, with no shell for a healthcheck. This shares the
+  # PDS's network namespace and reports its health endpoint, so `up --wait`
+  # waits for a PDS that can serve.
+  atproto-pds-ready:
+    image: curlimages/curl:8.11.1
+    network_mode: service:atproto-pds
+    init: true
+    entrypoint: ["sleep", "infinity"]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/xrpc/_health"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+    depends_on:
+      atproto-pds:
+        condition: service_started

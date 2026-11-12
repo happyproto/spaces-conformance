@@ -22,10 +22,17 @@ health: /xrpc/_health
 accounts:
   # One account per container: did:plc genesis, then POST /init.
   mode: custom
-  write_auth: oauth-dpop
+  # The today rows use a password session (createSession, then Bearer), as
+  # HappyView's pds.js interop tests do. OAuth with DPoP is scripted and
+  # tested (test/stack/oauth.stack.test.ts); the scope suites use it (phase 7).
+  write_auth: password-session
 spaces:
   authority: account
+  # Setup only (ungraded). The pinned image serves only the Oct 22
+  # simplespace.createSpace; cli/run.ts --setup-mode picks another mode.
   create: simplespace
+  modes: [oct29, simplespace, auto]
+setup: adapter.ts
 deviations: deviations.yaml
 quirks:
   single_account: true
