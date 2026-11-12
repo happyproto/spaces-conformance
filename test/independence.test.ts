@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Assertion } from '../harness/catalogue.ts';
 import { loadCatalogue } from '../harness/catalogue.ts';
-import { independenceReason, independent, type Independence, loadIndependence, PASS_INDEX, validatePassIndex } from '../harness/independence.ts';
+import { independenceReason, independent, type Independence, loadIndependence, PASS_INDEX, staleSources, validatePassIndex } from '../harness/independence.ts';
 import { provisionalReason, vectorStatus } from '../harness/provisional.ts';
 import { ROOT } from '../harness/schema.ts';
 import { judgeAll } from '../harness/verdict.ts';
@@ -78,6 +78,25 @@ describe('the committed pass index', () => {
     writeFileSync(path, JSON.stringify(index));
     const p = validatePassIndex(loadCatalogue(join(ROOT, 'spec', 'assertions.yaml')), path);
     expect(p.map((x) => x.message).join()).toMatch(/does not match its sources/);
+  });
+
+  it('requires every committed results file to be a source or excluded with a reason', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'passes-'));
+    const path = join(dir, 'passes.json');
+    const index = JSON.parse(readFileSync(PASS_INDEX, 'utf8'));
+    index.excluded = index.excluded.slice(1);
+    writeFileSync(path, JSON.stringify(index));
+    const p = validatePassIndex(loadCatalogue(join(ROOT, 'spec', 'assertions.yaml')), path);
+    expect(p.map((x) => x.message).join()).toMatch(/neither a source nor excluded/);
+  });
+
+  it('names sources that ran against another catalogue', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'passes-'));
+    const path = join(dir, 'passes.json');
+    const index = JSON.parse(readFileSync(PASS_INDEX, 'utf8'));
+    index.sources[0].assertions_digest = 'sha256:0';
+    writeFileSync(path, JSON.stringify(index));
+    expect(staleSources(path).map((s) => s.implementation)).toContain(index.sources[0].implementation);
   });
 
   it('loads every passing implementation with its manifest lineage', () => {

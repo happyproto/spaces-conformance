@@ -18,7 +18,7 @@ import { loadDeviations, validateDeviations } from '../harness/deviations.ts';
 import { loadLexicons } from '../harness/lexicons.ts';
 import { loadManifest, loadPins, validateManifest } from '../harness/manifest.ts';
 import { formatProblem, type Problem } from '../harness/problems.ts';
-import { validatePassIndex } from '../harness/independence.ts';
+import { staleSources, validatePassIndex } from '../harness/independence.ts';
 import { validateResults } from '../harness/results.ts';
 import { ROOT } from '../harness/schema.ts';
 import { anchors, loadRevisions, loadSpecText } from '../harness/spec.ts';
@@ -79,6 +79,9 @@ counts.push(`${resultFiles.length} result files`);
 
 problems.push(...validatePassIndex(cat));
 counts.push('the pass index');
+const stale = staleSources();
+if (stale.length)
+  console.log(`note: ${stale.length} pass-index source(s) ran against an older catalogue (${stale.map((s) => s.implementation).join(', ')}); rerun them if a row's check changed since`);
 
 for (const p of problems) console.error(formatProblem(p));
 console.log(`${problems.length ? 'FAIL' : 'ok'}: ${counts.join(', ')}, ${problems.length} problem(s)`);

@@ -131,8 +131,15 @@ describe('catalogue', () => {
     const missing = validateCatalogue(catalogueOf({ ...row({}), areas: undefined as never }), 'f', spec, revKeys).map((x) => x.message);
     expect(missing.join()).toMatch(/must have required property 'areas'/);
     const empty = validateCatalogue(catalogueOf(row({ areas: [] })), 'f', spec, revKeys).map((x) => x.message);
-    expect(empty).toContain("suite digest relies on harness crypto, so areas can't be empty");
+    expect(empty).toContain("suite digest relies on harness crypto, so areas can't be empty without a no_crypto reason");
     expect(validateCatalogue(catalogueOf(row({ suite: 'records', areas: [] })), 'f', spec, revKeys)).toEqual([]);
+  });
+
+  it('lets a crypto-suite row use no crypto only with a reason, and only with areas: []', () => {
+    const why = 'reads a DID document and runs no harness crypto';
+    expect(validateCatalogue(catalogueOf(row({ areas: [], no_crypto: why })), 'f', spec, revKeys)).toEqual([]);
+    const both = validateCatalogue(catalogueOf(row({ areas: ['lthash'], no_crypto: why })), 'f', spec, revKeys).map((x) => x.message);
+    expect(both).toContain('no_crypto is only for a row with areas: []');
   });
 
   it('rejects schema violations before the level rule', () => {

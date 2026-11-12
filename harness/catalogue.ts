@@ -44,6 +44,8 @@ export interface Assertion {
   until?: string;
   provisional?: boolean;
   areas: ('cbor' | 'lthash' | 'mac' | 'httpsig' | 'jwt' | 'star')[];
+  /** Why a row in a crypto suite uses no harness crypto (areas: []). */
+  no_crypto?: string;
 }
 
 export interface Catalogue {
@@ -128,7 +130,9 @@ export function validateCatalogue(cat: unknown, file: string, specText: string, 
     }
     for (const r of [a.since, a.until]) if (r && !revisions.includes(r)) at(`revision ${r} is not in spec/revisions.json`);
     if (a.id.startsWith('info.') && a.level !== 'info') at('info.* ids must be level info');
-    if (CRYPTO_SUITES.has(a.suite) && !a.areas?.length) at(`suite ${a.suite} relies on harness crypto, so areas can't be empty`);
+    if (CRYPTO_SUITES.has(a.suite) && !a.areas?.length && !a.no_crypto)
+      at(`suite ${a.suite} relies on harness crypto, so areas can't be empty without a no_crypto reason`);
+    if (a.no_crypto && a.areas?.length) at('no_crypto is only for a row with areas: []');
     if (lex && a.lexicon) {
       for (const nsid of lexiconsOf(a)) {
         if (!lex.has(nsid)) {

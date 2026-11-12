@@ -12,8 +12,9 @@
 // The passes come from evidence/passes.json, a committed index regenerated
 // from validated results files by `node cli/passes.ts` (docs/catalogue.md).
 
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { createHash } from 'node:crypto';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import type { Assertion, Catalogue } from './catalogue.ts';
 import { loadManifest } from './manifest.ts';
 import type { Problem } from './problems.ts';
@@ -28,15 +29,28 @@ export interface PassSource {
   implementation: string;
   run: string;
   suite_commit: string;
+  /** The catalogue digest the run used (results suite.assertions_digest). */
+  assertions_digest: string;
   image: string;
+}
+
+/** A committed results file that deliberately doesn't feed the index. */
+export interface PassExclusion {
+  file: string;
+  reason: string;
 }
 
 export interface PassIndex {
   /** The results files the index was built from, in order. */
   sources: PassSource[];
+  /** Committed results files left out on purpose, each with why. */
+  excluded: PassExclusion[];
   /** assertion id -> ids of the implementations it passed on, sorted. */
   passes: Record<string, string[]>;
 }
+
+/** Where committed results files live: each must be a source or excluded. */
+export const RESULTS_DIR = join(ROOT, 'test', 'fixtures', 'results');
 
 export interface Independence {
   /** assertion id -> implementations it passed on. */
@@ -47,13 +61,13 @@ export interface Independence {
 
 interface ResultsFile {
   run: { id: string };
-  suite: { commit: string };
+  suite: { commit: string; assertions_digest: string };
   implementation: { id: string; image: string };
   results: { id: string; status: string }[];
 }
 
 /** Build the index from results files (already validated by the caller). */
-export function buildPassIndex(files: { path: string; file: ResultsFile }[]): PassIndex {
+export function buildPassIndex(files: { path: string; file: ResultsFile }[], excluded: PassExclusion[] = []): PassIndex {
   const passes = new Map<string, Set<string>>();
   for (const { file } of files)
     for (const r of file.results) {
@@ -67,15 +81,17 @@ export function buildPassIndex(files: { path: string; file: ResultsFile }[]): Pa
       implementation: file.implementation.id,
       run: file.run.id,
       suite_commit: file.suite.commit,
+      assertions_digest: file.suite.assertions_digest,
       image: file.implementation.image,
     })),
+    excluded,
     passes: Object.fromEntries([...passes].sort(([a], [b]) => (a < b ? -1 : 1)).map(([id, s]) => [id, [...s].sort()])),
   };
 }
 
 /** The committed index plus every manifest's lineage. */
 export function loadIndependence(indexPath = PASS_INDEX): Independence {
-  const index: PassIndex = existsSync(indexPath) ? JSON.parse(readFileSync(indexPath, 'utf8')) : { sources: [], passes: {} };
+  const index: PassIndex = existsSync(indexPath) ? JSON.parse(readFileSync(indexPath, 'utf8')) : { sources: [], excluded: [], passes: {} };
   const lineage = new Map<string, Partial<Record<Area, string>>>();
   for (const id of new Set(Object.values(index.passes).flat())) {
     const m = join(ROOT, 'implementations', id, 'manifest.yaml');
@@ -125,15 +141,38 @@ export function readSources(paths: string[], cat: Catalogue): { files: { path: s
 
 /**
  * The committed index must be exactly what its sources rebuild to, so a pass
- * can't be added by hand. Every source must validate.
+ * can't be added by hand. Every source must validate, and every committed
+ * results file must be either a source or excluded with a reason.
  */
-export function validatePassIndex(cat: Catalogue, indexPath = PASS_INDEX): Problem[] {
+export function validatePassIndex(cat: Catalogue, indexPath = PASS_INDEX, resultsDir = RESULTS_DIR): Problem[] {
   if (!existsSync(indexPath)) return [];
   const index: PassIndex = JSON.parse(readFileSync(indexPath, 'utf8'));
+  const at = (where: string, message: string) => ({ file: 'evidence/passes.json', where, message });
+  const listed = new Set([...index.sources.map((s) => s.file), ...(index.excluded ?? []).map((e) => e.file)]);
+  const coverage: Problem[] = [];
+  if (existsSync(resultsDir))
+    for (const f of readdirSync(resultsDir).filter((f) => f.endsWith('.json'))) {
+      const path = relative(ROOT, join(resultsDir, f));
+      if (!listed.has(path)) coverage.push(at(path, 'committed results file is neither a source nor excluded with a reason'));
+    }
+  for (const e of index.excluded ?? []) if (!existsSync(join(ROOT, e.file))) coverage.push(at(e.file, 'excluded file does not exist'));
   const { files, problems } = readSources(index.sources.map((s) => s.file), cat);
+  problems.unshift(...coverage);
   if (problems.length) return problems;
-  const rebuilt = buildPassIndex(files);
+  const rebuilt = buildPassIndex(files, index.excluded ?? []);
   if (JSON.stringify(rebuilt) !== JSON.stringify(index))
     problems.push({ file: 'evidence/passes.json', where: 'passes', message: 'does not match its sources: regenerate it with node cli/passes.ts' });
   return problems;
+}
+
+/**
+ * Sources whose run used another catalogue than the current one. They still
+ * count: most catalogue edits don't change what a row checks. `bun run
+ * validate` names them, so whoever changes a row's check knows to rerun.
+ */
+export function staleSources(indexPath = PASS_INDEX): PassSource[] {
+  if (!existsSync(indexPath)) return [];
+  const index: PassIndex = JSON.parse(readFileSync(indexPath, 'utf8'));
+  const current = `sha256:${createHash('sha256').update(readFileSync(join(ROOT, 'spec', 'assertions.yaml'))).digest('hex')}`;
+  return index.sources.filter((s) => s.assertions_digest !== current);
 }

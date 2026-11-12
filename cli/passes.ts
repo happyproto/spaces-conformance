@@ -26,7 +26,9 @@ if (problems.length) {
   console.error(problems.map(formatProblem).join('\n'));
   process.exit(1);
 }
-const index = buildPassIndex(files);
+// Keep the reasoned exclusions; they're edited by hand.
+const excluded = existsSync(PASS_INDEX) ? ((JSON.parse(readFileSync(PASS_INDEX, 'utf8')) as PassIndex).excluded ?? []) : [];
+const index = buildPassIndex(files, excluded);
 mkdirSync(dirname(PASS_INDEX), { recursive: true });
 writeFileSync(PASS_INDEX, `${JSON.stringify(index, null, 2)}\n`);
 console.log(`wrote ${relative(ROOT, PASS_INDEX)}: ${Object.keys(index.passes).length} assertions passed, from ${files.length} results files`);

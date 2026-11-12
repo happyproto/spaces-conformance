@@ -21,7 +21,7 @@ Each row ties one check to one sentence of Proposal 0016 at the revision `spec/r
 | `error` | For `xrpc.error.<Name>` rows, the error name. It must equal `<Name>` and be declared by the listed lexicon. |
 | `since`, `until` | Revision keys from `spec/revisions.json`. |
 | `provisional` | Marks a row provisional by hand, whatever the evidence. The lineage rule below applies to every row regardless. |
-| `areas` | Required on every row. It lists the harness crypto areas the check runs through (`cbor`, `lthash`, `mac`, `httpsig`, `jwt`, `star`), or is `[]` to acknowledge it uses none, so no row can be left unfenced by omission. It can't be empty in the `digest`, `mac` and `export` suites. While any listed area has a pending vector cross-check (`vectors/README.md`), the assertion is provisional. After that, it stays provisional until the lineage rule below clears it. |
+| `areas` | Required on every row. It lists the harness crypto areas the check runs through (`cbor`, `lthash`, `mac`, `httpsig`, `jwt`, `star`), or is `[]` to acknowledge it uses none, so no row can be left unfenced by omission. It can't be empty in the `digest`, `mac` and `export` suites, unless the row's `no_crypto` says why it uses none. While any listed area has a pending vector cross-check (`vectors/README.md`), the assertion is provisional. After that, it stays provisional until the lineage rule below clears it. |
 
 **Level rule.**
 
@@ -80,6 +80,8 @@ The passes come from `evidence/passes.json`, which maps each assertion to the im
 - Rebuild it with `node cli/passes.ts <results.json>...`. With no arguments, it rebuilds from the index's current sources.
 - Every source must be a committed results file of a real run, and must validate. Today the sources are `test/fixtures/results/parity-*`.
 - `bun run validate` rebuilds the index from its sources and refuses any difference, so a pass can't be added by hand.
+- Every file in `test/fixtures/results/` must be either a source or listed under `excluded`, with a reason. `cli/passes.ts` keeps the exclusions.
+- Each source records the `assertions_digest` its run used. When that differs from the current catalogue, `bun run validate` names the source. It still counts, because most catalogue edits don't change what a row checks. Rerun the source after changing a row's check.
 
 `harness/independence.ts` implements the rule, and both the reporter and `verdict` apply it.
 
