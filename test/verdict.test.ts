@@ -5,7 +5,7 @@ import { capEvidence } from '../harness/assert.ts';
 import { loadCatalogue } from '../harness/catalogue.ts';
 import { vectorStatus } from '../harness/provisional.ts';
 import { assemble, openSetupSteps, readRaw, reconcile } from '../harness/reporter.ts';
-import { setup, SetupError } from '../harness/assert.ts';
+import { DeadlineExceeded, runAssertion, setup, SetupError } from '../harness/assert.ts';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { declaredAssertions } from '../harness/coverage.ts';
@@ -75,6 +75,55 @@ describe('setup hangs', () => {
     const hung = setup('createAccount', () => new Promise(() => {}), 20);
     await expect(hung).rejects.toBeInstanceOf(SetupError);
     await expect(setup('fine', async () => 7, 1000)).resolves.toBe(7);
+  });
+
+  it('steps that each fit but together outlast the deadline record error, and the next test is unaffected', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'raw-'));
+    const prev = process.env.CONFORMANCE_RAW_DIR;
+    process.env.CONFORMANCE_RAW_DIR = dir;
+    try {
+      const step = (ms: number) => () => new Promise<void>((r) => setTimeout(r, ms));
+      let finished = false;
+      const slow = runAssertion('a.slow', 'x', {}, async () => {
+        for (const n of [1, 2, 3]) await setup(`step ${n}`, step(350), 1000);
+        finished = true;
+      }, 900);
+      await expect(slow).rejects.toBeInstanceOf(DeadlineExceeded);
+      await runAssertion('a.next', 'x', {}, async () => {}, 900);
+      // Let the orphaned fn finish: its late pass must not be recorded.
+      await new Promise((r) => setTimeout(r, 400));
+      expect(finished).toBe(true);
+      const recs = readRaw(dir);
+      expect(recs.filter((r) => r.id === 'a.slow')).toEqual([expect.objectContaining({ status: 'error', evidence: { step: 'step 3' } })]);
+      expect(recs.find((r) => r.id === 'a.next')).toMatchObject({ status: 'pass' });
+      const cases = new Map([
+        ['a.slow', { state: 'failed' as const, errors: ['ran past 900 ms during setup step step 3'] }],
+        ['a.next', { state: 'passed' as const, errors: [] }],
+      ]);
+      const out = reconcile(recs, cases, new Map(), new Map(), () => null, () => 'x', openSetupSteps(dir));
+      expect(out.find((r) => r.id === 'a.slow')).toMatchObject({ status: 'error' });
+    } finally {
+      if (prev === undefined) delete process.env.CONFORMANCE_RAW_DIR;
+      else process.env.CONFORMANCE_RAW_DIR = prev;
+    }
+  });
+
+  it('outlasting the deadline with no setup step open is a scored fail', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'raw-'));
+    const prev = process.env.CONFORMANCE_RAW_DIR;
+    process.env.CONFORMANCE_RAW_DIR = dir;
+    try {
+      const slow = runAssertion('a.slowhost', 'x', {}, async () => {
+        await setup('fast', async () => {}, 1000);
+        await new Promise((r) => setTimeout(r, 300));
+      }, 100);
+      await expect(slow).rejects.toBeInstanceOf(DeadlineExceeded);
+      await new Promise((r) => setTimeout(r, 300));
+      expect(readRaw(dir)).toEqual([expect.objectContaining({ id: 'a.slowhost', status: 'fail' })]);
+    } finally {
+      if (prev === undefined) delete process.env.CONFORMANCE_RAW_DIR;
+      else process.env.CONFORMANCE_RAW_DIR = prev;
+    }
   });
 
   it('a test timeout during an open setup step is error, not a scored fail', () => {

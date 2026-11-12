@@ -59,10 +59,30 @@ const current = new AsyncLocalStorage<string>();
  */
 export const SETUP_TIMEOUT_MS = Number(process.env.CONFORMANCE_SETUP_TIMEOUT_MS ?? 45_000);
 
-/** Mark a setup step's start and end, for reconcile(): a test timeout inside an open step is `error`. */
+/**
+ * How long one assertion may run in all. It's just under the test timeout, so
+ * runAssertion() classifies a slow test itself, while it still knows which
+ * setup step is open: several steps, each within SETUP_TIMEOUT_MS, can
+ * together outlast the test.
+ */
+export const ASSERTION_DEADLINE_MS = Number(process.env.CONFORMANCE_ASSERTION_DEADLINE_MS ?? 58_000);
+
+/** Setup steps open right now, per assertion id, in start order. */
+const openSteps = new Map<string, string[]>();
+/** Assertions whose result is already recorded: a later record (an orphaned fn finishing) is dropped. */
+const settled = new Set<string>();
+
+/** Mark a setup step's start and end: in memory for runAssertion(), on disk for reconcile(). */
 function mark(phase: 'start' | 'end', step: string) {
   const id = current.getStore();
   if (!id) return;
+  const open = openSteps.get(id) ?? [];
+  if (phase === 'start') open.push(step);
+  else {
+    const i = open.lastIndexOf(step);
+    if (i >= 0) open.splice(i, 1);
+  }
+  openSteps.set(id, open);
   const dir = rawDir();
   mkdirSync(dir, { recursive: true });
   appendFileSync(join(dir, `${process.pid}.setup.jsonl`), `${JSON.stringify({ id, step, phase })}\n`);
@@ -90,6 +110,8 @@ export function rawDir(): string {
 }
 
 function record(r: RawResult) {
+  if (settled.has(r.id)) return;
+  settled.add(r.id);
   const dir = rawDir();
   mkdirSync(dir, { recursive: true });
   appendFileSync(join(dir, `${process.pid}.jsonl`), `${JSON.stringify(r)}\n`);
@@ -112,9 +134,49 @@ export function capEvidence(e: Record<string, unknown>): Record<string, unknown>
   return out;
 }
 
+/** Thrown when an assertion outlasts ASSERTION_DEADLINE_MS, after its result is recorded. */
+export class DeadlineExceeded extends Error {}
+
+/**
+ * Run one applicable assertion and record its result. Past `deadlineMs` it
+ * records at once: `error` if a setup step is open (ungraded), else `fail`
+ * (the host was too slow). The orphaned fn may finish later; its record is
+ * dropped, so it can't turn into a late pass.
+ */
+export function runAssertion<C>(id: string, suite: string, ctx: C, fn: (ctx: C) => Promise<void | string>, deadlineMs = ASSERTION_DEADLINE_MS): Promise<void> {
+  return current.run(id, async () => {
+    const start = Date.now();
+    let timer: NodeJS.Timeout | undefined;
+    const deadline = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        const step = openSteps.get(id)?.at(-1);
+        const message = step
+          ? `ran past ${deadlineMs} ms during setup step ${step}`
+          : `ran past ${deadlineMs} ms with no setup step open`;
+        record({ id, suite, status: step ? 'error' : 'fail', ms: Date.now() - start, message, ...(step ? { evidence: { step } } : {}) });
+        reject(new DeadlineExceeded(message));
+      }, deadlineMs);
+    });
+    try {
+      const observed = await Promise.race([fn(ctx), deadline]);
+      record({ id, suite, status: 'pass', ms: Date.now() - start, ...(observed ? { message: observed } : {}) });
+    } catch (e) {
+      if (e instanceof DeadlineExceeded) throw e;
+      const ms = Date.now() - start;
+      const err = e as Error & { evidence?: Record<string, unknown> };
+      const status = e instanceof SetupError ? 'error' : 'fail';
+      const evidence = err.evidence ?? (e instanceof SetupError ? { step: e.step } : undefined);
+      record({ id, suite, status, ms, message: err.message.slice(0, 500), evidence: evidence && capEvidence(evidence) });
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
+  });
+}
+
 /** fn may return a string: the observation, recorded as the result message (how info rows report). */
 export function assertion(id: string, fn: (ctx: RunContext) => Promise<void | string>) {
-  test(id, (t) => current.run(id, async () => {
+  test(id, async (t) => {
     const ctx = await runContext();
     const a = ctx.byId.get(id);
     if (!a) throw new Error(`${id} is not in the catalogue`);
@@ -124,17 +186,6 @@ export function assertion(id: string, fn: (ctx: RunContext) => Promise<void | st
       t.skip(reason);
       return;
     }
-    const start = Date.now();
-    try {
-      const observed = await fn(ctx);
-      record({ id, suite: a.suite, status: 'pass', ms: Date.now() - start, ...(observed ? { message: observed } : {}) });
-    } catch (e) {
-      const ms = Date.now() - start;
-      const err = e as Error & { evidence?: Record<string, unknown> };
-      const status = e instanceof SetupError ? 'error' : 'fail';
-      const evidence = err.evidence ?? (e instanceof SetupError ? { step: e.step } : undefined);
-      record({ id, suite: a.suite, status, ms, message: err.message.slice(0, 500), evidence: evidence && capEvidence(evidence) });
-      throw e;
-    }
-  }));
+    await runAssertion(id, a.suite, ctx, fn);
+  });
 }
