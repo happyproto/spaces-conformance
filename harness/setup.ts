@@ -59,12 +59,12 @@ export function recordedMode(manifest: Manifest, accounts: SetupMode['accounts']
 export function bearer(token: string): WriteAuth {
   return {
     mode: 'password-session',
-    request: (method, url, body) =>
+    request: (method, url, body, headers = {}) =>
       http(
         url,
         body === undefined
-          ? { method, headers: { authorization: `Bearer ${token}` } }
-          : { ...json(body), method, headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' } },
+          ? { method, headers: { ...headers, authorization: `Bearer ${token}` } }
+          : { method, headers: { ...headers, authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify(body) },
       ),
   };
 }

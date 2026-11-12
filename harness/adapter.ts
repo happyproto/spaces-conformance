@@ -8,8 +8,8 @@ import type { Manifest } from './manifest.ts';
 /** How requests are authenticated as an account. Outside 0016 for password sessions; recorded, not graded. */
 export interface WriteAuth {
   mode: 'password-session' | 'oauth-dpop' | 'api-key';
-  /** Send an authenticated request. */
-  request(method: 'GET' | 'POST', url: string, body?: unknown): Promise<HttpResponse>;
+  /** Send an authenticated request, with any extra headers (e.g. Atproto-Space-Want-Mac). */
+  request(method: 'GET' | 'POST', url: string, body?: unknown, headers?: Record<string, string>): Promise<HttpResponse>;
 }
 
 export interface Account {
