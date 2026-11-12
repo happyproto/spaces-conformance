@@ -5,7 +5,8 @@ import { capEvidence } from '../harness/assert.ts';
 import { loadCatalogue } from '../harness/catalogue.ts';
 import { vectorStatus } from '../harness/provisional.ts';
 import { assemble, openSetupSteps, readRaw, reconcile } from '../harness/reporter.ts';
-import { DeadlineExceeded, fail, runAssertion, setup, SetupError } from '../harness/assert.ts';
+import { DeadlineExceeded, fail, Pending, pending, runAssertion, setup, SetupError } from '../harness/assert.ts';
+import { loadManifest, notApplicable } from '../harness/manifest.ts';
 import { checkTimeouts } from '../harness/timeouts.ts';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -170,6 +171,31 @@ describe('setup hangs', () => {
     expect(() => checkTimeouts({ test: 60_000, deadline: 60_000, setup: 45_000 })).toThrow(/below the test timeout/);
     expect(() => checkTimeouts({ test: 30_000, deadline: 58_000, setup: 45_000 })).toThrow(/below the test timeout/);
     expect(() => checkTimeouts({ test: 60_000, deadline: 40_000, setup: 45_000 })).toThrow(/below the assertion deadline/);
+  });
+
+  it('a pending precondition records skip with a pending reason, not error', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'raw-'));
+    const prev = process.env.CONFORMANCE_RAW_DIR;
+    process.env.CONFORMANCE_RAW_DIR = dir;
+    try {
+      await expect(runAssertion('a.pending', 'x', {}, async () => pending('credential path in phase 7'), 1000)).rejects.toBeInstanceOf(Pending);
+      const recs = readRaw(dir);
+      expect(recs).toEqual([expect.objectContaining({ id: 'a.pending', status: 'skip', skip_reason: 'pending: credential path in phase 7' })]);
+      const cases = new Map([['a.pending', { state: 'skipped' as const, errors: [] }]]);
+      expect(reconcile(recs, cases, new Map(), new Map(), () => null, () => 'x')[0]).toMatchObject({ status: 'skip' });
+    } finally {
+      if (prev === undefined) delete process.env.CONFORMANCE_RAW_DIR;
+      else process.env.CONFORMANCE_RAW_DIR = prev;
+    }
+  });
+
+  it('a row that requires harness.credential_reads is not applicable to every manifest', () => {
+    const cat = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
+    const row = cat.assertions.find((a) => a.id === 'mac.commit-bound-to-repo')!;
+    for (const impl of ['zds', 'pdsjs', 'reference', 'atproto-pds', 'happyview']) {
+      const m = loadManifest(join(ROOT, 'implementations', impl, 'manifest.yaml'));
+      expect(notApplicable(row, m)).toMatch(/harness\.credential_reads not claimed/);
+    }
   });
 
   it('a test timeout during an open setup step is error, not a scored fail', () => {

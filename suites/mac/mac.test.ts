@@ -2,13 +2,13 @@
 // HappyView's interop tests do. 0016 requires the MAC only "when called with
 // a space credential" (#authenticity-headers), and the harness's credential
 // path comes in phase 7. So until then:
-//   - no Atproto-Space-Mac on a session read is `error` (a precondition the
-//     harness can't meet yet), never `fail`;
+//   - no Atproto-Space-Mac on a session read is `skip` ("pending: …"), never
+//     `fail` or `error`;
 //   - a MAC that is present but wrong (type, ver, or doesn't verify) is `fail`.
 // Evidence names the read auth used.
 
 import type { MacCheck } from '../../harness/actors/syncer.ts';
-import { assertion, fail, SetupError, setup } from '../../harness/assert.ts';
+import { assertion, fail, pending, setup } from '../../harness/assert.ts';
 import { parseMultikey } from '../../harness/crypto/keys.ts';
 import { REPO_TYPE, parseMacHeader } from '../../harness/crypto/mac.ts';
 import { ownerSpace } from '../fixtures.ts';
@@ -22,12 +22,11 @@ async function repoWithRecord(ctx: Parameters<typeof freshRepo>[0]): Promise<Rep
 
 const readAuth = (repo: Repo) => ({ read_auth: repo.owner.auth.mode });
 
-const CREDENTIAL_PENDING = 'precondition: 0016 requires the MAC only on space-credential reads, and the harness has no credential path yet (phase 7)';
+const CREDENTIAL_PENDING = 'MAC only required on credential reads; credential path in phase 7';
 
-/** No MAC on a session read isn't the host's fault under 0016: record error. */
+/** No MAC on a session read isn't the host's fault under 0016: skip, pending the credential path. */
 function requireMacHeader(mac: MacCheck): string {
-  if (!mac.header) throw new SetupError('MAC on a session read', new Error(CREDENTIAL_PENDING));
-  return mac.header;
+  return mac.header ?? pending(CREDENTIAL_PENDING);
 }
 
 assertion('mac.kem-key-published', async (ctx) => {
@@ -77,9 +76,10 @@ assertion('mac.commit-valid', async (ctx) => {
 
 // A real check reads the author's repo as another account (caller != author)
 // and verifies the MAC against the author's #atproto_kem, not the caller's.
-// Reading as a non-author needs a space credential (phase 7). Asking for a MAC
-// keyed to some other key, as the author, proves nothing: the host never sees
-// that key, so such a MAC can never verify.
+// Reading as a non-author needs a space credential, so the catalogue row
+// requires harness.credential_reads, which no manifest claims until phase 7:
+// it records skip. (Asking, as the author, for a MAC keyed to some other key
+// proves nothing: the host never sees that key, so it can never verify.)
 assertion('mac.commit-bound-to-repo', async () => {
-  throw new SetupError('non-author reader', new Error('precondition: needs a reader who is not the author, which needs the space-credential path (phase 7)'));
+  pending('needs a reader who is not the author, which needs the space-credential path (phase 7)');
 });

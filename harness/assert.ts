@@ -39,6 +39,24 @@ export class SetupError extends Error {
   }
 }
 
+/**
+ * The assertion can't be judged until the harness grows a capability (e.g.
+ * the space-credential read path). Recorded as `skip` with a "pending:"
+ * reason, not `error`: it's permanent until then, and an `error` would rerun
+ * the stack and fail a gated run as infrastructure.
+ */
+export class Pending extends Error {
+  readonly reason: string;
+  constructor(reason: string) {
+    super(`pending: ${reason}`);
+    this.reason = reason;
+  }
+}
+
+export const pending = (reason: string): never => {
+  throw new Pending(reason);
+};
+
 /** A check failed, with what the host actually answered. */
 export class AssertionFailure extends Error {
   readonly evidence?: Record<string, unknown>;
@@ -146,6 +164,10 @@ export function runAssertion<C>(id: string, suite: string, ctx: C, fn: (ctx: C) 
       record({ id, suite, status: 'pass', ms: Date.now() - start, ...(observed ? { message: observed } : {}) });
     } catch (e) {
       if (e instanceof DeadlineExceeded) throw e;
+      if (e instanceof Pending) {
+        record({ id, suite, status: 'skip', skip_reason: e.message });
+        throw e;
+      }
       const ms = Date.now() - start;
       const err = e as Error & { evidence?: Record<string, unknown> };
       const status = e instanceof SetupError ? 'error' : 'fail';
@@ -170,6 +192,11 @@ export function assertion(id: string, fn: (ctx: RunContext) => Promise<void | st
       t.skip(reason);
       return;
     }
-    await runAssertion(id, a.suite, ctx, fn);
+    try {
+      await runAssertion(id, a.suite, ctx, fn);
+    } catch (e) {
+      if (e instanceof Pending) return t.skip(e.message);
+      throw e;
+    }
   });
 }
