@@ -10,17 +10,20 @@ import { ROOT } from '../harness/schema.ts';
 const row = (over: Partial<Assertion>): Assertion => ({ id: 't.t', suite: 'digest', level: 'must', roles: ['repo-host'], areas: [], checks: 'x', ...over });
 
 describe('provisional fencing', () => {
-  it('reads area status from the shipped vectors', () => {
+  it('reads area status from the shipped vectors: phase 3 cleared every area', () => {
     const s = vectorStatus();
-    expect(s.get('cbor')!.pending).toBe(false); // every CID vector agrees with a third-party encoder
-    expect(s.get('jwt')!.pending).toBe(false); // RFC 7515 A.3
-    expect(s.get('mac')!.pending).toBe(true); // MAC vectors are harness-only
-    expect(s.get('star')!.pending).toBe(true);
-    expect(s.get('mac')!.pendingVectors.join()).toMatch(/mac\.json/);
+    for (const area of ['cbor', 'lthash', 'mac', 'httpsig', 'jwt', 'star'] as const) expect(s.get(area)!.pending, area).toBe(false);
   });
 
-  it('makes an assertion provisional while any of its areas is pending', () => {
+  /** Shipped status, with mac pending: the fencing logic, independent of today's vectors. */
+  const withMacPending = () => {
     const s = vectorStatus();
+    s.set('mac', { area: 'mac', pending: true, pendingVectors: ['mac.json: x'] });
+    return s;
+  };
+
+  it('makes an assertion provisional while any of its areas is pending', () => {
+    const s = withMacPending();
     expect(provisionalReason(row({ areas: ['cbor'] }), s)).toBeNull();
     expect(provisionalReason(row({ areas: ['cbor', 'mac'] }), s)).toMatch(/mac not yet cross-checked/);
     expect(provisionalReason(row({ provisional: true }), s)).toMatch(/flagged/);
@@ -41,9 +44,15 @@ describe('provisional fencing', () => {
     expect(s.get('httpsig')!.pending).toBe(true);
   });
 
-  it('leaves every MAC and STAR assertion in the shipped catalogue provisional for now', () => {
+  it('leaves no assertion in the shipped catalogue provisional by area, now every area is cleared', () => {
     const s = vectorStatus();
     const cat = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
-    for (const a of cat.assertions.filter((a) => a.suite === 'mac' || a.suite === 'export')) expect(provisionalReason(a, s), a.id).not.toBeNull();
+    for (const a of cat.assertions.filter((a) => !a.provisional)) expect(provisionalReason(a, s), a.id).toBeNull();
+  });
+
+  it('makes every MAC assertion provisional while the mac area is pending', () => {
+    const s = withMacPending();
+    const cat = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
+    for (const a of cat.assertions.filter((a) => a.suite === 'mac' && a.areas?.includes('mac'))) expect(provisionalReason(a, s), a.id).not.toBeNull();
   });
 });

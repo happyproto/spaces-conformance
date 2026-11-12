@@ -276,7 +276,9 @@ describe('STAR', () => {
     ['non-canonical meta varint', () => concat(MAGIC, new Uint8Array([0x80 | (bytes[4] & 0x7f), 0x80 | bytes[5], 0x00]), bytes.subarray(6))],
     ['meta that does not fill its length', () => { const m = encode(meta); return concat(MAGIC, varint(m.length + 1), m, new Uint8Array([0x00])); }],
     ['truncation inside a pair', () => bytes.subarray(0, bytes.length - 3)],
-    ['a key with no value', () => concat(bytes, varint(3), utf8('a/b'))],
+    ['a key with no value', () => concat(bytes.subarray(0, bytes.length - 1), new Uint8Array([0x01]), varint(3), utf8('a/b'))],
+    ['no end byte', () => bytes.subarray(0, bytes.length - 1)],
+    ['bytes after the end byte', () => concat(bytes, new Uint8Array([0x00]))],
     ['out-of-order keys', () => mk([['c.x.y/b', rec], ['c.x.y/a', rec]])],
     ['duplicate keys', () => mk([['c.x.y/a', rec], ['c.x.y/a', rec]])],
     ['a key that is not a record path', () => mk([['not-a-path', rec]])],
@@ -296,5 +298,25 @@ describe('STAR', () => {
   });
   it('builds keys from collection and rkey', () => {
     expect(hex(pathKey('a.b.c', 'self'))).toBe(hex(utf8('a.b.c/self')));
+  });
+});
+
+describe('STAR interop fixtures (microcosm.blue/star 41bdec1)', () => {
+  const load = (f: string) => JSON.parse(readFileSync(join(ROOT, 'vectors', 'star-interop', f), 'utf8'));
+  const valid: { comment: string; star_hex: string; decoded: { meta: Record<string, unknown>; pairs: { key_hex: string; value_hex: string }[] } }[] = load('valid-star-fixtures.json');
+  const invalid: { comment: string; star_hex: string }[] = load('invalid-star-fixtures.json');
+  it('has every fixture', () => {
+    expect(valid).toHaveLength(19);
+    expect(invalid).toHaveLength(37);
+  });
+  it.each(valid.map((f) => [f.comment, f] as const))('reads and rewrites: %s', (_c, f) => {
+    const star = fromHex(f.star_hex);
+    const got = readStar(star);
+    expect(toLexJson(got.meta)).toEqual(f.decoded.meta);
+    expect(got.pairs.map((p) => ({ key_hex: hex(p.key), value_hex: hex(p.value) }))).toEqual(f.decoded.pairs.map((p) => ({ key_hex: p.key_hex.toLowerCase(), value_hex: p.value_hex.toLowerCase() })));
+    expect(hex(writeStar(got.meta, got.pairs))).toBe(f.star_hex.toLowerCase());
+  });
+  it.each(invalid.map((f) => [f.comment, f] as const))('rejects: %s', (_c, f) => {
+    expect(() => readStar(fromHex(f.star_hex))).toThrow();
   });
 });

@@ -209,7 +209,9 @@ describe('declared assertions', () => {
 describe('scoring', () => {
   const cat = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
   const byId = new Map(cat.assertions.map((a) => [a.id, a]));
+  // mac set pending, so the provisional path stays covered now the shipped vectors are all cleared.
   const areas = vectorStatus();
+  areas.set('mac', { area: 'mac', pending: true, pendingVectors: ['mac.json: x'] });
 
   it('scores must rows per role, counts deviations as not passing, and leaves out provisional, info and skipped rows', () => {
     const results: RawResult[] = [

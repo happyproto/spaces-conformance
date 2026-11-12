@@ -1,17 +1,22 @@
 {
-  "description": "STAR-lite v1 archives with the atproto-space-repo profile. One valid archive and the rejections #repo-serialization requires.",
+  "description": "STAR archives with the atproto-space-repo profile: magic, meta, then each pair after a 0x01 control byte, and 0x00 to end. One valid archive and the rejections #repo-serialization requires. The generic STAR framing is cross-checked against STAR's interop fixtures (vectors/star-interop).",
   "valid": [
     {
       "name": "one record",
-      "hex": "2a6c0100ae01a6637265766d336d7a75626d63616f6b77323263766572016464617461582022b46d9c1b9992a4c57eea7e45397918b0ee1f48e0db2efbf70e6b0439ea268a647265706f6d6469643a706c633a616c69636565247479706572617470726f746f2d73706163652d7265706f657370616365783b61743a2f2f6469643a706c633a73706163652f73706163652f636f6d2e6578616d706c652e636f6e666f726d616e63652e73706163652f73656c661e636f6d2e6578616d706c652e636f6e666f726d616e63652e6e6f74652f6154a364746578746568656c6c6f652474797065781c636f6d2e6578616d706c652e636f6e666f726d616e63652e6e6f7465696372656174656441747818323032362d31312d30395430303a30303a30302e3030305a",
+      "hex": "2a6c0100ae01a6637265766d336d7a75626d63616f6b77323263766572016464617461582022b46d9c1b9992a4c57eea7e45397918b0ee1f48e0db2efbf70e6b0439ea268a647265706f6d6469643a706c633a616c69636565247479706572617470726f746f2d73706163652d7265706f657370616365783b61743a2f2f6469643a706c633a73706163652f73706163652f636f6d2e6578616d706c652e636f6e666f726d616e63652e73706163652f73656c66011e636f6d2e6578616d706c652e636f6e666f726d616e63652e6e6f74652f6154a364746578746568656c6c6f652474797065781c636f6d2e6578616d706c652e636f6e666f726d616e63652e6e6f7465696372656174656441747818323032362d31312d30395430303a30303a30302e3030305a00",
       "records": 1,
       "sources": [
-        "harness"
+        "harness",
+        "HappyView beta 5154fc61 crates/happyview-star StarReader (reads it: atproto-space-repo, one pair)",
+        "microcosm.blue/star 41bdec1 interop fixtures (framing; vectors/star-interop, all 56 pass)"
       ],
       "cross_check": {
         "area": "star",
-        "status": "pending",
-        "against": []
+        "status": "cross-checked",
+        "against": [
+          "HappyView beta 5154fc61 crates/happyview-star StarReader (reads it: atproto-space-repo, one pair)",
+          "microcosm.blue/star 41bdec1 interop fixtures (framing; vectors/star-interop, all 56 pass)"
+        ]
       }
     }
   ],

@@ -49,8 +49,11 @@
     ],
     "cross_check": {
       "area": "httpsig",
-      "status": "pending",
-      "against": []
+      "status": "cross-checked",
+      "against": [
+        "HappyView 9f084f5c spaces::http_signature::sign (same did:key and the same RFC 6979 signature bytes for the valid case)",
+        "HappyView 9f084f5c spaces::http_signature::verify (accepts valid, rejects tag other and another audience)"
+      ]
     }
   }
 }

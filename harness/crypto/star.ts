@@ -1,11 +1,17 @@
-// STAR-lite v1 (the format 0016 @701ef9c6be cites for #repo-serialization),
-// and its atproto-space-repo profile.
+// STAR (the format 0016 @701ef9c6be cites for #repo-serialization, whose
+// "framing and parsing follow STAR's rules"), and its atproto-space-repo
+// profile.
 //
-//   [ magic 2A 6C 01 00 | varint len | DRISL meta ] [ varint len | key | varint len | value ]* EOF
+//   [ magic 2A 6C 01 00 | varint len | DRISL meta ] [ 01 | varint len | key | varint len | value ]* [ 00 ]
+//
+// The pinned 0016 diagram leaves out the 0x01 / 0x00 control bytes, but STAR's
+// own rules, its interop fixtures (vectors/star-interop) and the reference
+// implementation at 98ef3a6b all use them. docs/parity.md notes the gap.
 //
 // Reader rules: exact magic; canonical varints; meta is exactly one canonical
-// DRISL map with a string $type that fills its length; EOF only at a pair
-// boundary. Any violation rejects the whole archive.
+// DRISL map with a string $type that fills its length; each pair starts with
+// 0x01; 0x00 ends the archive, and nothing may follow it. Any violation
+// rejects the whole archive.
 
 import { compareBytes, concat, fromUtf8, readVarint, utf8, varint } from './bytes.ts';
 import { decode, type DrislValue, encode } from './drisl.ts';
@@ -14,6 +20,8 @@ import { LtHash } from './lthash.ts';
 import { isNsid, isRecordKey } from '../syntax.ts';
 
 export const MAGIC = new Uint8Array([0x2a, 0x6c, 0x01, 0x00]);
+const CONTROL_PAIR = 0x01;
+const CONTROL_END = 0x00;
 const MAX_RECORD = 1024 * 1024;
 
 export interface StarArchive {
@@ -37,18 +45,28 @@ export function readStar(b: Uint8Array): StarArchive {
     throw new Error('STAR: meta must be a map');
   if (typeof (meta as Record<string, unknown>).$type !== 'string') throw new Error('STAR: meta needs a string $type');
   const pairs: StarArchive['pairs'] = [];
-  while (off < b.length) {
+  for (;;) {
+    if (off >= b.length) throw new Error('STAR: EOF before the end byte');
+    const control = b[off++];
+    if (control === CONTROL_END) break;
+    if (control !== CONTROL_PAIR) throw new Error(`STAR: invalid control byte ${control}`);
     const key = take('key');
-    if (off >= b.length) throw new Error('STAR: EOF inside a pair');
     const value = take('value');
     pairs.push({ key, value });
   }
+  if (off !== b.length) throw new Error('STAR: bytes after the end byte');
   return { meta: meta as Record<string, DrislValue>, pairs };
 }
 
 export function writeStar(meta: Record<string, DrislValue>, pairs: { key: Uint8Array; value: Uint8Array }[]): Uint8Array {
   const m = encode(meta);
-  return concat(MAGIC, varint(m.length), m, ...pairs.flatMap((p) => [varint(p.key.length), p.key, varint(p.value.length), p.value]));
+  return concat(
+    MAGIC,
+    varint(m.length),
+    m,
+    ...pairs.flatMap((p) => [Uint8Array.of(CONTROL_PAIR), varint(p.key.length), p.key, varint(p.value.length), p.value]),
+    Uint8Array.of(CONTROL_END),
+  );
 }
 
 export interface SpaceRepoCheck {
