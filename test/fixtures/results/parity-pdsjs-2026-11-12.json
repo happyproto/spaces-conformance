@@ -1,0 +1,320 @@
+{
+  "schema": 1,
+  "run": {
+    "id": "2026-11-12T16-38-07Z-pdsjs-bd40",
+    "kind": "local",
+    "started_at": "2026-11-12T16:38:07.386Z",
+    "finished_at": "2026-11-12T16:38:20.111Z",
+    "attempt": 1
+  },
+  "suite": {
+    "commit": "17a0e87161",
+    "assertions_digest": "sha256:0df506daa8f7b436f49005ed1ad08212dab65132120624ac1816d026b18814ef"
+  },
+  "spec": {
+    "proposal": "0016",
+    "revision": "2026-10-29",
+    "commit": "701ef9c6be",
+    "lexicons": "atproto@98ef3a6b"
+  },
+  "implementation": {
+    "id": "pdsjs",
+    "image": "ghcr.io/happyproto/pds-test/pdsjs@sha256:1725c1f8d2cee4c4f5095c9309f6cf27e11336b74452f0ae12628afae5fe22be",
+    "roles": [
+      "pds",
+      "repo-host",
+      "space-host"
+    ],
+    "profile": "pds",
+    "write_auth": "password-session",
+    "setup_mode": {
+      "accounts": "custom",
+      "spaces": "simplespace"
+    }
+  },
+  "peers": [
+    {
+      "id": "plc",
+      "image": "ghcr.io/happyproto/pds-test/plc@sha256:be4b9b844e460085372b74194d4d6417206f420b1f1d36c8c8ab86b5d8db9ce5"
+    }
+  ],
+  "deviations_applied": [
+    {
+      "assertion": "digest.cid-drisl-typed",
+      "cause": "space-record-encoding",
+      "reason": "createRecord and getRecord return CIDs that differ from DRISL for all four typed fixture records: a $link, a $bytes, and integers past 32 bits. Plain-JSON records match.",
+      "spec": "#commit-digest",
+      "tracking": "https://tangled.org/chadtmiller.com/pds.js/issues/4",
+      "since": "2026-11-12"
+    },
+    {
+      "assertion": "oplog.pagination-complete",
+      "cause": "oplog-cursor-ignored",
+      "reason": "listRepoOps ignores cursor, so following it repeats the first page. The lexicon says cursor takes precedence over since.",
+      "spec": "#incremental-sync",
+      "tracking": "https://tangled.org/chadtmiller.com/pds.js/issues/5",
+      "since": "2026-11-12"
+    },
+    {
+      "assertion": "oplog.pagination-batch-boundary",
+      "cause": "oplog-cursor-ignored",
+      "reason": "Paging with limit=2 across one three-op applyWrites batch, following cursor, returned m1, m2, m1, m2: the first page twice, and m3 never.",
+      "spec": "#incremental-sync",
+      "tracking": "https://tangled.org/chadtmiller.com/pds.js/issues/5",
+      "since": "2026-11-12"
+    }
+  ],
+  "results": [
+    {
+      "id": "digest.cid-drisl-plain",
+      "suite": "digest",
+      "status": "pass",
+      "ms": 73
+    },
+    {
+      "id": "digest.cid-drisl-typed",
+      "suite": "digest",
+      "status": "fail",
+      "ms": 21,
+      "message": "4 record CID(s) differ from DRISL",
+      "evidence": {
+        "mismatches": "[{\"record\":\"link\",\"expected\":\"bafyreibaqc4536cejdtbwogej27ac6hxwtv5i4r4ausdvsnq7wk6y2kkpy\",\"createRecord\":\"bafyreihmqvnpc6ub3lpjav6ixa75he5s35chcqreipr576wsy6sbekbjs4\",\"getRecord\":\"bafyreihmqvnpc6ub3lpjav6ixa75he5s35chcqreipr576wsy6sbekbjs4\"},{\"record\":\"bytes\",\"expected\":\"bafyreih7l4pqycjqw6dgo5za2ahfom47knijygwzrox3xdrqvxqcdv5icm\",\"createRecord\":\"bafyreif4ujkhdx544iazl6mvoz2yoax2bxs7i5bpci3ghkkpbhqsfjon4e\",\"getRecord\":\"bafyreif4ujkhdx544iazl6mvoz2yoax2bxs7i5bpci3ghkkpbhqsfjon4e\"},{\"record\":\"bigint\",\"expected\":\"bafyreiciwjycqqgzdnzlb27b423cbfkwpazbuvwr6cuo2iky2izjpcy47i\",\"createRecord\":\"bafyreianpq5ttxqgvpv2bv4t3fxb5jgnc4lcigkwyqpjg6bcghxfyfh32y\",\"getRecord\":\"bafyreianpq5ttxqgvpv2bv4t3fxb5jgnc4lcigkwyqpjg6bcghxfyfh32y\"},{\"record\":\"int32edge\",\"expected\":\"bafyreigebouhwxkg45klwndejbenmunuobia2wwmojhtyvyv3eu4fhuwze\",\"createRecord\":\"bafyreiaz2ouihzl4tngrgb2zgqttdvu4v5th66q6xepcm63phu5bvpco34\",\"getRecord\":\"bafyreiaz2ouihzl4tngrgb2zgqttdvu4v5th66q6xepcm63phu5bvpco34\"}]"
+      }
+    },
+    {
+      "id": "digest.covers-overwrite-and-delete",
+      "suite": "digest",
+      "status": "fail",
+      "ms": 34,
+      "message": "the host served a pre-0016 signed commit (hash, ikm, mac, sig), not a 0016 commit; its pre-0016 hash equals the expected digest",
+      "evidence": {
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"mV97vHpFMpf8eQbwPjpUyvBl8wEdysBSbr7WacGhqkY\"},\"ikm\":{\"$bytes\":\"1MAAxp7U7tUPvxyGq6TCaOYhSz1yaHpIHv3SCaaQZpk\"},\"sig\":{\"$bytes\":\"fFPdBbQZVM7ViLD9q7AU5+QJ62ZNj0hgJR+uqBHjmklTPQR0hSzvGbnSPuB7PngIdi+9CrLa1Q/DiPZHHO2zog\"},\"mac\":{\"$bytes\":\"6KXJW75MmHo1yVDCW5QLiBoOcb8X6GtUIqGuQdjYPKY\"},\"rev\":\"3n24vsahy3sx6\"}",
+        "legacy_hash": "995f7bbc7a453297fc7906f03e3a54caf065f3011dcac0526ebed669c1a1aa46",
+        "expected": "995f7bbc7a453297fc7906f03e3a54caf065f3011dcac0526ebed669c1a1aa46"
+      }
+    },
+    {
+      "id": "digest.matches-record-set",
+      "suite": "digest",
+      "status": "fail",
+      "ms": 68,
+      "message": "the host served a pre-0016 signed commit (hash, ikm, mac, sig), not a 0016 commit; its pre-0016 hash equals the expected digest",
+      "evidence": {
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"FtSKFAdJyveH+Yso4+SYHB/ey3XN+zJSC+A1tn7tttM\"},\"ikm\":{\"$bytes\":\"VrOH7qe4JV9pBr3vZtMUCRK2Xi6JUlCk6IX/w/hz6+U\"},\"sig\":{\"$bytes\":\"I3/plsJLkCSANlKxvSPKqQGVaPBCQC4oZPSrwhiCbXx4DtjTTKzM5oZRg3aRJaLwUwCLzhoykonghDB7VYQdiA\"},\"mac\":{\"$bytes\":\"z8ENo+h9YUsT3m6e6DKRsI5a0Li63MiBdKUsPSxNafs\"},\"rev\":\"3n24vsagq2kx6\"}",
+        "legacy_hash": "16d48a140749caf787f98b28e3e4981c1fdecb75cdfb32520be035b67eedb6d3",
+        "expected": "16d48a140749caf787f98b28e3e4981c1fdecb75cdfb32520be035b67eedb6d3"
+      }
+    },
+    {
+      "id": "digest.multi-batch",
+      "suite": "digest",
+      "status": "fail",
+      "ms": 56,
+      "message": "the host served a pre-0016 signed commit (hash, ikm, mac, sig), not a 0016 commit; its pre-0016 hash equals the expected digest",
+      "evidence": {
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"3Id2QfGLQeTHtfByzLFbYuco/Xx8/kteg0D6h641xO4\"},\"ikm\":{\"$bytes\":\"FEjF0BXbyZGkQKQpz5gR+M+P+zaACp064Hpb479jPSY\"},\"sig\":{\"$bytes\":\"8Kidoxb9Q3nN4nRqLMlk2G79dqHk+48Y0NdfptQOmexUGMMT4uMpxfkuaLIsUqT4GPw3j8VWmNkvUCZzemRxwQ\"},\"mac\":{\"$bytes\":\"8XcrIOxdWzRYqeB13HNPMfz8Du1r/KiOdKthQTCAk5U\"},\"rev\":\"3n24vsajd2sx6\"}",
+        "legacy_hash": "dc877641f18b41e4c7b5f072ccb15b62e728fd7c7cfe4b5e8340fa87ae35c4ee",
+        "expected": "dc877641f18b41e4c7b5f072ccb15b62e728fd7c7cfe4b5e8340fa87ae35c4ee"
+      }
+    },
+    {
+      "id": "info.read-auth-status",
+      "suite": "records",
+      "status": "pass",
+      "ms": 1,
+      "message": "listRecords with no auth answered 401"
+    },
+    {
+      "id": "info.unknown-method-status",
+      "suite": "records",
+      "status": "pass",
+      "ms": 1,
+      "message": "an unknown method answered 501"
+    },
+    {
+      "id": "lifecycle.implicit-create",
+      "suite": "lifecycle",
+      "status": "pass",
+      "ms": 103
+    },
+    {
+      "id": "mac.commit-bound-to-repo",
+      "suite": "mac",
+      "status": "skip",
+      "skip_reason": "capability harness.credential_reads not claimed"
+    },
+    {
+      "id": "mac.commit-header-present",
+      "suite": "mac",
+      "status": "skip",
+      "skip_reason": "pending: MAC only required on credential reads; credential path in phase 7"
+    },
+    {
+      "id": "mac.commit-valid",
+      "suite": "mac",
+      "status": "skip",
+      "skip_reason": "pending: MAC only required on credential reads; credential path in phase 7"
+    },
+    {
+      "id": "mac.kem-key-published",
+      "suite": "mac",
+      "status": "pass",
+      "ms": 57
+    },
+    {
+      "id": "oplog.entry-shape",
+      "suite": "oplog",
+      "status": "pass",
+      "ms": 358
+    },
+    {
+      "id": "oplog.fold-matches-commit",
+      "suite": "oplog",
+      "status": "fail",
+      "ms": 99,
+      "message": "the host served a pre-0016 signed commit (hash, ikm, mac, sig), not a 0016 commit; its pre-0016 hash differs from the expected digest too",
+      "evidence": {
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"sqkLD2pB3gEcDc9uigKrdKJDqyuV8VtROQPvFOn8qGo\"},\"ikm\":{\"$bytes\":\"x3lqE0FBKApY5wmdC1dDajgjSadDS24CrIpz7xoCSLg\"},\"sig\":{\"$bytes\":\"6ZRUa83fGlRBi5wNZf0eNq6NDdqXrQLm8lNy6qaT/ns5cE/hSmk1gqk0NCBMBdrq7rFFCoU5/IH4xohsIkF4bA\"},\"mac\":{\"$bytes\":\"kP04o182CGC5fTt2SIIcjfLP0ot7DDPfiGiURGksTuo\"},\"rev\":\"3n24vs7ewysx6\"}",
+        "legacy_hash": "b2a90b0f6a41de011c0dcf6e8a02ab74a243ab2b95f15b513903ef14e9fca86a",
+        "expected": "8dd7834cb1a9e4b1d392c27ea92d39822f182ca7f2a5ab07a96ff4b70b22b6bb"
+      }
+    },
+    {
+      "id": "oplog.pagination-batch-boundary",
+      "suite": "oplog",
+      "status": "fail",
+      "ms": 32,
+      "message": "a page boundary inside one applyWrites batch lost ops: got [m1, m1, m2, m2]",
+      "evidence": {
+        "pages": "[2,2]",
+        "ops": "[{\"rev\":\"3n24vs77gakx6\",\"rkey\":\"m1\",\"cid\":\"bafyreife6wrnazkbiqvbobtnjdacmssi4nlkspxtoylbgbdtlbz2bfrohm\",\"prev\":null,\"value\":true},{\"rev\":\"3n24vs77gakx6\",\"rkey\":\"m2\",\"cid\":\"bafyreigqkaoxf3vbzxg7w2kjn7vfbk5nwwbgrudskbsdiaunlzxkywhztq\",\"prev\":null,\"value\":true},{\"rev\":\"3n24vs77gakx6\",\"rkey\":\"m1\",\"cid\":\"bafyreife6wrnazkbiqvbobtnjdacmssi4nlkspxtoylbgbdtlbz2bfrohm\",\"prev\":null,\"value\":true},{\"rev\":\"3n24vs77gakx6\",\"rkey\":\"m2\",\"cid\":\"bafyreigqkaoxf3vbzxg7w2kjn7vfbk5nwwbgrudskbsdiaunlzxkywhztq\",\"prev\":null,\"value\":true}]"
+      }
+    },
+    {
+      "id": "oplog.pagination-complete",
+      "suite": "oplog",
+      "status": "fail",
+      "ms": 115,
+      "message": "following cursor with limit=2 returned p0 2 times, not once",
+      "evidence": {
+        "pages": "[2,2]",
+        "ops": "[{\"rev\":\"3n24vs73sz2x6\",\"rkey\":\"p0\",\"cid\":\"bafyreiawph7lrdogmdrdlcws7dydjyczhweqyneviinmnd66urnjrcizz4\",\"prev\":null,\"value\":true},{\"rev\":\"3n24vs74dmcx6\",\"rkey\":\"p1\",\"cid\":\"bafyreife6wrnazkbiqvbobtnjdacmssi4nlkspxtoylbgbdtlbz2bfrohm\",\"prev\":null,\"value\":true},{\"rev\":\"3n24vs73sz2x6\",\"rkey\":\"p0\",\"cid\":\"bafyreiawph7lrdogmdrdlcws7dydjyczhweqyneviinmnd66urnjrcizz4\",\"prev\":null,\"value\":true},{\"rev\":\"3n24vs74dmcx6\",\"rkey\":\"p1\",\"cid\":\"bafyreife6wrnazkbiqvbobtnjdacmssi4nlkspxtoylbgbdtlbz2bfrohm\",\"prev\":null,\"value\":true}]"
+      }
+    },
+    {
+      "id": "oplog.since-exclusive",
+      "suite": "oplog",
+      "status": "pass",
+      "ms": 64
+    },
+    {
+      "id": "oplog.stale-values-omitted",
+      "suite": "oplog",
+      "status": "pass",
+      "ms": 87
+    },
+    {
+      "id": "policy.create-get-roundtrip",
+      "suite": "policy",
+      "status": "fail",
+      "ms": 63,
+      "message": "policy.$type is \"com.atproto.simplespace.defs#publicPolicy\", not \"com.atproto.memberspace.policy\"",
+      "evidence": {
+        "status": 200,
+        "body": "{\"uri\":\"at://did:plc:m7mmzfocdwakykeraurvfpqw/space/com.example.conformance.space/938cda9b9a92\",\"readPolicy\":{\"$type\":\"com.atproto.simplespace.defs#publicPolicy\"},\"writePolicy\":{\"$type\":\"com.atproto.simplespace.defs#memberListPolicy\"},\"policy\":{\"$type\":\"com.atproto.simplespace.defs#publicPolicy\"},\"appAccess\":{\"$type\":\"com.atproto.simplespace.defs#allowList\",\"allowed\":[\"https://app.example/oauth-client-metadata.json\"]},\"config\":{\"$type\":\"com.atproto.simplespace.defs#spaceConfig\",\"policy\":\"public\",\"appAccess\":{\"$type\":\"com.atproto.simplespace.defs#allowList\",\"allowed\":[\"https://app.example/oauth-client-metadata.json\"]}}}"
+      }
+    },
+    {
+      "id": "policy.member-methods",
+      "suite": "policy",
+      "status": "fail",
+      "ms": 78,
+      "message": "memberspace.putMember answered 501",
+      "evidence": {
+        "body": "{\"error\":\"MethodNotImplemented\",\"message\":\"Method Not Implemented\"}"
+      }
+    },
+    {
+      "id": "policy.put-member-upsert",
+      "suite": "policy",
+      "status": "fail",
+      "ms": 1,
+      "message": "memberspace.putMember (write: false) answered 501",
+      "evidence": {
+        "body": "{\"error\":\"MethodNotImplemented\",\"message\":\"Method Not Implemented\"}"
+      }
+    },
+    {
+      "id": "records.apply-writes-atomic",
+      "suite": "records",
+      "status": "pass",
+      "ms": 52
+    },
+    {
+      "id": "records.commit-bytes-encoding",
+      "suite": "records",
+      "status": "fail",
+      "ms": 8,
+      "message": "commit.data is not {\"$bytes\": ...}",
+      "evidence": {
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"dU010WKp8CadeNKHwmjV6xOWIXB5kwj6hydmN/NzXUY\"},\"ikm\":{\"$bytes\":\"xm0cCnZgyM1n23+vypmmMFGrDJ5L7Uz42lNeRjMLKsg\"},\"sig\":{\"$bytes\":\"hXGzeEGxEU3M/UV17K/S3ddpyV2Ak/SihPEhHbShYC5KK076vG5egy8/lv+OL4gaZuQVx+sUzkADuPG7zKgD9Q\"},\"mac\":{\"$bytes\":\"6/qtd+gC1CPjGKtzMCwTCOidmcLrDMTv+C/gtqVU0gs\"},\"rev\":\"3n24vsap4mdx6\"}"
+      }
+    },
+    {
+      "id": "records.commit-fields",
+      "suite": "records",
+      "status": "fail",
+      "ms": 40,
+      "message": "commit fields are [hash, ikm, mac, rev, sig, ver], not exactly [data, repo, rev, space, ver]",
+      "evidence": {
+        "body": "{\"commit\":{\"ver\":1,\"hash\":{\"$bytes\":\"X1hQC32Idq8bFQkwBpjsRDcoro+e19gur1Y/GxOYlys\"},\"ikm\":{\"$bytes\":\"FJtDhz2/vR/G/r+/sc917JWeub6Ktnos/XFk4FT87lc\"},\"sig\":{\"$bytes\":\"DUGAyy3qfBcwMRs3y89vWBBB/EBcQHIyodt5Yku+4A8O2OVQcZL1cGcr6OD9wiu58QRyzhC3fBydtWM23/N34g\"},\"mac\":{\"$bytes\":\"wi2twAlMBJ3mizolZMsX6+e7NDI5GXpuYLAkTefvG5Q\"},\"rev\":\"3n24vsaott3x6\"}}"
+      }
+    },
+    {
+      "id": "records.commit-repo-space-match",
+      "suite": "records",
+      "status": "fail",
+      "ms": 10,
+      "message": "the commit has no repo or space field",
+      "evidence": {
+        "requested": "{\"repo\":\"did:plc:m7mmzfocdwakykeraurvfpqw\",\"space\":\"at://did:plc:m7mmzfocdwakykeraurvfpqw/space/com.example.conformance.space/b891f3c26df6\"}",
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"7uuLRV3NgMMLlfRNE615tOKNRjV08uOfXUBQqCIJpOI\"},\"ikm\":{\"$bytes\":\"YrKAWpJbb+aqDWI05DDa+YZQ1nZOXcxfP7bV42KAaZs\"},\"sig\":{\"$bytes\":\"1N+zIt3RhdHg7OekwvJQTVD4+l+kDirmxyQ6RqOfPK5vV92R2Q6OkwnBoamml4t2VSokz/rYr/AD2DRsg30Y+w\"},\"mac\":{\"$bytes\":\"JXcW/Ij0IP8GsB3H74CxtWycLJo9+WnEoOptb0X+fhI\"},\"rev\":\"3n24vsapfflx6\"}"
+      }
+    },
+    {
+      "id": "records.crud-roundtrip",
+      "suite": "records",
+      "status": "pass",
+      "ms": 73
+    },
+    {
+      "id": "records.read-requires-auth",
+      "suite": "records",
+      "status": "pass",
+      "ms": 40
+    }
+  ],
+  "summary": {
+    "by_role": {
+      "pds": {
+        "must_applicable": 6,
+        "must_pass": 3,
+        "should_applicable": 0,
+        "should_pass": 0
+      },
+      "repo-host": {
+        "must_applicable": 18,
+        "must_pass": 8,
+        "should_applicable": 0,
+        "should_pass": 0
+      },
+      "space-host": {
+        "must_applicable": 3,
+        "must_pass": 0,
+        "should_applicable": 0,
+        "should_pass": 0
+      }
+    },
+    "unexpected": 10
+  }
+}

@@ -1,0 +1,285 @@
+{
+  "schema": 1,
+  "run": {
+    "id": "2026-11-12T16-37-56Z-atproto-pds-d008",
+    "kind": "local",
+    "started_at": "2026-11-12T16:37:56.510Z",
+    "finished_at": "2026-11-12T16:38:06.494Z",
+    "attempt": 1
+  },
+  "suite": {
+    "commit": "17a0e87161",
+    "assertions_digest": "sha256:0df506daa8f7b436f49005ed1ad08212dab65132120624ac1816d026b18814ef"
+  },
+  "spec": {
+    "proposal": "0016",
+    "revision": "2026-10-29",
+    "commit": "701ef9c6be",
+    "lexicons": "atproto@98ef3a6b"
+  },
+  "implementation": {
+    "id": "atproto-pds",
+    "image": "ghcr.io/happyproto/pds-test/atproto-pds@sha256:19a0f54acd6dca38a44097987f8e000504a2cf090c81768f2957bdcee2431848",
+    "roles": [
+      "pds",
+      "repo-host",
+      "space-host"
+    ],
+    "profile": "pds",
+    "write_auth": "password-session",
+    "setup_mode": {
+      "accounts": "create-account",
+      "spaces": "simplespace"
+    }
+  },
+  "peers": [
+    {
+      "id": "plc",
+      "image": "ghcr.io/happyproto/pds-test/plc@sha256:be4b9b844e460085372b74194d4d6417206f420b1f1d36c8c8ab86b5d8db9ce5"
+    }
+  ],
+  "deviations_applied": [],
+  "results": [
+    {
+      "id": "digest.cid-drisl-plain",
+      "suite": "digest",
+      "status": "pass",
+      "ms": 103
+    },
+    {
+      "id": "digest.cid-drisl-typed",
+      "suite": "digest",
+      "status": "pass",
+      "ms": 24
+    },
+    {
+      "id": "digest.covers-overwrite-and-delete",
+      "suite": "digest",
+      "status": "fail",
+      "ms": 21,
+      "message": "the host served a pre-0016 signed commit (hash, ikm, mac, sig), not a 0016 commit; its pre-0016 hash equals the expected digest",
+      "evidence": {
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"mV97vHpFMpf8eQbwPjpUyvBl8wEdysBSbr7WacGhqkY\"},\"mac\":{\"$bytes\":\"hU1IVwKw3IVmKfLit7HSj0ZCJ0K2+oULnU3M44ekWIQ\"},\"ikm\":{\"$bytes\":\"uA+mtmfB3Sq/jjbBY2MJ4KaZ2E5MzL+bwjIlSZ/M6+s\"},\"sig\":{\"$bytes\":\"Z9ewkTbZZf/SbN09LRXFVwCyN3wfENszRrEfQNR+Y69iDRQ/hJQTFamgDFrTba6YASVcRIxEBgGmVQhAVTLBEw\"},\"rev\":\"3n24vrtfu55qt\"}",
+        "legacy_hash": "995f7bbc7a453297fc7906f03e3a54caf065f3011dcac0526ebed669c1a1aa46",
+        "expected": "995f7bbc7a453297fc7906f03e3a54caf065f3011dcac0526ebed669c1a1aa46"
+      }
+    },
+    {
+      "id": "digest.matches-record-set",
+      "suite": "digest",
+      "status": "fail",
+      "ms": 111,
+      "message": "the host served a pre-0016 signed commit (hash, ikm, mac, sig), not a 0016 commit; its pre-0016 hash equals the expected digest",
+      "evidence": {
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"FtSKFAdJyveH+Yso4+SYHB/ey3XN+zJSC+A1tn7tttM\"},\"mac\":{\"$bytes\":\"SccAhQkqHtORH6i1Vtuo+uXYYPWeNuaW4MYDJJnN958\"},\"ikm\":{\"$bytes\":\"RY7Pe2OIBcHPh4tjacBkjZ+Jg6P7hCbJGinq+Gt7kwU\"},\"sig\":{\"$bytes\":\"blDfqCuPyOAoiqhBwWMzuomVPUujd+FbV9uwCqZrzkxK8ZhSWHd+XdnS2IFfug4l55/PIpacX3FtkrQfk0BjAg\"},\"rev\":\"3n24vrtevaw6b\"}",
+        "legacy_hash": "16d48a140749caf787f98b28e3e4981c1fdecb75cdfb32520be035b67eedb6d3",
+        "expected": "16d48a140749caf787f98b28e3e4981c1fdecb75cdfb32520be035b67eedb6d3"
+      }
+    },
+    {
+      "id": "digest.multi-batch",
+      "suite": "digest",
+      "status": "fail",
+      "ms": 29,
+      "message": "the host served a pre-0016 signed commit (hash, ikm, mac, sig), not a 0016 commit; its pre-0016 hash equals the expected digest",
+      "evidence": {
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"3Id2QfGLQeTHtfByzLFbYuco/Xx8/kteg0D6h641xO4\"},\"mac\":{\"$bytes\":\"YWJI6grZTM3wLE+LUw+Beh2J/fLjvnnEYca1IHHRnDM\"},\"ikm\":{\"$bytes\":\"+29ZNwZ30oQOc5O/KzXzYxtWjW7BOLpbTZ0HLya4zEA\"},\"sig\":{\"$bytes\":\"Mt4qVFymRyjggxO0jls2PWjf3Z92UZDecDrC/1MXY08xZKjid71LiT2fsUZCYb+8XmZn68a9cj5JShKyg7Qteg\"},\"rev\":\"3n24vrtgiiffr\"}",
+        "legacy_hash": "dc877641f18b41e4c7b5f072ccb15b62e728fd7c7cfe4b5e8340fa87ae35c4ee",
+        "expected": "dc877641f18b41e4c7b5f072ccb15b62e728fd7c7cfe4b5e8340fa87ae35c4ee"
+      }
+    },
+    {
+      "id": "info.read-auth-status",
+      "suite": "records",
+      "status": "pass",
+      "ms": 1,
+      "message": "listRecords with no auth answered 401"
+    },
+    {
+      "id": "info.unknown-method-status",
+      "suite": "records",
+      "status": "pass",
+      "ms": 1,
+      "message": "an unknown method answered 501"
+    },
+    {
+      "id": "lifecycle.implicit-create",
+      "suite": "lifecycle",
+      "status": "pass",
+      "ms": 158
+    },
+    {
+      "id": "mac.commit-bound-to-repo",
+      "suite": "mac",
+      "status": "skip",
+      "skip_reason": "capability harness.credential_reads not claimed"
+    },
+    {
+      "id": "mac.commit-header-present",
+      "suite": "mac",
+      "status": "skip",
+      "skip_reason": "pending: no #atproto_kem key to request a MAC with (graded by mac.kem-key-published)"
+    },
+    {
+      "id": "mac.commit-valid",
+      "suite": "mac",
+      "status": "skip",
+      "skip_reason": "pending: no #atproto_kem key to request a MAC with (graded by mac.kem-key-published)"
+    },
+    {
+      "id": "mac.kem-key-published",
+      "suite": "mac",
+      "status": "fail",
+      "ms": 78,
+      "message": "did:plc:33nwewphkvlaxjflhjcflqdz's DID document has no #atproto_kem verification method",
+      "evidence": {
+        "verificationMethod": "[{\"id\":\"did:plc:33nwewphkvlaxjflhjcflqdz#atproto\",\"type\":\"Multikey\",\"controller\":\"did:plc:33nwewphkvlaxjflhjcflqdz\",\"publicKeyMultibase\":\"zQ3shV9gpMR1Gpm6PNWoQE3i7pk4Tcu8cjXHJf45kx9Lio8At\"},{\"id\":\"did:plc:33nwewphkvlaxjflhjcflqdz#atproto_space\",\"type\":\"Multikey\",\"controller\":\"did:plc:33nwewphkvlaxjflhjcflqdz\",\"publicKeyMultibase\":\"zQ3shV9gpMR1Gpm6PNWoQE3i7pk4Tcu8cjXHJf45kx9Lio8At\"}]"
+      }
+    },
+    {
+      "id": "oplog.entry-shape",
+      "suite": "oplog",
+      "status": "pass",
+      "ms": 166
+    },
+    {
+      "id": "oplog.fold-matches-commit",
+      "suite": "oplog",
+      "status": "fail",
+      "ms": 21,
+      "message": "the host served a pre-0016 signed commit (hash, ikm, mac, sig), not a 0016 commit; its pre-0016 hash equals the expected digest",
+      "evidence": {
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"sqkLD2pB3gEcDc9uigKrdKJDqyuV8VtROQPvFOn8qGo\"},\"mac\":{\"$bytes\":\"Cscd4+8+Kcap6S4i+w5gSDjY9f2hOr9gnXVUCrUozNc\"},\"ikm\":{\"$bytes\":\"XmS2p2xzDlIvqxal+mjRDXSn6KEWgW/AULPYBzurLME\"},\"sig\":{\"$bytes\":\"G9z+rqGf1MZPOmGJbXstg3XhoTjhf91kL6qTq00Oax4Df/aHL7Jlc8SXwSxslqM8pUXpx1WBqi7qeoBR0d3Iuw\"},\"rev\":\"3n24vrsg6cadx\"}",
+        "legacy_hash": "b2a90b0f6a41de011c0dcf6e8a02ab74a243ab2b95f15b513903ef14e9fca86a",
+        "expected": "b2a90b0f6a41de011c0dcf6e8a02ab74a243ab2b95f15b513903ef14e9fca86a"
+      }
+    },
+    {
+      "id": "oplog.pagination-batch-boundary",
+      "suite": "oplog",
+      "status": "pass",
+      "ms": 8
+    },
+    {
+      "id": "oplog.pagination-complete",
+      "suite": "oplog",
+      "status": "pass",
+      "ms": 23
+    },
+    {
+      "id": "oplog.since-exclusive",
+      "suite": "oplog",
+      "status": "pass",
+      "ms": 13
+    },
+    {
+      "id": "oplog.stale-values-omitted",
+      "suite": "oplog",
+      "status": "pass",
+      "ms": 16
+    },
+    {
+      "id": "policy.create-get-roundtrip",
+      "suite": "policy",
+      "status": "fail",
+      "ms": 95,
+      "message": "policy.$type is \"com.atproto.simplespace.defs#publicPolicy\", not \"com.atproto.memberspace.policy\"",
+      "evidence": {
+        "status": 200,
+        "body": "{\"uri\":\"at://did:plc:oivsvx4bnvqptf4mpx6torv6/space/com.example.conformance.space/4867ff63cab2\",\"readPolicy\":{\"$type\":\"com.atproto.simplespace.defs#publicPolicy\"},\"writePolicy\":{\"$type\":\"com.atproto.simplespace.defs#memberListPolicy\"},\"appAccess\":{\"$type\":\"com.atproto.simplespace.defs#allowList\",\"allowed\":[\"https://app.example/oauth-client-metadata.json\"]},\"policy\":{\"$type\":\"com.atproto.simplespace.defs#publicPolicy\"},\"config\":{\"$type\":\"com.atproto.simplespace.defs#spaceConfig\",\"appAccess\":{\"$type\":\"com.atproto.simplespace.defs#allowList\",\"allowed\":[\"https://app.example/oauth-client-metadata.json\"]},\"policy\":\"public\"}}"
+      }
+    },
+    {
+      "id": "policy.member-methods",
+      "suite": "policy",
+      "status": "fail",
+      "ms": 50,
+      "message": "memberspace.putMember answered 501",
+      "evidence": {
+        "body": "{\"error\":\"MethodNotImplemented\",\"message\":\"Method Not Implemented\"}"
+      }
+    },
+    {
+      "id": "policy.put-member-upsert",
+      "suite": "policy",
+      "status": "fail",
+      "ms": 1,
+      "message": "memberspace.putMember (write: false) answered 501",
+      "evidence": {
+        "body": "{\"error\":\"MethodNotImplemented\",\"message\":\"Method Not Implemented\"}"
+      }
+    },
+    {
+      "id": "records.apply-writes-atomic",
+      "suite": "records",
+      "status": "pass",
+      "ms": 13
+    },
+    {
+      "id": "records.commit-bytes-encoding",
+      "suite": "records",
+      "status": "fail",
+      "ms": 6,
+      "message": "commit.data is not {\"$bytes\": ...}",
+      "evidence": {
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"P92SF1QHsespzo8/RcOqyfUTGvjXHr/17jrM1Cidjlg\"},\"mac\":{\"$bytes\":\"5VRb3Ma8sDkFWOtlYR0tha97vXPgiLtkUAVP1Een+c0\"},\"ikm\":{\"$bytes\":\"9f4kjyZgpELL/h2YUiT2pAzAuR4hqXXbgw3ORYMOMT8\"},\"sig\":{\"$bytes\":\"3ESyGQhAKLmq/JJ31iQIe278lJNrOvfl3O91nHOHx+soiFq/deBvskZXgUktoVDEvnAvANz+dJdcgkBrxqlJsw\"},\"rev\":\"3n24vrtnrpzrl\"}"
+      }
+    },
+    {
+      "id": "records.commit-fields",
+      "suite": "records",
+      "status": "fail",
+      "ms": 91,
+      "message": "commit fields are [hash, ikm, mac, rev, sig, ver], not exactly [data, repo, rev, space, ver]",
+      "evidence": {
+        "body": "{\"commit\":{\"ver\":1,\"hash\":{\"$bytes\":\"AqBNm53fMbbO3adutGsc7voav3kFuFHtn3RD3D3rj+k\"},\"mac\":{\"$bytes\":\"pNyr9V517+fiDjFPvdE54VH5EuV1EGoEX05LC+klqaY\"},\"ikm\":{\"$bytes\":\"f/Z85PMhEBm7snuaq5Zq/O5b15iywTmP6ET31SoqxQs\"},\"sig\":{\"$bytes\":\"Uc8THHZ6hEJUFYOaCE8ftN/Qtgc3MhgKflrkfsiwSvRMvBQsa1zieUVxLNxnZVNPMbAZVgSphI0KJ9R+/p+8wA\"},\"rev\":\"3n24vrtngzz5p\"}}"
+      }
+    },
+    {
+      "id": "records.commit-repo-space-match",
+      "suite": "records",
+      "status": "fail",
+      "ms": 6,
+      "message": "the commit has no repo or space field",
+      "evidence": {
+        "requested": "{\"repo\":\"did:plc:msfcqref2gke7lhvvencqqil\",\"space\":\"at://did:plc:msfcqref2gke7lhvvencqqil/space/com.example.conformance.space/a3cfe06fef42\"}",
+        "commit": "{\"ver\":1,\"hash\":{\"$bytes\":\"4qa868XPa3vxaaAgDP5aw1sH5Exlq+jT5TUg1rMHPpw\"},\"mac\":{\"$bytes\":\"ORKDMTsIOepVpZGs9rP5LfGPF7coYFIBu6+aPUGXhHU\"},\"ikm\":{\"$bytes\":\"cvTIu3cs/Q3PbSYzIAXwM3ax1SDgFUdKZpH2EdC15NE\"},\"sig\":{\"$bytes\":\"c3gCacU7K2YDEAdnYGY3jhxjVYMtxOLVJ/e9ZoaybN9sxhE17Fi55gkDoFv1MulJtWCuV6uJfKVgPYozDqBdfg\"},\"rev\":\"3n24vrtnyffng\"}"
+      }
+    },
+    {
+      "id": "records.crud-roundtrip",
+      "suite": "records",
+      "status": "pass",
+      "ms": 108
+    },
+    {
+      "id": "records.read-requires-auth",
+      "suite": "records",
+      "status": "pass",
+      "ms": 83
+    }
+  ],
+  "summary": {
+    "by_role": {
+      "pds": {
+        "must_applicable": 6,
+        "must_pass": 3,
+        "should_applicable": 0,
+        "should_pass": 0
+      },
+      "repo-host": {
+        "must_applicable": 18,
+        "must_pass": 10,
+        "should_applicable": 0,
+        "should_pass": 0
+      },
+      "space-host": {
+        "must_applicable": 3,
+        "must_pass": 0,
+        "should_applicable": 0,
+        "should_pass": 0
+      }
+    },
+    "unexpected": 11
+  }
+}
