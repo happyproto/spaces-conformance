@@ -1,12 +1,23 @@
 // pds.js setup hooks (ungraded). pds.js hosts one account and has no
 // createAccount: the operator registers a did:plc and hands the server its
-// signing and KEM keys through /init.
+// signing and KEM keys through /init. Each harness user has its own
+// container, pdsjs-<name>.test (compose.yml).
+//
+// Requests use the account's password session (createSession, then Bearer),
+// as HappyView's pds.js interop tests do; 0016 doesn't name it, and the run
+// records write_auth: password-session. OAuth with DPoP through consent()
+// works too (test/stack/oauth.stack.test.ts); the scope suites use it (phase 7).
+// The pinned image serves only the Oct 22 com.atproto.simplespace.createSpace;
+// --setup-mode picks.
 
+import type { Adapter } from '../../harness/adapter.ts';
+import { setup } from '../../harness/assert.ts';
 import { hex } from '../../harness/crypto/bytes.ts';
 import { generate } from '../../harness/crypto/keys.ts';
 import { http, json } from '../../harness/http.ts';
 import type { Plc } from '../../harness/actors/plc.ts';
 import { pdsjsConsent } from '../../harness/oauth/consent/pdsjs.ts';
+import { bearer, createSpace, recordedMode } from '../../harness/setup.ts';
 
 export const PASSWORD = 'password123';
 
@@ -37,3 +48,20 @@ export async function provisionAccount(plc: Plc, pdsUrl: string, handle: string,
 }
 
 export const consent = (account: PdsjsAccount) => pdsjsConsent(account.password);
+
+/** The harness users that have a pds.js container. */
+export const USERS = ['alice', 'bob'] as const;
+
+export const adapter: Adapter = {
+  setupMode: (m) => recordedMode(m, 'custom'),
+  provisionAccount: (ctx, name) =>
+    setup(`pds.js account ${name}`, async () => {
+      if (!(USERS as readonly string[]).includes(name)) throw new Error(`pds.js has a container only for ${USERS.join(', ')}, not ${name}`);
+      const pdsUrl = `http://pdsjs-${name}.test`;
+      const a = await provisionAccount(ctx.plc, pdsUrl, `${name}.test`);
+      const r = await http(`${pdsUrl}/xrpc/com.atproto.server.createSession`, json({ identifier: a.did, password: a.password }));
+      if (r.status !== 200 || typeof r.body?.accessJwt !== 'string') throw new Error(`createSession answered ${r.status}: ${JSON.stringify(r.body)}`);
+      return { did: a.did, handle: a.handle, repoHost: pdsUrl, auth: bearer(r.body.accessJwt) };
+    }),
+  createSpace: (ctx, owner, spaceType, policy) => createSpace(ctx.manifest, owner.repoHost, owner, spaceType, policy),
+};

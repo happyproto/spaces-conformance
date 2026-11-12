@@ -1,0 +1,36 @@
+id: atproto-pds
+name: atproto-pds (atproto-crates)
+source: https://tangled.org/ngerakines.me/atproto-crates
+image:
+  repository: ghcr.io/happyproto/pds-test/atproto-pds
+  pin: ATPROTO_PDS_IMAGE
+  dispatch_target: atproto-pds
+spec_revision: "2026-10-29"
+roles: [pds, repo-host, space-host]
+profile: pds
+capabilities:
+  # Claimed from the spec's baseline; phase 3 confirms each against a run.
+  policies: [personalspace, memberspace, managedspace]
+  repo_host:
+    foreign_authorities: true
+  oauth:
+    # Advertises an https issuer; no headless consent script yet.
+    scripted: false
+compose: compose.yml
+base_url: https://atproto-pds.test
+health: /xrpc/_health
+accounts:
+  mode: create-account
+  write_auth: password-session
+spaces:
+  authority: account
+  # Setup only (ungraded). The pinned image serves only the Oct 22
+  # simplespace.createSpace; cli/run.ts --setup-mode picks another mode.
+  create: simplespace
+  modes: [oct29, simplespace, auto]
+setup: adapter.ts
+deviations: deviations.yaml
+quirks:
+  # Signing keys are named sk-<millis>: accounts created in the same
+  # millisecond collide, so the adapter creates them one at a time.
+  serial_account_creation: true

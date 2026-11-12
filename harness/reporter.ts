@@ -196,7 +196,7 @@ export default class ConformanceReporter implements Reporter {
       (id) => byId.get(id)?.suite ?? 'records',
       openSetupSteps(),
     );
-    const file = assemble(env, adapter.setupMode, results);
+    const file = assemble(env, adapter.setupMode(manifest), results);
     const problems = validateResults(file, 'results', catalogue);
     const outDir = env.CONFORMANCE_OUT_DIR ?? join(ROOT, 'results-local');
     mkdirSync(outDir, { recursive: true });

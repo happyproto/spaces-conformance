@@ -41,6 +41,12 @@ reference.test {
 	reverse_proxy reference:3000
 }
 
+atproto-pds.test {
+	import logged
+	tls internal
+	reverse_proxy atproto-pds:3000
+}
+
 harness.test {
 	import logged
 	tls internal

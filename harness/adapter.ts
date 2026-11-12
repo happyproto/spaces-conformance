@@ -22,7 +22,8 @@ export interface Account {
 
 export interface SetupMode {
   accounts: 'create-account' | 'custom' | 'external';
-  spaces: 'oct29' | 'simplespace' | 'custom';
+  /** `auto` only when no space was created, so nothing resolved it (harness/setup.ts). */
+  spaces: 'oct29' | 'simplespace' | 'auto' | 'custom';
   bootstrap?: string;
 }
 
@@ -40,7 +41,8 @@ export interface Policy {
 }
 
 export interface Adapter {
-  setupMode: SetupMode;
+  /** What this run used for setup. Called by the reporter after the suites ran. */
+  setupMode(manifest: Manifest): SetupMode;
   provisionAccount(ctx: StackCtx, name: string): Promise<Account>;
   /** Create a space owned by `owner` and return its at:// URI. */
   createSpace(ctx: StackCtx, owner: Account, spaceType: string, policy: Policy): Promise<string>;

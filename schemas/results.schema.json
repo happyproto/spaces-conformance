@@ -209,6 +209,7 @@
               "enum": [
                 "oct29",
                 "simplespace",
+                "auto",
                 "custom"
               ]
             },
