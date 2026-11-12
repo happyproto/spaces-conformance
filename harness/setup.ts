@@ -11,7 +11,7 @@
 // reporter, in another process, records what the run actually used.
 
 import { randomBytes } from '@noble/hashes/utils.js';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Account, Policy, SetupMode, WriteAuth } from './adapter.ts';
 import { rawDir, setup } from './assert.ts';
@@ -29,24 +29,30 @@ export function requestedMode(manifest: Manifest, env = process.env): SpacesMode
   return m;
 }
 
-const RESOLVED = 'spaces-mode.json';
+const RESOLVED = /^spaces-mode\.\d+\.json$/;
 
+/** Each worker writes its own file, so the reporter sees every resolution. */
 function rememberResolved(mode: 'oct29' | 'simplespace') {
   const dir = rawDir();
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, RESOLVED), JSON.stringify({ spaces: mode }));
+  writeFileSync(join(dir, `spaces-mode.${process.pid}.json`), JSON.stringify({ spaces: mode }));
 }
 
 /**
- * The setup mode to record. With `auto`, the mode a worker resolved, or
- * `auto` itself if no space was created (nothing resolved it).
+ * The setup mode to record. With `auto`, the mode the workers resolved, or
+ * `auto` itself if no space was created (nothing resolved it). Workers that
+ * resolved differently mean the host changed mid-run: that throws, so the
+ * run fails as infrastructure rather than recording one mode for both.
  */
 export function recordedMode(manifest: Manifest, accounts: SetupMode['accounts'], env = process.env): SetupMode {
   const asked = requestedMode(manifest, env);
-  let spaces: SetupMode['spaces'] = asked;
-  const file = join(env.CONFORMANCE_RAW_DIR ?? rawDir(), RESOLVED);
-  if (asked === 'auto' && existsSync(file)) spaces = JSON.parse(readFileSync(file, 'utf8')).spaces;
-  return { accounts, spaces };
+  if (asked !== 'auto') return { accounts, spaces: asked };
+  const dir = env.CONFORMANCE_RAW_DIR ?? rawDir();
+  const seen = new Set<string>(
+    existsSync(dir) ? readdirSync(dir).filter((f) => RESOLVED.test(f)).map((f) => JSON.parse(readFileSync(join(dir, f), 'utf8')).spaces) : [],
+  );
+  if (seen.size > 1) throw new Error(`setup mode auto resolved differently across workers (${[...seen].sort().join(', ')}): the host changed during the run`);
+  return { accounts, spaces: (seen.values().next().value as SetupMode['spaces'] | undefined) ?? 'auto' };
 }
 
 /** Requests as the account's password session (Bearer). Outside 0016; recorded, not graded. */
@@ -102,6 +108,8 @@ export function methodMissing(r: HttpResponse): boolean {
   if (r.status === 404 || r.status === 501) return true;
   const err = String(r.body?.error ?? '');
   const msg = String(r.body?.message ?? '');
+  // "No service configured" is the pinned reference image's wording (built
+  // 2026-10-01). Drop it when that pin moves to an image that answers 404 or 501.
   return r.status === 400 && (/UnknownMethod|MethodNotImplemented/.test(err) || /No service configured/i.test(msg));
 }
 

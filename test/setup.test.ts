@@ -20,9 +20,13 @@ describe('setup modes', () => {
     const dir = mkdtempSync(join(tmpdir(), 'raw-'));
     const env = { CONFORMANCE_SPACES_MODE: 'auto', CONFORMANCE_RAW_DIR: dir };
     expect(recordedMode(manifest, 'create-account', env)).toEqual({ accounts: 'create-account', spaces: 'auto' });
-    writeFileSync(join(dir, 'spaces-mode.json'), JSON.stringify({ spaces: 'simplespace' }));
+    writeFileSync(join(dir, 'spaces-mode.101.json'), JSON.stringify({ spaces: 'simplespace' }));
+    writeFileSync(join(dir, 'spaces-mode.102.json'), JSON.stringify({ spaces: 'simplespace' }));
     expect(recordedMode(manifest, 'create-account', env)).toEqual({ accounts: 'create-account', spaces: 'simplespace' });
+    // A fixed mode is recorded as asked; the files only matter for auto.
     expect(recordedMode(manifest, 'custom', { CONFORMANCE_RAW_DIR: dir })).toEqual({ accounts: 'custom', spaces: 'simplespace' });
+    writeFileSync(join(dir, 'spaces-mode.103.json'), JSON.stringify({ spaces: 'oct29' }));
+    expect(() => recordedMode(manifest, 'create-account', env)).toThrow(/resolved differently across workers \(oct29, simplespace\)/);
   });
 
   it('tells a method the host does not serve from a refused request', () => {

@@ -33,7 +33,10 @@ if (values.json) {
   const messages = new Map<string, string>(file.results.map((r: { id: string; message?: string; skip_reason?: string }) => [r.id, r.message ?? r.skip_reason ?? '']));
   const mark = { ok: ' ', warn: '!', fail: '✗' } as const;
   console.log(`\n${file.implementation.id} @ ${file.implementation.image}`);
-  console.log(`spec ${file.spec.proposal} ${file.spec.revision} (${file.spec.commit}), suite ${file.suite.commit}, setup ${JSON.stringify(file.implementation.setup_mode)}\n`);
+  console.log(`spec ${file.spec.proposal} ${file.spec.revision} (${file.spec.commit}), suite ${file.suite.commit}`);
+  const sm = file.implementation.setup_mode;
+  // The setup mode decides what the run could reach, so it gets its own line.
+  console.log(`setup: spaces ${sm.spaces}, accounts ${sm.accounts}${sm.bootstrap ? `, bootstrap ${sm.bootstrap}` : ''}, write auth ${file.implementation.write_auth}\n`);
   for (const j of judged) {
     const why = j.provisional && j.display !== 'not applicable' ? ` [provisional: ${j.provisional}]` : '';
     console.log(`${mark[j.gate]} ${j.display.padEnd(20)} ${j.id.padEnd(40)} ${(messages.get(j.id) ?? '').slice(0, 100)}${why}`);
