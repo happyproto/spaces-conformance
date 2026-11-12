@@ -166,7 +166,7 @@
           "type": "string"
         },
         "provisional": {
-          "description": "Set until two implementations with different lineage pass it (design ch. 3.4).",
+          "description": "Marks a row provisional by hand. The lineage rule (harness/independence.ts) applies regardless.",
           "type": "boolean"
         },
         "params": {

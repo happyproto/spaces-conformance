@@ -12,6 +12,7 @@
 // | skip  | n/a    | n/a         | not applicable       | excluded    | ok        |
 
 import type { Assertion, Role } from './catalogue.ts';
+import type { Independence } from './independence.ts';
 import type { Area, AreaStatus } from './provisional.ts';
 import { provisionalReason } from './provisional.ts';
 
@@ -55,6 +56,8 @@ export function judgeAll(
   listed: Set<string>,
   areas: Map<Area, AreaStatus>,
   roles: Role[],
+  /** The S5 evidence. Every real caller passes loadIndependence(); leaving it out skips the lineage rule. */
+  independence?: Independence,
 ): { judged: Judged[]; summary: Summary } {
   const judged: Judged[] = [];
   const by_role: Summary['by_role'] = Object.fromEntries(
@@ -62,7 +65,7 @@ export function judgeAll(
   );
   for (const r of results) {
     const a = byId.get(r.id);
-    const provisional = a ? provisionalReason(a, areas) : 'not in the catalogue';
+    const provisional = a ? provisionalReason(a, areas, independence) : 'not in the catalogue';
     const j = { id: r.id, raw: r.status, provisional, ...judge(r.status, listed.has(r.id), provisional !== null, !!r.flaky) };
     judged.push(j);
     if (!a || !j.scored || a.level === 'info') continue;

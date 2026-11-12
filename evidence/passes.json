@@ -1,0 +1,112 @@
+{
+  "sources": [
+    {
+      "file": "test/fixtures/results/parity-zds-2026-11-12.json",
+      "implementation": "zds",
+      "run": "2026-11-12T16-37-39Z-zds-b097",
+      "suite_commit": "17a0e87161",
+      "image": "ghcr.io/happyproto/pds-test/zds@sha256:809bfa1025271946e78c123e8ff99cb48f0a92c4d37485b985631e9d866380d1"
+    },
+    {
+      "file": "test/fixtures/results/parity-atproto-pds-2026-11-12.json",
+      "implementation": "atproto-pds",
+      "run": "2026-11-12T16-37-56Z-atproto-pds-d008",
+      "suite_commit": "17a0e87161",
+      "image": "ghcr.io/happyproto/pds-test/atproto-pds@sha256:19a0f54acd6dca38a44097987f8e000504a2cf090c81768f2957bdcee2431848"
+    },
+    {
+      "file": "test/fixtures/results/parity-pdsjs-2026-11-12.json",
+      "implementation": "pdsjs",
+      "run": "2026-11-12T16-38-07Z-pdsjs-bd40",
+      "suite_commit": "17a0e87161",
+      "image": "ghcr.io/happyproto/pds-test/pdsjs@sha256:1725c1f8d2cee4c4f5095c9309f6cf27e11336b74452f0ae12628afae5fe22be"
+    },
+    {
+      "file": "test/fixtures/results/parity-reference-2026-11-12.json",
+      "implementation": "reference",
+      "run": "2026-11-12T16-38-21Z-reference-3c26",
+      "suite_commit": "17a0e87161",
+      "image": "ghcr.io/happyproto/pds-test/pds-spaces-alpha@sha256:1cf9349e9f0e89789784569fed376cd647742ea7c368948625f44779ba03f150"
+    }
+  ],
+  "passes": {
+    "digest.cid-drisl-plain": [
+      "atproto-pds",
+      "pdsjs",
+      "reference",
+      "zds"
+    ],
+    "digest.cid-drisl-typed": [
+      "atproto-pds",
+      "reference",
+      "zds"
+    ],
+    "info.read-auth-status": [
+      "atproto-pds",
+      "pdsjs",
+      "reference",
+      "zds"
+    ],
+    "info.unknown-method-status": [
+      "atproto-pds",
+      "pdsjs",
+      "reference",
+      "zds"
+    ],
+    "lifecycle.implicit-create": [
+      "atproto-pds",
+      "pdsjs",
+      "reference",
+      "zds"
+    ],
+    "mac.kem-key-published": [
+      "pdsjs"
+    ],
+    "oplog.entry-shape": [
+      "atproto-pds",
+      "pdsjs",
+      "reference",
+      "zds"
+    ],
+    "oplog.pagination-batch-boundary": [
+      "atproto-pds",
+      "reference",
+      "zds"
+    ],
+    "oplog.pagination-complete": [
+      "atproto-pds",
+      "reference",
+      "zds"
+    ],
+    "oplog.since-exclusive": [
+      "atproto-pds",
+      "pdsjs",
+      "reference",
+      "zds"
+    ],
+    "oplog.stale-values-omitted": [
+      "atproto-pds",
+      "pdsjs",
+      "reference",
+      "zds"
+    ],
+    "records.apply-writes-atomic": [
+      "atproto-pds",
+      "pdsjs",
+      "reference",
+      "zds"
+    ],
+    "records.crud-roundtrip": [
+      "atproto-pds",
+      "pdsjs",
+      "reference",
+      "zds"
+    ],
+    "records.read-requires-auth": [
+      "atproto-pds",
+      "pdsjs",
+      "reference",
+      "zds"
+    ]
+  }
+}

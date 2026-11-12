@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { loadCatalogue } from '../harness/catalogue.ts';
 import { loadDeviations } from '../harness/deviations.ts';
+import { loadIndependence } from '../harness/independence.ts';
 import { vectorStatus } from '../harness/provisional.ts';
 import { ROOT } from '../harness/schema.ts';
 import { judgeAll } from '../harness/verdict.ts';
@@ -25,7 +26,7 @@ const catalogue = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
 const byId = new Map(catalogue.assertions.map((a) => [a.id, a]));
 const deviations: { assertion: string; cause: string; tracking: string }[] = values.deviations ? loadDeviations(values.deviations) : file.deviations_applied;
 const listed = new Set(deviations.map((d) => d.assertion));
-const { judged, summary } = judgeAll(file.results, byId, listed, vectorStatus(), file.implementation.roles);
+const { judged, summary } = judgeAll(file.results, byId, listed, vectorStatus(), file.implementation.roles, loadIndependence());
 
 if (values.json) {
   console.log(JSON.stringify({ judged, summary }, null, 2));

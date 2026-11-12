@@ -17,6 +17,14 @@ capabilities:
   oauth:
     # Advertises an https issuer; no headless consent script yet.
     scripted: false
+# Per area, at the pinned image's revision e81213fe (ngerakines.me/atproto-crates):
+#   cbor    atproto-dasl: crates/atproto-pds/src/space/writer.rs encode_value
+#   lthash  atproto-space: crates/atproto-space/src/set_hash.rs
+#   mac     atproto-space: crates/atproto-space/src/commit.rs
+#   httpsig atproto-space: crates/atproto-space/src/http_signature.rs
+#   jwt     atproto-space: crates/atproto-space/src/credential.rs
+#   star    none: getRepo serves a CAR (atproto-space sync/provider.rs), so unknown
+lineage: { cbor: atproto-dasl, lthash: atproto-space, mac: atproto-space, httpsig: atproto-space, jwt: atproto-space }
 compose: compose.yml
 base_url: https://atproto-pds.test
 health: /xrpc/_health

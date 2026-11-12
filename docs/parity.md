@@ -62,6 +62,26 @@ HappyView's `pdsjs_drops_ops_when_a_page_ends_inside_a_batch` pins the same bug 
 
 **F. pds.js's typed-record CIDs.** `digest.cid-drisl-typed` fails on pds.js: all four typed fixture records (a `$link`, a `$bytes`, and integers past 32 bits) get CIDs that differ from DRISL. HappyView's `pdsjs_encodes_large_integers_differently_from_the_reference` pins the same divergence. It's a listed deviation, tracked by [pds.js#4](https://tangled.org/chadtmiller.com/pds.js/issues/4).
 
+## How these results are scored
+
+The tables below show raw results. Scoring also applies the lineage rule (`docs/catalogue.md`): a row that uses harness crypto counts only once it has passed on two implementations whose libraries for that crypto differ.
+
+- **Still provisional, so not scored:** the cause A and B rows that fail everywhere: the digest rows, `oplog.fold-matches-commit`, `records.commit-repo-space-match` and `mac.kem-key-published`.
+  - No implementation passes the first three groups at these pins.
+  - Only pds.js passes `mac.kem-key-published`, and no second implementation has passed it yet.
+  - They show as "fail (provisional)" and only warn in gated CI.
+- **Cleared:** `digest.cid-drisl-plain`, `digest.cid-drisl-typed` and `oplog.pagination-batch-boundary`. Each passed on implementations whose CBOR and LtHash code comes from different libraries.
+- **Scored fails that remain:** five rows that use no harness crypto, so the lineage rule doesn't apply:
+  - `records.commit-fields` and `records.commit-bytes-encoding` (cause A);
+  - the three policy rows (cause D).
+
+| Implementation | pds must | repo-host must | space-host must | Unexpected |
+|---|---|---|---|---|
+| ZDS | 3/6 | 10/12 | 0/3 | 5 |
+| pds.js (deviations applied) | 3/6 | 7/12 | 0/3 | 5 |
+| atproto-pds | 3/6 | 10/12 | 0/3 | 5 |
+| reference | 3/6 | 10/12 | 0/3 | 5 |
+
 ## Per test
 
 "Pass", "fail" and "skip" are the suite's results. "Skip (pending)" is a row the suite can't judge at these pins. HappyView passed every test listed here. HappyView-only tests are listed at the end.

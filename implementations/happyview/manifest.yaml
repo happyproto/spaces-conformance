@@ -21,7 +21,14 @@ capabilities:
   oauth:
     # Through pds.js's headless consent (phase 0 spike 1).
     scripted: true
-lineage: { cbor: happyview, lthash: happyview, mac: happyview, httpsig: happyview, jwt: happyview, star: happyview }
+# Per area, at the pinned 9f084f5c:
+#   cbor    serde_ipld_dagcbor 0.6: crates/happyview-provider/src/cid.rs record_to_dag_cbor
+#   lthash  happyview: src/spaces/lthash.rs
+#   mac     happyview: src/spaces/space_mac.rs
+#   httpsig happyview: src/spaces/http_signature.rs
+#   jwt     happyview: src/spaces/credential.rs verifies credentials and delegation tokens itself
+#   star    none at 9f084f5c (crates/happyview-star landed later), so unknown
+lineage: { cbor: serde_ipld_dagcbor, lthash: happyview, mac: happyview, httpsig: happyview, jwt: happyview }
 compose: compose.yml
 base_url: https://happyview.test
 health: /health

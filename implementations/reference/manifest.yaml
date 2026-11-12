@@ -20,7 +20,15 @@ capabilities:
     foreign_authorities: true
   oauth:
     scripted: false
-lineage: { cbor: "@atproto/lex-cbor", lthash: "@atproto/space", mac: "@atproto/space", httpsig: "@atproto/space", jwt: "@atproto/crypto", star: "@atproto/star" }
+# Per area, the code that implements it in the pinned image, built from
+# bluesky-social/atproto at 79d6307e (the image's revision label):
+#   cbor    @atproto/lex-cbor: packages/pds/src/actor-store/space/transactor.ts imports its encode
+#   lthash  @atproto/space: packages/space/src/lthash.ts, repo-commit.ts
+#   mac     @atproto/space: packages/space/src/repo-commit.ts (hkdf/hmac primitives from @atproto/crypto)
+#   httpsig @atproto/space: packages/space/src/http-signature.ts
+#   jwt     @atproto/space: packages/space/src/credential.ts parses and signs the JWTs
+#   star    none: there's no STAR at 79d6307e (no packages/star), so unknown
+lineage: { cbor: "@atproto/lex-cbor", lthash: "@atproto/space", mac: "@atproto/space", httpsig: "@atproto/space", jwt: "@atproto/space" }
 compose: compose.yml
 base_url: https://reference.test
 health: /xrpc/_health
