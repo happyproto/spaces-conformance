@@ -15,6 +15,10 @@ Each vector lists its `sources`:
 | `node:crypto HMAC (in the test)` | Recomputed in the test with Node's own HMAC, a second HMAC implementation. |
 | `harness` | Computed by this harness only. |
 
+Each implementation source says how it was used:
+- **run**: the implementation's own functions, executed at the named commit on the vector's inputs, in a scratch checkout outside this repo. Only their outputs come here.
+- **read**: the layout taken from its source and recomputed independently.
+
 Every positive vector carries a machine-readable `cross_check: {area, status, against}`:
 - `area` is one of `cbor`, `lthash`, `mac`, `httpsig`, `jwt` or `star`. These are the same areas as the manifests' `lineage`.
 - `status` is `cross-checked` when a source other than the harness agrees, and `pending` otherwise.

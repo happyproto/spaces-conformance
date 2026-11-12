@@ -51,8 +51,8 @@
       "area": "httpsig",
       "status": "cross-checked",
       "against": [
-        "HappyView 9f084f5c spaces::http_signature::sign (same did:key and the same RFC 6979 signature bytes for the valid case)",
-        "HappyView 9f084f5c spaces::http_signature::verify (accepts valid, rejects tag other and another audience)"
+        "HappyView 9f084f5c spaces::http_signature sign + verify (run: same did:key and signature bytes; accept and reject match each case)",
+        "atproto#5187 98ef3a6b packages/space createSpaceSigHeaders + verifyCredentialSig (run: same signature bytes; accept and reject match each case)"
       ]
     }
   }

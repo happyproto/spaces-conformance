@@ -7,14 +7,16 @@
       "records": 1,
       "sources": [
         "harness",
-        "HappyView beta 5154fc61 crates/happyview-star StarReader (reads it: atproto-space-repo, one pair)",
+        "HappyView beta 5154fc61 crates/happyview-star StarReader (run: reads it)",
+        "atproto#5187 98ef3a6b packages/star readStar (run: reads it)",
         "microcosm.blue/star 41bdec1 interop fixtures (framing; vectors/star-interop, all 56 pass)"
       ],
       "cross_check": {
         "area": "star",
         "status": "cross-checked",
         "against": [
-          "HappyView beta 5154fc61 crates/happyview-star StarReader (reads it: atproto-space-repo, one pair)",
+          "HappyView beta 5154fc61 crates/happyview-star StarReader (run: reads it)",
+          "atproto#5187 98ef3a6b packages/star readStar (run: reads it)",
           "microcosm.blue/star 41bdec1 interop fixtures (framing; vectors/star-interop, all 56 pass)"
         ]
       }

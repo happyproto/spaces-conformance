@@ -13,15 +13,15 @@
       "sources": [
         "harness",
         "node:crypto HMAC (in the test)",
-        "HappyView 9f084f5c spaces::space_mac::commit_mac (run on these inputs)",
-        "atproto#5187 98ef3a6b packages/space/src/mac.ts computeCommitMac (layout)"
+        "HappyView 9f084f5c spaces::space_mac::commit_mac (run)",
+        "atproto#5187 98ef3a6b packages/space computeCommitMac (run)"
       ],
       "cross_check": {
         "area": "mac",
         "status": "cross-checked",
         "against": [
-          "HappyView 9f084f5c spaces::space_mac::commit_mac (run on these inputs)",
-          "atproto#5187 98ef3a6b packages/space/src/mac.ts computeCommitMac (layout)"
+          "HappyView 9f084f5c spaces::space_mac::commit_mac (run)",
+          "atproto#5187 98ef3a6b packages/space computeCommitMac (run)"
         ]
       },
       "hmac_input": "617470726f746f2d73706163652d7265706f2d7631003b61743a2f2f6469643a706c633a73706163652f73706163652f636f6d2e6578616d706c652e636f6e666f726d616e63652e73706163652f73656c66000d6469643a706c633a616c696365000d336d7a75626d63616f6b773232e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
@@ -37,13 +37,15 @@
       "sources": [
         "harness",
         "node:crypto HMAC (in the test)",
-        "atproto#5187 98ef3a6b packages/space/src/mac.ts computeRecordMac (layout; recomputed independently with Python hmac)"
+        "atproto#5187 98ef3a6b packages/space computeRecordMac (run)",
+        "Python hmac over the layout written out by hand (independent recomputation)"
       ],
       "cross_check": {
         "area": "mac",
         "status": "cross-checked",
         "against": [
-          "atproto#5187 98ef3a6b packages/space/src/mac.ts computeRecordMac (layout; recomputed independently with Python hmac)"
+          "atproto#5187 98ef3a6b packages/space computeRecordMac (run)",
+          "Python hmac over the layout written out by hand (independent recomputation)"
         ]
       }
     }
