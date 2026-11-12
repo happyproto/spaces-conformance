@@ -4,11 +4,12 @@
 // path comes in phase 7. So until then:
 //   - no Atproto-Space-Mac on a session read is `skip` ("pending: …"), never
 //     `fail` or `error`;
+//   - no #atproto_kem key is `skip` too: mac.kem-key-published grades it once;
 //   - a MAC that is present but wrong (type, ver, or doesn't verify) is `fail`.
 // Evidence names the read auth used.
 
-import type { MacCheck } from '../../harness/actors/syncer.ts';
 import { assertion, fail, pending, setup } from '../../harness/assert.ts';
+import { requireAuthorKem, requireMacHeader } from './precondition.ts';
 import { parseMultikey } from '../../harness/crypto/keys.ts';
 import { REPO_TYPE, parseMacHeader } from '../../harness/crypto/mac.ts';
 import { ownerSpace } from '../fixtures.ts';
@@ -21,13 +22,6 @@ async function repoWithRecord(ctx: Parameters<typeof freshRepo>[0]): Promise<Rep
 }
 
 const readAuth = (repo: Repo) => ({ read_auth: repo.owner.auth.mode });
-
-const CREDENTIAL_PENDING = 'MAC only required on credential reads; credential path in phase 7';
-
-/** No MAC on a session read isn't the host's fault under 0016: skip, pending the credential path. */
-function requireMacHeader(mac: MacCheck): string {
-  return mac.header ?? pending(CREDENTIAL_PENDING);
-}
 
 assertion('mac.kem-key-published', async (ctx) => {
   const { owner } = await ownerSpace(ctx);
@@ -49,7 +43,7 @@ assertion('mac.kem-key-published', async (ctx) => {
 assertion('mac.commit-header-present', async (ctx) => {
   const repo = await repoWithRecord(ctx);
   const { syncer, target } = await syncerFor(repo);
-  if (!target.authorKem) fail('the author publishes no #atproto_kem key, so the harness cannot ask for a MAC', readAuth(repo));
+  requireAuthorKem(target);
   const { response, mac } = await syncer.commit(target);
   const evidence = { ...readAuth(repo), status: response.status, header: mac.header ?? null, vary: mac.vary };
   if (response.status !== 200) fail(`getLatestCommit answered ${response.status}`, evidence);
@@ -66,7 +60,7 @@ assertion('mac.commit-header-present', async (ctx) => {
 assertion('mac.commit-valid', async (ctx) => {
   const repo = await repoWithRecord(ctx);
   const { syncer, target } = await syncerFor(repo);
-  if (!target.authorKem) fail('the author publishes no #atproto_kem key, so no MAC can be checked', readAuth(repo));
+  requireAuthorKem(target);
   const { response, mac } = await syncer.commit(target);
   if (response.status !== 200) fail(`getLatestCommit answered ${response.status}`, { status: response.status });
   requireMacHeader(mac);
