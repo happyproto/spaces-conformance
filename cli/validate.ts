@@ -36,6 +36,9 @@ const counts: string[] = [];
 
 const revisions = loadRevisions();
 const revisionKeys = Object.keys(revisions.revisions);
+// Revision keys are ISO dates: since, until and variants order them as strings.
+for (const k of [...revisionKeys, revisions.default])
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(k)) problems.push({ file: 'spec/revisions.json', where: k, message: 'revision keys must be YYYY-MM-DD dates, so they order as strings' });
 
 const catPath = join(ROOT, 'spec', 'assertions.yaml');
 let cat: ReturnType<typeof loadCatalogue>;
