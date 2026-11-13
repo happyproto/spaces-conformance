@@ -21,6 +21,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { loadCatalogue } from '../harness/catalogue.ts';
+import { loadCheckedDeviations } from '../harness/deviations.ts';
 import { loadManifest } from '../harness/manifest.ts';
 import { formatProblem } from '../harness/problems.ts';
 import { validateResults } from '../harness/results.ts';
@@ -89,6 +90,15 @@ const deviations =
   values.deviations ?? (typeof manifest.deviations === 'string' ? `implementations/${impl}/${manifest.deviations}` : undefined);
 if (manifest.deviations && typeof manifest.deviations === 'object' && !values.deviations)
   console.warn(`note: ${impl}'s deviations live in ${manifest.deviations.repo}; pass --deviations to apply them`);
+// Validate the list before the stack starts: an entry without `expect`, or
+// with a pattern that matches anything, would cover any failure.
+if (deviations) {
+  const { problems } = await loadCheckedDeviations(join(ROOT, deviations), deviations);
+  if (problems.length) {
+    for (const p of problems) console.error(formatProblem(p));
+    process.exit(2);
+  }
+}
 
 type Outcome =
   | { kind: 'results'; runId: string; out: string; file: any }

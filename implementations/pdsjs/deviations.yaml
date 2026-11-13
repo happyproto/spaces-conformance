@@ -1,6 +1,11 @@
 # Seeded from HappyView's interop pins (design ch. 4.6). Each entry is listed
 # only once a run confirms it isn't a harness bug. Confirmed against
 # PDSJS_IMAGE sha256:1725c1f8d2ce on 2026-11-12.
+#
+# Each `expect` is the failure the 2026-11-12 parity run recorded
+# (test/fixtures/results/parity-pdsjs-2026-11-12.json). Patterns match the
+# whole value. Any other failure on the same assertion is "deviation changed",
+# which fails the run.
 
 # One cause: how space record values are encoded (pds.js#4).
 - assertion: digest.cid-drisl-typed
@@ -12,6 +17,12 @@
   spec: "#commit-digest"
   tracking: https://tangled.org/chadtmiller.com/pds.js/issues/4
   since: "2026-11-12"
+  expect:
+    message: 4 record CID\(s\) differ from DRISL
+    # All four typed fixtures, in fixture order, each wrong on both createRecord and getRecord.
+    evidence:
+      mismatches: >-
+        \[\{"record":"link",[^{}]*"getRecord":"bafy[^"]+"\},\{"record":"bytes",[^{}]*"getRecord":"bafy[^"]+"\},\{"record":"bigint",[^{}]*"getRecord":"bafy[^"]+"\},\{"record":"int32edge",[^{}]*"getRecord":"bafy[^"]+"\}\]
 
 # One cause: listRepoOps doesn't follow cursor (pds.js#5).
 - assertion: oplog.pagination-complete
@@ -22,6 +33,10 @@
   spec: "#incremental-sync"
   tracking: https://tangled.org/chadtmiller.com/pds.js/issues/5
   since: "2026-11-12"
+  expect:
+    message: following cursor with limit=2 returned p0 2 times, not once
+    evidence:
+      pages: \[2,2\]
 - assertion: oplog.pagination-batch-boundary
   cause: oplog-cursor-ignored
   reason: >-
@@ -30,3 +45,7 @@
   spec: "#incremental-sync"
   tracking: https://tangled.org/chadtmiller.com/pds.js/issues/5
   since: "2026-11-12"
+  expect:
+    message: "a page boundary inside one applyWrites batch lost ops: got \\[m1, m1, m2, m2\\]"
+    evidence:
+      pages: \[2,2\]

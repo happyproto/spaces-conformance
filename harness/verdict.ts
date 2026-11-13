@@ -1,23 +1,37 @@
 // Display states, scoring and CI gating (design ch. 4.4). The same module
 // serves `conformance verdict`, the reporter's summary and, later, the site.
 //
-// | Raw   | Listed | Provisional | Shown as             | Scored as   | Gated CI  |
-// | pass  | no     | either      | pass                 | pass        | ok        |
-// | fail  | no     | no          | fail                 | fail        | fails     |
-// | fail  | no     | yes         | fail (provisional)   | excluded    | warns     |
-// | fail  | yes    | either      | known deviation      | not passing | ok        |
-// | pass  | yes    | no          | fixed, still listed  | pass        | fails     |
-// | pass  | yes    | yes         | fixed, still listed  | pass        | warns     |
-// | error | either | either      | error                | excluded    | fails     |
-// | skip  | n/a    | n/a         | not applicable       | excluded    | ok        |
+// | Raw   | Listed            | Provisional | Shown as             | Scored as   | Gated CI  |
+// | pass  | no                | either      | pass                 | pass        | ok        |
+// | fail  | no                | no          | fail                 | fail        | fails     |
+// | fail  | no                | yes         | fail (provisional)   | excluded    | warns     |
+// | fail  | yes, as expected  | either      | known deviation      | not passing | ok        |
+// | fail  | yes, other fail   | no          | deviation changed    | fail        | fails     |
+// | fail  | yes, other fail   | yes         | deviation changed    | excluded    | warns     |
+// | pass  | yes               | no          | fixed, still listed  | pass        | fails     |
+// | pass  | yes               | yes         | fixed, still listed  | pass        | warns     |
+// | error | either            | either      | error                | excluded    | fails     |
+// | skip  | n/a               | n/a         | not applicable       | excluded    | ok        |
+//
+// "As expected" means the fail matches the entry's `expect` (harness/deviations.ts).
 
 import type { Assertion, Role } from './catalogue.ts';
+import { type Deviation, expectMismatch } from './deviations.ts';
 import type { Independence } from './independence.ts';
 import type { Area, AreaStatus } from './provisional.ts';
 import { provisionalReason } from './provisional.ts';
 
 export type Raw = 'pass' | 'fail' | 'error' | 'skip';
-export type Display = 'pass' | 'pass (flaky)' | 'fail' | 'fail (provisional)' | 'known deviation' | 'fixed, still listed' | 'error' | 'not applicable';
+export type Display =
+  | 'pass'
+  | 'pass (flaky)'
+  | 'fail'
+  | 'fail (provisional)'
+  | 'known deviation'
+  | 'deviation changed'
+  | 'fixed, still listed'
+  | 'error'
+  | 'not applicable';
 export type Gate = 'ok' | 'warn' | 'fail';
 
 export interface Judged {
@@ -29,17 +43,23 @@ export interface Judged {
   scored: boolean;
   passing: boolean;
   provisional: string | null;
+  /** For 'deviation changed': how the failure differs from the entry's `expect`. */
+  changed?: string;
 }
 
 // A pass after an earlier attempt's fail or error is 'pass (flaky)': scored as a pass, gate warn.
-export function judge(raw: Raw, listed: boolean, provisional: boolean, flaky = false): Omit<Judged, 'id' | 'raw' | 'provisional'> {
+// A listed fail that doesn't match the entry's `expect` (expected = false) is
+// 'deviation changed': judged as the unlisted fail it is, so a known deviation
+// can't hide a new failure on the same assertion.
+export function judge(raw: Raw, listed: boolean, provisional: boolean, flaky = false, expected = true): Omit<Judged, 'id' | 'raw' | 'provisional' | 'changed'> {
   if (raw === 'skip') return { display: 'not applicable', gate: 'ok', scored: false, passing: false };
   if (raw === 'error') return { display: 'error', gate: 'fail', scored: false, passing: false };
   if (raw === 'pass') {
     if (!listed) return { display: flaky ? 'pass (flaky)' : 'pass', gate: flaky ? 'warn' : 'ok', scored: !provisional, passing: true };
     return { display: 'fixed, still listed', gate: provisional ? 'warn' : 'fail', scored: !provisional, passing: true };
   }
-  if (listed) return { display: 'known deviation', gate: 'ok', scored: !provisional, passing: false };
+  if (listed && expected) return { display: 'known deviation', gate: 'ok', scored: !provisional, passing: false };
+  if (listed) return { display: 'deviation changed', gate: provisional ? 'warn' : 'fail', scored: !provisional, passing: false };
   return provisional
     ? { display: 'fail (provisional)', gate: 'warn', scored: false, passing: false }
     : { display: 'fail', gate: 'fail', scored: true, passing: false };
@@ -51,9 +71,10 @@ export interface Summary {
 }
 
 export function judgeAll(
-  results: { id: string; status: Raw; flaky?: unknown }[],
+  results: { id: string; status: Raw; flaky?: unknown; message?: string; evidence?: Record<string, unknown> }[],
   byId: Map<string, Assertion>,
-  listed: Set<string>,
+  /** The deviation list in force, by assertion id. */
+  listed: Map<string, Pick<Deviation, 'expect'>>,
   areas: Map<Area, AreaStatus>,
   roles: Role[],
   /** The S5 evidence. Every real caller passes loadIndependence(); leaving it out skips the lineage rule. */
@@ -66,7 +87,14 @@ export function judgeAll(
   for (const r of results) {
     const a = byId.get(r.id);
     const provisional = a ? provisionalReason(a, areas, independence) : 'not in the catalogue';
-    const j = { id: r.id, raw: r.status, provisional, ...judge(r.status, listed.has(r.id), provisional !== null, !!r.flaky) };
+    const changed = r.status === 'fail' && listed.has(r.id) ? expectMismatch(listed.get(r.id)!.expect, r) : null;
+    const j: Judged = {
+      id: r.id,
+      raw: r.status,
+      provisional,
+      ...judge(r.status, listed.has(r.id), provisional !== null, !!r.flaky, changed === null),
+      ...(changed ? { changed } : {}),
+    };
     judged.push(j);
     if (!a || !j.scored || a.level === 'info') continue;
     for (const role of a.roles.filter((x) => roles.includes(x))) {

@@ -205,6 +205,7 @@ describe('deviations', () => {
     spec: '#xrpc-api',
     tracking: 'HAP-388 (PR 6)',
     since: '2026-11-08',
+    expect: { message: 'refused repo: .*', evidence: { status: '400' } },
   };
 
   it('accepts a well-formed list', () => {
@@ -217,6 +218,15 @@ describe('deviations', () => {
     ['an unknown anchor', { spec: '#nope' }, /not a heading anchor/],
     ['a future date', { since: '2026-12-01' }, /in the future/],
     ['a missing reason', { reason: undefined }, /must have required property 'reason'/],
+    ['a missing expect', { expect: undefined }, /must have required property 'expect'/],
+    ['an expect without a message', { expect: { evidence: { status: '400' } } }, /must have required property 'message'/],
+    ['an expect message that is not a regular expression', { expect: { message: '(' } }, /expect message is not a valid regular expression/],
+    ['an expect evidence pattern that is not a regular expression', { expect: { message: 'x', evidence: { status: '[' } } }, /expect evidence.status is not a valid/],
+    ['an expect message that escapes its anchors', { expect: { message: 'x)|(.*' } }, /expect message is not a valid regular expression/],
+    ['an expect message that matches the empty string', { expect: { message: '.*' } }, /expect message matches "", so it would cover any failure/],
+    ['an expect message that matches any non-empty value', { expect: { message: '.+' } }, /expect message matches "zz-sentinel-not-a-failure"/],
+    ['an expect message that matches anything through a class', { expect: { message: '[^]*' } }, /expect message matches ""/],
+    ['an expect evidence pattern that matches anything', { expect: { message: 'x', evidence: { status: '(?:.|\\n)*' } } }, /expect evidence.status matches ""/],
   ])('rejects %s', (_name, over, message) => {
     const p = validateDeviations([{ ...entry, ...over }], 'd', cat, specAnchors, '2026-11-09');
     expect(p.map((x) => x.message).join('\n')).toMatch(message);

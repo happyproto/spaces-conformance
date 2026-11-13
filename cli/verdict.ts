@@ -1,16 +1,20 @@
 // `conformance verdict <results.json> [--deviations file]`: display states and
 // the CI gate (design ch. 4.4). Exits 1 on any unexpected result: an
-// unlisted non-provisional fail, a non-provisional pass that's still
+// unlisted non-provisional fail, a listed non-provisional fail that isn't
+// the failure its entry expects, a non-provisional pass that's still
 // listed, or an error. Provisional results and deviations only warn.
 //
 // --deviations replaces the list embedded in the results file, so a PR's own
-// deviation list can be judged against a run (design ch. 6.4).
+// deviation list can be judged against a run (design ch. 6.4). That list must
+// pass the same validation as `bun run validate`, so every entry has an `expect`
+// that compiles and doesn't match anything. A listed fail
+// that doesn't match its `expect` is "deviation changed", and fails the gate.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { loadCatalogue } from '../harness/catalogue.ts';
-import { loadDeviations } from '../harness/deviations.ts';
+import { type Deviation, loadCheckedDeviations } from '../harness/deviations.ts';
 import { loadIndependence } from '../harness/independence.ts';
 import { vectorStatus } from '../harness/provisional.ts';
 import { ROOT } from '../harness/schema.ts';
@@ -24,8 +28,17 @@ if (!positionals[0]) {
 const file = JSON.parse(readFileSync(positionals[0], 'utf8'));
 const catalogue = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
 const byId = new Map(catalogue.assertions.map((a) => [a.id, a]));
-const deviations: { assertion: string; cause: string; tracking: string }[] = values.deviations ? loadDeviations(values.deviations) : file.deviations_applied;
-const listed = new Set(deviations.map((d) => d.assertion));
+let deviations: Deviation[] = file.deviations_applied;
+if (values.deviations) {
+  const checked = await loadCheckedDeviations(values.deviations);
+  deviations = checked.deviations;
+  const problems = checked.problems;
+  if (problems.length) {
+    for (const p of problems) console.error(`${p.file} ${p.where}: ${p.message}`);
+    process.exit(2);
+  }
+}
+const listed = new Map(deviations.map((d) => [d.assertion, d]));
 const { judged, summary } = judgeAll(file.results, byId, listed, vectorStatus(), file.implementation.roles, loadIndependence());
 
 if (values.json) {
@@ -39,7 +52,9 @@ if (values.json) {
   // The setup mode decides what the run could reach, so it gets its own line.
   console.log(`setup: spaces ${sm.spaces}, accounts ${sm.accounts}${sm.bootstrap ? `, bootstrap ${sm.bootstrap}` : ''}, write auth ${file.implementation.write_auth}\n`);
   for (const j of judged) {
-    const why = j.provisional && j.display !== 'not applicable' ? ` [provisional: ${j.provisional}]` : '';
+    const why =
+      (j.changed ? ` [expected otherwise: ${j.changed}]` : '') +
+      (j.provisional && j.display !== 'not applicable' ? ` [provisional: ${j.provisional}]` : '');
     console.log(`${mark[j.gate]} ${j.display.padEnd(20)} ${j.id.padEnd(40)} ${(messages.get(j.id) ?? '').slice(0, 100)}${why}`);
   }
   console.log('');

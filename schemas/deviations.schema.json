@@ -2,23 +2,48 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/happyproto/spaces-conformance/schemas/deviations.schema.json",
   "title": "Known deviations",
-  "description": "An implementation's deviation list (design ch. 4.3). Cross-checks against the catalogue are in harness/deviations.ts.",
+  "description": "An implementation's deviation list (design ch. 4.3). Cross-checks against the catalogue are in harness/deviations.ts. Every entry in a list needs `expect`; result files from before it existed embed entries without it (`$defs/entry`).",
   "type": "array",
   "items": {
-    "type": "object",
-    "additionalProperties": false,
-    "required": ["assertion", "cause", "reason", "spec", "tracking", "since"],
-    "properties": {
-      "assertion": { "type": "string" },
-      "cause": { "description": "Groups entries that one fix closes.", "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
-      "reason": { "type": "string", "minLength": 10 },
-      "spec": { "description": "Anchor in the pinned proposal.", "type": "string", "pattern": "^#[a-z0-9-]+$" },
-      "tracking": {
-        "description": "An issue: HAP-123, HAP-388 (PR 6), owner/repo#12, or an https URL.",
-        "type": "string",
-        "pattern": "^(HAP-[0-9]+|[\\w.-]+/[\\w.-]+#[0-9]+|https://\\S+)( \\([^)]+\\))?$"
-      },
-      "since": { "type": "string", "format": "date" }
+    "allOf": [{ "$ref": "#/$defs/entry" }, { "type": "object", "required": ["expect"] }]
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assertion", "cause", "reason", "spec", "tracking", "since"],
+      "properties": {
+        "assertion": { "type": "string" },
+        "cause": { "description": "Groups entries that one fix closes.", "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+        "reason": { "type": "string", "minLength": 10 },
+        "spec": { "description": "Anchor in the pinned proposal.", "type": "string", "pattern": "^#[a-z0-9-]+$" },
+        "tracking": {
+          "description": "An issue: HAP-123, HAP-388 (PR 6), owner/repo#12, or an https URL.",
+          "type": "string",
+          "pattern": "^(HAP-[0-9]+|[\\w.-]+/[\\w.-]+#[0-9]+|https://\\S+)( \\([^)]+\\))?$"
+        },
+        "since": { "type": "string", "format": "date" },
+        "expect": { "$ref": "#/$defs/expect" }
+      }
+    },
+    "expect": {
+      "description": "The failure this deviation covers. A fail whose message or evidence doesn't match is 'deviation changed', which fails the gate, so a known deviation can't hide a new failure on the same assertion.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["message"],
+      "properties": {
+        "message": {
+          "description": "A regular expression (JavaScript, unicode mode) the whole result message must match. It is anchored on both ends by the harness.",
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "description": "Per evidence key, a regular expression the whole value must match. A string value is matched as it is; any other value as its JSON. A listed key that's missing from the evidence is a mismatch.",
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        }
+      }
     }
   }
 }

@@ -244,7 +244,9 @@
       }
     },
     "deviations_applied": {
-      "$ref": "deviations.schema.json"
+      "description": "The entries of the list in force for the assertions that ran. Files from before `expect` existed have entries without it.",
+      "type": "array",
+      "items": { "$ref": "deviations.schema.json#/$defs/entry" }
     },
     "results": {
       "type": "array",
