@@ -9,8 +9,8 @@ import { assemble, openSetupSteps, readRaw, reconcile } from '../harness/reporte
 import { DeadlineExceeded, fail, Pending, pending, runAssertion, setup, SetupError } from '../harness/assert.ts';
 import { loadManifest, notApplicable } from '../harness/manifest.ts';
 import { checkTimeouts } from '../harness/timeouts.ts';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { loadDeviations } from '../harness/deviations.ts';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { loadDeviations, wholeMatch } from '../harness/deviations.ts';
 import { tmpdir } from 'node:os';
 import { declaredAssertions } from '../harness/coverage.ts';
 import { validateResults } from '../harness/results.ts';
@@ -293,6 +293,19 @@ describe('expect on deviations', () => {
     expect(summary.unexpected).toBe(1);
   });
 
+  it('fails the gate on a message with extra text after the expected one', () => {
+    const { judged } = run('following cursor with limit=2 returned p0 2 times, not once; and more', { pages: '[2,2]' });
+    expect(judged[0]).toMatchObject({ display: 'deviation changed', gate: 'fail', changed: expect.stringMatching(/^message/) });
+  });
+
+  it('fails the gate on evidence with extra text after the expected value', () => {
+    expect(run('following cursor with limit=2 returned p0 2 times, not once', { pages: '[2,2]x' }).judged[0]).toMatchObject({ display: 'deviation changed' });
+  });
+
+  it('refuses a pattern that would escape its anchors', () => {
+    expect(() => wholeMatch('x)|(.*')).toThrow(SyntaxError);
+  });
+
   it('fails the gate on different or missing evidence', () => {
     expect(run('following cursor with limit=2 returned p0 2 times, not once', { pages: '[2,1]' }).judged[0]).toMatchObject({
       display: 'deviation changed',
@@ -337,10 +350,23 @@ describe('per-assertion digests (HAP-432)', () => {
 });
 
 describe('the shipped deviation lists', () => {
-  // Each list's expect must describe the failure its committed parity run recorded.
-  it.each(['pdsjs', 'zds', 'atproto-pds', 'reference'])('%s matches its parity run', (impl) => {
+  // Each list's expect must describe the failure its newest committed parity run recorded.
+  const fixtures = readdirSync(join(ROOT, 'test', 'fixtures', 'results'));
+  const impls = readdirSync(join(ROOT, 'implementations')).filter((id) => existsSync(join(ROOT, 'implementations', id, 'deviations.yaml')));
+  const newestParity = (impl: string) =>
+    fixtures
+      .filter((f) => f.startsWith(`parity-${impl}-`) && /^\d{4}-\d{2}-\d{2}\.json$/.test(f.slice(`parity-${impl}-`.length)))
+      .sort()
+      .at(-1);
+
+  it('covers every implementation that ships a list', () => {
+    expect(impls.length).toBeGreaterThan(0);
+    for (const impl of impls) expect(newestParity(impl), impl).toBeDefined();
+  });
+
+  it.each(impls)('%s matches its newest parity run', (impl) => {
     const list = loadDeviations(join(ROOT, 'implementations', impl, 'deviations.yaml'));
-    const run = JSON.parse(readFileSync(join(ROOT, 'test', 'fixtures', 'results', `parity-${impl}-2026-11-12.json`), 'utf8'));
+    const run = JSON.parse(readFileSync(join(ROOT, 'test', 'fixtures', 'results', newestParity(impl)!), 'utf8'));
     const cat = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
     const { judged } = judgeAll(run.results, new Map(cat.assertions.map((a) => [a.id, a])), new Map(list.map((d) => [d.assertion, d])), vectorStatus(), run.implementation.roles);
     for (const d of list) expect(judged.find((j) => j.id === d.assertion)).toMatchObject({ display: 'known deviation' });

@@ -6,17 +6,18 @@
 //
 // --deviations replaces the list embedded in the results file, so a PR's own
 // deviation list can be judged against a run (design ch. 6.4). That list must
-// pass the deviations schema, so every entry has its `expect`. A listed fail
+// pass the same validation as `bun run validate`, so every entry has an `expect`
+// that compiles and doesn't match anything. A listed fail
 // that doesn't match its `expect` is "deviation changed", and fails the gate.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { loadCatalogue, resolveCatalogue } from '../harness/catalogue.ts';
-import { type Deviation, deviationsAt, loadDeviations } from '../harness/deviations.ts';
+import { type Deviation, deviationsAt, loadCheckedDeviations } from '../harness/deviations.ts';
 import { loadIndependence } from '../harness/independence.ts';
 import { vectorStatus } from '../harness/provisional.ts';
-import { checkSchema, ROOT } from '../harness/schema.ts';
+import { ROOT } from '../harness/schema.ts';
 import { judgeAll } from '../harness/verdict.ts';
 
 const { values, positionals } = parseArgs({ allowPositionals: true, options: { deviations: { type: 'string' }, json: { type: 'boolean', default: false } } });
@@ -29,9 +30,11 @@ const catalogue = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
 // Judge each row as it read at the revision the run graded.
 const revision: string = file.spec.revision;
 const byId = new Map(resolveCatalogue(catalogue, revision).map((a) => [a.id, a]));
-const deviations: Deviation[] = values.deviations ? loadDeviations(values.deviations) : file.deviations_applied;
+let deviations: Deviation[] = file.deviations_applied;
 if (values.deviations) {
-  const problems = checkSchema('deviations', deviations, values.deviations);
+  const checked = await loadCheckedDeviations(values.deviations);
+  deviations = checked.deviations;
+  const problems = checked.problems;
   if (problems.length) {
     for (const p of problems) console.error(`${p.file} ${p.where}: ${p.message}`);
     process.exit(2);
