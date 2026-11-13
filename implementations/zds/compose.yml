@@ -23,6 +23,10 @@ services:
       ZDS_PUBLIC_URL: https://zds.test
       ZDS_PLC_DIRECTORY: http://plc:2582
       ZDS_CRAWLERS: https://harness.test
+      # The stack's network is private (3fff:408::/64, internal: true), and ZDS
+      # refuses outbound calls to non-public addresses unless this is set. The
+      # harness's syncer and authority actors live at harness.test there.
+      ZDS_ALLOW_PRIVATE_FETCH: "true"
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/3000 && printf 'GET /xrpc/_health HTTP/1.0\\r\\nHost: zds.test\\r\\n\\r\\n' >&3 && head -n 1 <&3 | grep -q ' 200 '"]
       interval: 2s

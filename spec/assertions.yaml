@@ -1242,8 +1242,7 @@ assertions:
         params: [space, repo, repoRev, data]
         checks: >-
           After a write into a space whose authority is the harness, the harness space host receives
-          notifyRepoUpdate with the new repoRev and data. Not graded yet: needs the phase 7 credential
-          path.
+          notifyRepoUpdate with the new repoRev and data.
 
   - id: writers.notify-write-forwarded
     suite: writer-set
@@ -1268,8 +1267,7 @@ assertions:
         params: [space, update]
         checks: >-
           A registered syncer receives notifySpaceUpdate carrying the current and previous space revision,
-          with no gap between consecutive notifications. Not graded yet: needs the phase 7 credential
-          path.
+          with no gap between consecutive notifications.
 
   - id: writers.stale-rev-ignored
     suite: writer-set
@@ -1331,7 +1329,8 @@ assertions:
         checks: >-
           authorizeSpaceSync with notify registers once the syncer answers confirmRegistration. After the
           credential expires, the next update sends the syncer an expiry notice instead, and nothing more
-          until it reauthorizes. Not graded yet: needs the phase 7 credential path.
+          until it reauthorizes. An endpoint that echoes the wrong challenge is not registered. The
+          expiry part waits out the host's credential, so it runs only with --slow.
 
   - id: writers.list-repos
     suite: writer-set
@@ -1355,7 +1354,7 @@ assertions:
         params: [space, limit, cursor]
         checks: >-
           listWriters lists every account that has written, each with its current repoRev and data, and
-          pages completely. Not graded yet: needs the phase 7 credential path.
+          pages completely.
 
   - id: writers.list-repos-since-space-rev
     suite: writer-set
@@ -1384,7 +1383,7 @@ assertions:
         params: [cursor]
         checks: >-
           listWriters with cursor set to an earlier space revision returns only the repos updated after it
-          (exclusive), per the lexicon's cursor. Not graded yet: needs the phase 7 credential path.
+          (exclusive), per the lexicon's cursor.
 
   - id: writers.remove-writer
     suite: writer-set
@@ -1406,8 +1405,7 @@ assertions:
         quote: >-
           This can be explicitly requested with `com.atproto.space.removeWriter`.
         checks: >-
-          removeWriter drops the account from listWriters. Not graded yet: needs the phase 7 credential
-          path.
+          removeWriter drops the account from listWriters: it is absent, or listed as repoRemoved.
 
   - id: writers.removed-writer-retracked
     suite: writer-set
@@ -1429,7 +1427,7 @@ assertions:
           on the member list with `write` set to false.
         checks: >-
           In a memberspace space with publicWrite, an account removed with removeWriter is back in
-          listWriters after its next write. Not graded yet: needs the phase 7 credential path.
+          listWriters after its next write.
 
   - id: writers.repos-resolve-to-host
     suite: writer-set
