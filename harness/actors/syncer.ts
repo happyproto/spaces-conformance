@@ -1,15 +1,22 @@
 // The syncer actor: reads a repo the way a 0016 syncer does, and reports
 // what it saw rather than throwing, so assertions can grade each step.
 //
-//   commit()  getLatestCommit with Atproto-Space-Want-Mac, MAC checked
+//   commit()  getLatestCommit with a MAC request, MAC checked
 //   oplog()   listRepoOps from `since`, following cursor to the end, folded into a set hash
 //   archive() getRepo, read as STAR, streamed into a set hash, MAC checked
+//   record()  getRecord with a record MAC request (2026-11-12), MAC checked
+//
+// The MAC request follows the revision graded: 2026-10-29's
+// Atproto-Space-Want-Mac / Atproto-Space-Mac, or from 2026-11-12 RFC 9421
+// Accept-Signature with the HPKE export secret (macsig.ts).
 
 import { fromB64, hex } from '../crypto/bytes.ts';
-import { syncerSharedSecret } from '../crypto/kem.ts';
-import { generate, type PublicKey } from '../crypto/keys.ts';
+import { recordCid } from '../crypto/drisl.ts';
+import { syncerExportSecret, syncerSharedSecret } from '../crypto/kem.ts';
+import { didKey, generate, type PublicKey } from '../crypto/keys.ts';
 import { LtHash } from '../crypto/lthash.ts';
 import { commitMac, macEquals, parseMacHeader, REPO_TYPE, wantMacHeader } from '../crypto/mac.ts';
+import { acceptSignature, COMMIT_PROFILE, commitFromFields, coveredHeader, type MacProfile, RECORD_PROFILE, recordFromFields, verifyMacResponse } from '../crypto/macsig.ts';
 import { checkSpaceRepo } from '../crypto/star.ts';
 import type { HttpResponse } from '../http.ts';
 
@@ -39,8 +46,77 @@ export interface MacCheck {
   present: boolean;
   verified: boolean;
   reason?: string;
+  /** Vary lists the request header: Atproto-Space-Want-Mac, or Accept-Signature from 2026-11-12. */
   vary: boolean;
+  /** Atproto-Space-Mac, or from 2026-11-12 the profile's covered header. */
   header?: string;
+  /** From 2026-11-12: the Signature-Input and Signature headers as answered. */
+  signatureInput?: string;
+  signature?: string;
+}
+
+/** What one MAC request sent: its headers, the secret to check with, and (2026-11-12) the requested keyid. */
+export interface KeyShare {
+  headers: Record<string, string>;
+  secret?: Uint8Array;
+  keyid?: string;
+}
+
+/** The 2026-11-12 MAC headers of a response, keyed as verifyMacResponse reads them. */
+function macsigHeaders(r: HttpResponse, profile: MacProfile) {
+  const get = (h: string) => r.headers.get(h) ?? undefined;
+  return { [coveredHeader(profile)]: get(coveredHeader(profile)), 'signature-input': get('signature-input'), signature: get('signature') };
+}
+
+const varies = (r: HttpResponse, header: string) =>
+  (r.headers.get('vary') ?? '').toLowerCase().split(',').map((s) => s.trim()).includes(header);
+
+/**
+ * Check a 2026-11-12 MAC (#requesting-a-mac) over a response that should
+ * carry `commit`. The covered Atproto-Space-Commit must verify, match the body
+ * commit, and name the requested repo and space (#commit-mac).
+ */
+export function checkCommitMacSig(r: HttpResponse, commit: Commit | null, ks: KeyShare, t: Pick<Target, 'repo' | 'space'>): MacCheck {
+  const h = macsigHeaders(r, COMMIT_PROFILE);
+  const base = { vary: varies(r, 'accept-signature'), header: h[COMMIT_PROFILE], signatureInput: h['signature-input'], signature: h.signature };
+  const present = !!(h[COMMIT_PROFILE] || h['signature-input'] || h.signature);
+  if (!ks.secret || !ks.keyid) return { ...base, present, verified: false, reason: 'the author publishes no #atproto_kem key, so no MAC was requested' };
+  if (!present) return { ...base, present, verified: false, reason: 'no Atproto-Space-Commit, Signature-Input or Signature header' };
+  if (!commit) return { ...base, present, verified: false, reason: 'no 0016 commit to check the MAC against' };
+  const v = verifyMacResponse(COMMIT_PROFILE, h, ks.secret, ks.keyid);
+  if (typeof v === 'string') return { ...base, present, verified: false, reason: v };
+  const f = commitFromFields(v.fields);
+  if (typeof f === 'string') return { ...base, present, verified: false, reason: f };
+  for (const k of ['ver', 'repo', 'space', 'rev'] as const)
+    if (f[k] !== commit[k]) return { ...base, present, verified: false, reason: `Atproto-Space-Commit's ${k} ${JSON.stringify(f[k])} differs from the body commit's ${JSON.stringify(commit[k])}` };
+  if (hex(f.data) !== hex(commit.data)) return { ...base, present, verified: false, reason: "Atproto-Space-Commit's data differs from the body commit's" };
+  if (f.repo !== t.repo || f.space !== t.space) return { ...base, present, verified: false, reason: `Atproto-Space-Commit names ${f.repo} in ${f.space}, not the requested ${t.repo} in ${t.space}` };
+  return { ...base, present, verified: true };
+}
+
+/**
+ * Check a 2026-11-12 record MAC (#record-mac): it verifies, its URI is the
+ * requested one, and its CID is the CID of the record value returned.
+ */
+export function checkRecordMacSig(r: HttpResponse, uri: string, ks: KeyShare): MacCheck {
+  const h = macsigHeaders(r, RECORD_PROFILE);
+  const base = { vary: varies(r, 'accept-signature'), header: h[RECORD_PROFILE], signatureInput: h['signature-input'], signature: h.signature };
+  const present = !!(h[RECORD_PROFILE] || h['signature-input'] || h.signature);
+  if (!ks.secret || !ks.keyid) return { ...base, present, verified: false, reason: 'the author publishes no #atproto_kem key, so no MAC was requested' };
+  if (!present) return { ...base, present, verified: false, reason: 'no Atproto-Space-Record, Signature-Input or Signature header' };
+  const v = verifyMacResponse(RECORD_PROFILE, h, ks.secret, ks.keyid);
+  if (typeof v === 'string') return { ...base, present, verified: false, reason: v };
+  const f = recordFromFields(v.fields);
+  if (typeof f === 'string') return { ...base, present, verified: false, reason: f };
+  if (f.uri !== uri) return { ...base, present, verified: false, reason: `Atproto-Space-Record's uri ${f.uri} is not the requested ${uri}` };
+  let cid: string;
+  try {
+    cid = recordCid(r.body?.value).toString();
+  } catch (e) {
+    return { ...base, present, verified: false, reason: `the returned record has no CID the harness can compute: ${(e as Error).message}` };
+  }
+  if (f.cid !== cid) return { ...base, present, verified: false, reason: `Atproto-Space-Record's cid ${f.cid} is not the returned record's CID ${cid}` };
+  return { ...base, present, verified: true };
 }
 
 const xrpc = (t: Target, nsid: string, extra: Record<string, string> = {}) =>
@@ -81,24 +157,54 @@ export function checkCommitMac(r: HttpResponse, commit: Commit | null, sharedSec
   }
 }
 
+export interface SyncerOptions {
+  /** Request MACs the 2026-11-12 way (RFC 9421 Accept-Signature, HPKE export). */
+  macsig?: boolean;
+}
+
 export class Syncer {
   private readonly fetch: ReadFetch;
-  constructor(fetch: ReadFetch) {
+  readonly macsig: boolean;
+  constructor(fetch: ReadFetch, opts: SyncerOptions = {}) {
     this.fetch = fetch;
+    this.macsig = !!opts.macsig;
   }
 
-  /** A fresh key share for every request, as #shared-secret requires. */
-  private keyShare(t: Target): { headers: Record<string, string>; secret?: Uint8Array } {
+  /**
+   * A fresh key share for every request, as #shared-secret requires. From
+   * 2026-11-12, `profile` picks the MAC profile and `o` the request's label
+   * and alg.
+   */
+  keyShare(t: Target, profile: MacProfile = COMMIT_PROFILE, o: { label?: string; alg?: string } = {}): KeyShare {
     if (!t.authorKem) return { headers: {} };
     const eph = generate('p256');
+    if (this.macsig)
+      return { headers: { 'accept-signature': acceptSignature(profile, eph, o) }, secret: syncerExportSecret(eph, t.authorKem), keyid: didKey(eph) };
     return { headers: { 'atproto-space-want-mac': wantMacHeader(REPO_TYPE, 1, eph) }, secret: syncerSharedSecret(eph, t.authorKem) };
   }
 
-  async commit(t: Target) {
-    const ks = this.keyShare(t);
+  private checkCommit(r: HttpResponse, commit: Commit | null, ks: KeyShare, t: Target): MacCheck {
+    return this.macsig ? checkCommitMacSig(r, commit, ks, t) : checkCommitMac(r, commit, ks.secret);
+  }
+
+  /** A raw read with the caller's own headers, for requests the syncer wouldn't send (malformed MAC requests). */
+  request(t: Target, nsid: string, headers: Record<string, string>, extra: Record<string, string> = {}) {
+    return this.fetch(xrpc(t, nsid, extra), headers);
+  }
+
+  /** getLatestCommit; `ks` overrides the key share (a request with another label or alg). */
+  async commit(t: Target, ks: KeyShare = this.keyShare(t)) {
     const r = await this.fetch(xrpc(t, 'com.atproto.space.getLatestCommit'), ks.headers);
     const commit = r.status === 200 ? parseCommit(r.body?.commit) : null;
-    return { response: r, commit, mac: checkCommitMac(r, commit, ks.secret) };
+    return { response: r, commit, mac: this.checkCommit(r, commit, ks, t) };
+  }
+
+  /** getRecord with a 2026-11-12 record MAC request. The URI is the record's full space URI (#addressing). */
+  async record(t: Target, collection: string, rkey: string) {
+    const ks = this.keyShare(t, RECORD_PROFILE);
+    const uri = `${t.space}/${t.repo}/${collection}/${rkey}`;
+    const r = await this.fetch(xrpc(t, 'com.atproto.space.getRecord', { collection, rkey }), ks.headers);
+    return { response: r, uri, mac: checkRecordMacSig(r, uri, ks) };
   }
 
   /** Every op after `since`, following cursor. Each page gets its own key share. */
@@ -122,7 +228,7 @@ export class Syncer {
       const pageOps = Array.isArray(r.body?.ops) ? r.body.ops : [];
       ops.push(...pageOps);
       const commit = r.body?.commit ? parseCommit(r.body.commit) : null;
-      const mac = checkCommitMac(r, commit, ks.secret);
+      const mac = this.checkCommit(r, commit, ks, t);
       pages.push({ status: 200, ops: pageOps.length, commit: !!r.body?.commit, ...(commit ? { commitRev: commit.rev } : {}), mac });
       if (r.body?.commit) final = { commit, mac };
       const next = typeof r.body?.cursor === 'string' ? r.body.cursor : undefined;
@@ -158,7 +264,7 @@ export class Syncer {
     } catch (e) {
       return { response: r, error: (e as Error).message };
     }
-    const mac = checkCommitMac(r, { ...check.meta }, ks.secret);
+    const mac = this.checkCommit(r, { ...check.meta }, ks, t);
     return { response: r, check, mac, digestMatches: hex(check.computed) === hex(check.meta.data) };
   }
 }

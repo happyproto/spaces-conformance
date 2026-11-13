@@ -387,8 +387,6 @@ assertions:
       Multikey, and a P-256 publicKeyMultibase.
 
   - id: mac.commit-header-present
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: mac
     section: "#authenticity-headers"
     quote: >-
@@ -401,10 +399,18 @@ assertions:
     checks: >-
       With a space credential and Atproto-Space-Want-Mac, getLatestCommit returns
       Atproto-Space-Mac whose type and ver match the request's.
+    variants:
+      "2026-11-12":
+        section: "#requesting-a-mac"
+        quote: >-
+          Methods that return a [commit](#commit-mac) or a single [record](#record-mac) require a MAC
+          when called with a space credential.
+        checks: >-
+          With a MAC request (Accept-Signature, tag atproto-space-commit), getLatestCommit returns
+          Atproto-Space-Commit, Signature-Input and Signature, with exactly one signature tagged
+          atproto-space-commit covering ("atproto-space-commit";sf).
 
   - id: mac.vary-header
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: mac
     section: "#authenticity-headers"
     quote: >-
@@ -416,10 +422,18 @@ assertions:
     areas: [mac, httpsig, jwt]
     checks: >-
       The response's Vary lists Atproto-Space-Want-Mac, and the mac is a 32-byte structured-field byte sequence.
+    variants:
+      "2026-11-12":
+        section: "#requesting-a-mac"
+        quote: >-
+          Otherwise, it responds with the covered header and a signature using the requested label and
+          parameters, and lists `Accept-Signature` in `Vary`:
+        checks: >-
+          Asked under the label sig1 with alg hmac-sha256, the response's Signature-Input and Signature
+          use the label sig1, Signature-Input carries the requested keyid, tag and alg, and Vary lists
+          Accept-Signature.
 
   - id: mac.malformed-request-rejected
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: mac
     section: "#authenticity-headers"
     quote: >-
@@ -431,10 +445,19 @@ assertions:
     checks: >-
       A malformed Want-Mac, an unknown type or ver, or a key_share that isn't a P-256
       did:key is refused rather than answered without a MAC.
+    variants:
+      "2026-11-12":
+        section: "#requesting-a-mac"
+        quote: >-
+          It returns an error if `Accept-Signature` is missing or malformed, contains more than one
+          request with the profile's tag, requests other parameters, or has an invalid key.
+        checks: >-
+          A host that answers a well-formed request with a MAC refuses each of these: a malformed
+          Accept-Signature; two requests tagged atproto-space-commit; a request with an extra parameter;
+          a keyid that isn't a P-256 did:key. A missing header isn't sent: on a read without a space
+          credential the host may answer without a MAC. A 429 or 5xx answer makes the row pending.
 
   - id: mac.commit-valid
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: mac
     section: "#commit-mac"
     quote: >-
@@ -445,10 +468,18 @@ assertions:
     areas: [mac, httpsig, jwt]
     checks: >-
       The commit MAC verifies with the harness's HKDF shared secret and HMAC-SHA256 over the defined context.
+    variants:
+      "2026-11-12":
+        section: "#commit-mac"
+        quote: >-
+          The syncer checks that the header matches the commit in the response body, and that `repo`
+          and `space` match the requested repo.
+        checks: >-
+          The atproto-space-commit MAC verifies with the HPKE export secret (RFC 9421 hmac-sha256 over
+          the sf-normalized Atproto-Space-Commit), and its fields equal the body commit and the
+          requested repo and space.
 
   - id: mac.commit-bound-to-repo
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: mac
     section: "#shared-secret"
     quote: >-
@@ -464,9 +495,18 @@ assertions:
     checks: >-
       Read by a caller who isn't the author, the commit MAC verifies against the author's
       #atproto_kem key and not the caller's, i.e. the host does ECDH with the author's key.
+    variants:
+      "2026-11-12":
+        section: "#shared-secret"
+        quote: >-
+          The repo host derives the same secret from the ephemeral public key and the author's KEM
+          private key.
+        checks: >-
+          Read by a caller who isn't the author, the commit MAC verifies with the export secret of the
+          author's #atproto_kem key and not the caller's.
 
   - id: mac.list-repo-ops-final-page
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    # 2026-11-12 puts a commit on every page, so this G1 rule ends; mac.list-repo-ops-every-page grades the G2 one.
     until: "2026-10-29"
     suite: mac
     section: "#incremental-sync"
@@ -480,9 +520,23 @@ assertions:
     checks: >-
       The page holding the last op carries the commit and a MAC header. Earlier pages carry neither.
 
+  - id: mac.list-repo-ops-every-page
+    since: "2026-11-12"
+    suite: mac
+    section: "#commit-mac"
+    quote: >-
+      They use the `atproto-space-commit` profile, which covers an `Atproto-Space-Commit` header
+      containing the commit's fields, as shown above.
+    level: must
+    basis: [definition]
+    roles: [repo-host]
+    areas: [mac, httpsig, jwt]
+    checks: >-
+      Paged with limit=1 over three records, every listRepoOps page carries the commit and an
+      atproto-space-commit MAC that verifies and matches it. Fewer than two pages makes the row
+      pending.
+
   - id: mac.record-valid
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: mac
     section: "#record-mac"
     quote: >-
@@ -493,6 +547,15 @@ assertions:
     areas: [mac, cbor, httpsig, jwt]
     checks: >-
       getRecord's atproto-space-record MAC verifies over the record URI and binary CID.
+    variants:
+      "2026-11-12":
+        section: "#record-mac"
+        quote: >-
+          The syncer checks that the URI matches the request, computes the CID of the returned record,
+          and checks that it matches the header's CID.
+        checks: >-
+          getRecord's atproto-space-record MAC verifies with the HPKE export secret, its uri is the
+          requested record URI, and its cid is the CID of the returned record value.
 
   # --- oplog -------------------------------------------------------------------
 

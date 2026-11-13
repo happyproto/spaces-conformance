@@ -4,12 +4,13 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { HARNESS_DID, MANAGING_APP_SERVICE, Resolver, SYNCER_SERVICE, verifyServiceAuth } from '../harness/actors/identity.ts';
 import type { DidDocument, Plc } from '../harness/actors/plc.ts';
 import { Receiver } from '../harness/actors/receiver.ts';
-import { checkCommitMac, Syncer } from '../harness/actors/syncer.ts';
+import { checkCommitMac, checkCommitMacSig, checkRecordMacSig, Syncer } from '../harness/actors/syncer.ts';
 import { b64, hex } from '../harness/crypto/bytes.ts';
 import { recordCid, encode, fromLexJson } from '../harness/crypto/drisl.ts';
 import { signJwt } from '../harness/crypto/jwt.ts';
-import { hostSharedSecret } from '../harness/crypto/kem.ts';
-import { generate, multikey, parseDidKey } from '../harness/crypto/keys.ts';
+import { hostExportSecret, hostSharedSecret, syncerExportSecret } from '../harness/crypto/kem.ts';
+import { COMMIT_PROFILE, commitHeader, macRequestList, macResponseHeaders, RECORD_PROFILE, recordHeader } from '../harness/crypto/macsig.ts';
+import { didKey, generate, multikey, parseDidKey } from '../harness/crypto/keys.ts';
 import { LtHash } from '../harness/crypto/lthash.ts';
 import { commitMac, macHeader, parseWantMac } from '../harness/crypto/mac.ts';
 import { pathKey, writeStar } from '../harness/crypto/star.ts';
@@ -72,6 +73,42 @@ describe('checkCommitMac', () => {
     expect(checkCommitMac(resp(1), commit, secret)).toMatchObject({ verified: true });
     expect(checkCommitMac(resp(2), commit, secret)).toMatchObject({ verified: false, reason: expect.stringMatching(/ver 2/) });
     expect(checkCommitMac(resp(2), { ...commit, ver: 2 }, secret)).toMatchObject({ verified: false });
+  });
+});
+
+describe('2026-11-12 MAC checks', () => {
+  const kem = generate('p256');
+  const commit = { ver: 1, repo: REPO, space: SPACE, rev: '3mzu00000002', data: new Uint8Array(32).fill(3) };
+  const answer = (profile: typeof COMMIT_PROFILE | typeof RECORD_PROFILE, covered: string, body: unknown = {}, o: { secretKey?: typeof kem } = {}) => {
+    const eph = generate('p256');
+    const ks = { headers: {}, secret: syncerExportSecret(eph, kem), keyid: didKey(eph) };
+    const headers = macResponseHeaders(profile, covered, { label: 'mac', list: macRequestList(profile, eph) }, hostExportSecret(o.secretKey ?? kem, eph));
+    return { ks, r: { status: 200, headers: new Headers(headers), body, bytes: new Uint8Array() } };
+  };
+
+  it('verifies a commit MAC that matches the body commit and the request', () => {
+    const { ks, r } = answer(COMMIT_PROFILE, commitHeader(commit));
+    expect(checkCommitMacSig(r, commit, ks, { repo: REPO, space: SPACE })).toMatchObject({ present: true, verified: true, vary: true });
+  });
+
+  it('refuses a commit MAC keyed by another KEM key, over another commit, or for another repo', () => {
+    const other = answer(COMMIT_PROFILE, commitHeader(commit), {}, { secretKey: generate('p256') });
+    expect(checkCommitMacSig(other.r, commit, other.ks, { repo: REPO, space: SPACE })).toMatchObject({ verified: false, reason: 'the MAC does not match' });
+    const { ks, r } = answer(COMMIT_PROFILE, commitHeader(commit));
+    expect(checkCommitMacSig(r, { ...commit, rev: '3mzu00000003' }, ks, { repo: REPO, space: SPACE }).reason).toMatch(/rev .* differs from the body commit/);
+    expect(checkCommitMacSig(r, commit, ks, { repo: 'did:plc:someoneelse', space: SPACE }).reason).toMatch(/not the requested/);
+    expect(checkCommitMacSig({ ...r, headers: new Headers() }, commit, ks, { repo: REPO, space: SPACE })).toMatchObject({ present: false, verified: false });
+  });
+
+  it('verifies a record MAC against the requested URI and the returned record\'s CID', () => {
+    const value = { $type: 'com.example.conformance.note', n: 1 };
+    const uri = `${SPACE}/${REPO}/com.example.conformance.note/a`;
+    const cid = recordCid(value).toString();
+    const ok = answer(RECORD_PROFILE, recordHeader(uri, cid), { value });
+    expect(checkRecordMacSig(ok.r, uri, ok.ks)).toMatchObject({ present: true, verified: true });
+    expect(checkRecordMacSig(ok.r, `${uri}x`, ok.ks).reason).toMatch(/is not the requested/);
+    const wrongCid = answer(RECORD_PROFILE, recordHeader(uri, cid), { value: { ...value, n: 2 } });
+    expect(checkRecordMacSig(wrongCid.r, uri, wrongCid.ks).reason).toMatch(/is not the returned record's CID/);
   });
 });
 
