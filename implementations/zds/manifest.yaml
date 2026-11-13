@@ -19,6 +19,13 @@ capabilities:
 # Per area, at the pinned image's revision 8c97e950 (zat.dev/zds v0.12.2), with
 # zat v0.7.0-alpha.8. From this pin zds calls zat.space for all of them; zat's
 # space modules are its own Zig code, written to mirror @atproto/space's design.
+# zat counts as its own lineage in every area, including against @atproto/space
+# (the reference). Lineage tracks shared code: a bug in @atproto/space's
+# TypeScript can't carry over into zat's Zig. Mirroring the design mostly means
+# implementing what 0016 itself defines (the HPKE export, LtHash, the STAR
+# layout), which every implementation does. A shared misreading of the spec is
+# what the vectors' cross-checks catch, not lineage (vectors/README.md).
+# Revisit if a run shows zat sharing a reference-specific quirk.
 #   cbor    zat: zds's src/storage/store.zig encodes and hashes records with zat.cbor
 #   lthash  zat: zat.space.LtHash (zat's src/internal/space/lthash.zig, std Blake3)
 #   mac     zat: zat.space.mac (zat's src/internal/space/mac.zig with std HMAC; HKDF in kem.zig)
