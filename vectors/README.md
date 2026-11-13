@@ -8,7 +8,7 @@ Each vector lists its `sources`:
 |---|---|
 | `spec ...` | A constant or example in Proposal 0016 at the pinned revision. |
 | `RFC 9180 appendix A.3.1` | The DHKEM(P-256, HKDF-SHA256) test vector. It's independent of every space implementation. |
-| `atproto#5187 ...` | An expected value from a test in the reference implementation, at `98ef3a6b`. Only the values are used, not the code. |
+| `atproto#5187 ...` | An expected value from a test in the reference implementation, at `98ef3a6b`, or at `d4def6e9` where the source says so. Only the values are used, not the code. |
 | `HappyView ...` | An expected value from a test in HappyView's Rust at `9f084f5c`, or the output of its functions run on the vector's inputs in a scratch export (beta `5154fc61` for STAR). Only the values are used, not the code. |
 | `microcosm.blue/star 41bdec1 ...` | STAR's own interop fixtures (`star-interop/`), independent of every space implementation. |
 | `@ipld/dag-cbor 9.2.5` | Recomputed with that third-party encoder in a separate cross-check, outside this repo. |
@@ -34,8 +34,9 @@ Every verifier also has `negative` vectors, inputs it must reject. That way a ha
 | `jwt.json` | Compact JWS verification: RFC 7515 A.3 (ES256, with a high-S signature). |
 | `lthash.json` | The set hash, including the empty digest. |
 | `cid.json` | DRISL record CIDs, including `$link`, `$bytes`, integers near 2^32 and 2^53-1, and raw CIDs. |
-| `kem.json` | The HKDF shared secret. |
-| `mac.json` | Commit and record MACs. One commit vector has its full HMAC input written out in hex. Negatives: a flipped bit, a MAC for another repo, another URI. |
+| `kem.json` | The HKDF shared secret (2026-10-29). |
+| `macsig.json` | From 2026-11-12: the HPKE export secret, and RFC 9421 `hmac-sha256` MACs over `Atproto-Space-Commit` and `Atproto-Space-Record`, with the signature base written out. Negatives: a changed header, a record MAC offered as a commit MAC, two signatures with one tag, no `sf`, another `alg`, another `keyid`. |
+| `mac.json` | Commit and record MACs (2026-10-29). One commit vector has its full HMAC input written out in hex. Negatives: a flipped bit, a MAC for another repo, another URI. |
 | `httpsig.json` | The RFC 9421 signature base and `Signature-Input`, plus fixed-key presentations (deterministic signatures) to accept or reject. |
 | `star.json` | One valid `atproto-space-repo` archive. The rejections are built in the test. |
 | `star-interop/` | STAR's own framing fixtures: 19 valid and 37 invalid archives (`star-interop/README.md`). |

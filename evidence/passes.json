@@ -12,8 +12,8 @@
     {
       "file": "test/fixtures/results/parity-atproto-pds-2026-11-13.json",
       "implementation": "atproto-pds",
-      "run": "2026-11-13T18-34-12Z-atproto-pds-1eb1",
-      "suite_commit": "ced098ff0d",
+      "run": "2026-11-13T18-40-13Z-atproto-pds-337f",
+      "suite_commit": "aac544395d",
       "assertions_digest": "sha256:dbb1305112b3b0b97bc143f8af3e0fabdaf5e331e89023a39144611443d62849",
       "image": "ghcr.io/happyproto/pds-test/atproto-pds@sha256:0fe098d36c7fd8beedcdc3f68f4f8431eb4571cdf764599ee42520b22fa07a5f",
       "revision": "2026-10-29"
@@ -21,8 +21,8 @@
     {
       "file": "test/fixtures/results/parity-pdsjs-2026-11-13.json",
       "implementation": "pdsjs",
-      "run": "2026-11-13T18-34-30Z-pdsjs-8a81",
-      "suite_commit": "ced098ff0d",
+      "run": "2026-11-13T18-40-29Z-pdsjs-9e13",
+      "suite_commit": "aac544395d",
       "assertions_digest": "sha256:dbb1305112b3b0b97bc143f8af3e0fabdaf5e331e89023a39144611443d62849",
       "image": "ghcr.io/happyproto/pds-test/pdsjs@sha256:37c16c3499b54b799399118a24154d64e5397ea93a2b4da74c182f133f9e1bca",
       "revision": "2026-10-29"

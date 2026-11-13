@@ -11,10 +11,24 @@ import { Cid, CODEC_RAW } from '../harness/crypto/cid.ts';
 import { decode, encode, fromLexJson, recordCid, toLexJson } from '../harness/crypto/drisl.ts';
 import { presentCredential, signatureBase, toHighS, verifyPresentation } from '../harness/crypto/httpsig.ts';
 import { decodeJwt, signJwt, verifyJwt } from '../harness/crypto/jwt.ts';
-import { deriveSharedSecret, ecdhX, hostSharedSecret, syncerSharedSecret } from '../harness/crypto/kem.ts';
+import { deriveSharedSecret, ecdhX, hostExportSecret, hostSharedSecret, kemSecret, syncerExportSecret, syncerSharedSecret } from '../harness/crypto/kem.ts';
 import { didKey, fromSecret, generate, parseDidKey, parseMultikey, multikey } from '../harness/crypto/keys.ts';
 import { EMPTY_DIGEST_HEX, LtHash } from '../harness/crypto/lthash.ts';
 import { commitMac, macHeader, parseMacHeader, parseWantMac, recordMac, wantMacHeader } from '../harness/crypto/mac.ts';
+import {
+  acceptSignature,
+  commitFromFields,
+  commitHeader,
+  COMMIT_PROFILE,
+  macRequestList,
+  macResponseHeaders,
+  type MacProfile,
+  recordFromFields,
+  recordHeader,
+  RECORD_PROFILE,
+  verifyMacResponse,
+} from '../harness/crypto/macsig.ts';
+import { parseDictionary, serializeDictionary } from '../harness/crypto/sf.ts';
 import { checkSpaceRepo, MAGIC, pathKey, readStar, writeStar } from '../harness/crypto/star.ts';
 import { ROOT } from '../harness/schema.ts';
 
@@ -119,6 +133,56 @@ describe('KEM shared secret', () => {
     expect(hex(hostSharedSecret(author, eph))).toBe(hex(ss));
     expect(hex(hostSharedSecret(generate('p256'), eph))).not.toBe(hex(ss));
     expect(hex(deriveSharedSecret(ecdhX(eph.secret, author), eph, author))).toBe(hex(ss));
+  });
+});
+
+describe('2026-11-12 MACs (HPKE export and RFC 9421)', () => {
+  const v = vec('macsig');
+  const ss = fromHex(v.shared_secret);
+  const uncompressedKey = (h: string) => ({ curve: 'p256' as const, compressed: p256.Point.fromBytes(fromHex(h)).toBytes(true) });
+
+  it.each((v.export as any[]).map((x): [string, any] => [x.name, x]))('export: %s', (_n, x: any) => {
+    expect(hex(hostExportSecret(fromSecret('p256', fromHex(x.skRm)), uncompressedKey(x.enc)))).toBe(x.shared_secret);
+  });
+
+  it('exports the same secret on both sides, from the 2026-10-29 DHKEM secret', () => {
+    const author = generate('p256');
+    const eph = generate('p256');
+    const ss2 = syncerExportSecret(eph, author);
+    expect(hex(hostExportSecret(author, eph))).toBe(hex(ss2));
+    expect(hex(ss2)).not.toBe(hex(syncerSharedSecret(eph, author)));
+    expect(hex(kemSecret(ecdhX(eph.secret, author), eph, author))).toBe(hex(syncerSharedSecret(eph, author)));
+  });
+
+  const cases: [MacProfile, any, string][] = [
+    [COMMIT_PROFILE, v.commit[0], commitHeader({ ...v.commit[0], data: fromHex(v.commit[0].data) })],
+    [RECORD_PROFILE, v.record[0], recordHeader(v.record[0].uri, v.record[0].cid)],
+  ];
+  it.each(cases)('%s: request, covered header and signature', (profile, x, covered) => {
+    expect(acceptSignature(profile, v.key_share)).toBe(x.accept_signature);
+    expect(covered).toBe(x.covered);
+    const h = macResponseHeaders(profile, covered, { label: 'mac', list: macRequestList(profile, v.key_share) }, ss);
+    expect(h['signature-input']).toBe(x.signature_input);
+    expect(h.signature).toBe(x.signature);
+    // A second HMAC implementation over the written-out signature base.
+    expect(`mac=:${createHmac('sha256', ss).update(x.signature_base).digest('base64')}:`).toBe(x.signature);
+  });
+
+  it.each(cases)('%s: verifies, and gives back the covered fields', (profile, x) => {
+    const got = verifyMacResponse(profile, { [profile]: x.covered, 'signature-input': x.signature_input, signature: x.signature }, ss, v.key_share);
+    expect(typeof got).toBe('object');
+    const fields = (got as any).fields;
+    if (profile === COMMIT_PROFILE) expect(commitFromFields(fields)).toEqual({ ver: 1, repo: x.repo, space: x.space, rev: x.rev, data: fromHex(x.data) });
+    else expect(recordFromFields(fields)).toEqual({ uri: x.uri, cid: x.cid });
+  });
+
+  it.each((v.negative as any[]).map((n): [string, any] => [n.name, n]))('negative: %s', (_n, n: any) => {
+    expect(verifyMacResponse(n.profile, { [n.profile]: n.covered, 'signature-input': n.signature_input, signature: n.signature }, ss, v.key_share)).toBe(n.expect);
+  });
+
+  it('keeps inner-list item parameters through a parse and serialize', () => {
+    const input = v.commit[0].signature_input;
+    expect(serializeDictionary([...parseDictionary(input)])).toBe(input);
   });
 });
 

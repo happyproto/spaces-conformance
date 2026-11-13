@@ -11,6 +11,8 @@ export type SfParams = [string, SfBare][];
 export interface SfInnerList {
   inner: SfBare[];
   params: SfParams;
+  /** Each inner item's own parameters, by position (`"atproto-space-commit";sf`). Absent means none. */
+  itemParams?: SfParams[];
 }
 export type SfItem = SfBare | SfInnerList;
 export type SfDictionary = Map<string, SfItem>;
@@ -79,6 +81,7 @@ export function parseDictionary(input: string, memberParams?: SfMemberParams): S
   function innerList(): SfInnerList {
     i++; // (
     const inner: SfBare[] = [];
+    const itemParams: SfParams[] = [];
     for (;;) {
       while (s[i] === ' ') i++;
       if (s[i] === ')') {
@@ -87,10 +90,12 @@ export function parseDictionary(input: string, memberParams?: SfMemberParams): S
       }
       if (i >= s.length) fail('unterminated inner list');
       inner.push(bare());
-      params(); // member parameters: not used by the space headers
+      itemParams.push(params());
       if (s[i] !== ' ' && s[i] !== ')') fail('expected " " or ")" in inner list');
     }
-    return { inner, params: params() };
+    const list: SfInnerList = { inner, params: params() };
+    if (itemParams.some((p) => p.length)) list.itemParams = itemParams;
+    return list;
   }
 
   function bare(): SfBare {
@@ -149,7 +154,8 @@ export function serializeBare(v: SfBare): string {
 
 export const serializeParams = (ps: SfParams): string => ps.map(([k, v]) => (v === true ? `;${k}` : `;${k}=${serializeBare(v)}`)).join('');
 
-export const serializeInnerList = (l: SfInnerList): string => `(${l.inner.map(serializeBare).join(' ')})${serializeParams(l.params)}`;
+export const serializeInnerList = (l: SfInnerList): string =>
+  `(${l.inner.map((v, i) => serializeBare(v) + serializeParams(l.itemParams?.[i] ?? [])).join(' ')})${serializeParams(l.params)}`;
 
 export function serializeDictionary(entries: [string, SfItem][]): string {
   return entries
