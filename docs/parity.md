@@ -79,7 +79,7 @@ The digest itself agrees. In each digest fail, the evidence compares the old com
 
 **C. MAC rows the harness can't judge yet.** 0016 requires a MAC only "when called with a space credential" (`#authenticity-headers`). The harness reads with a password session, as HappyView's tests do, and has no credential path yet:
 - When a session read gets no `Atproto-Space-Mac`, `mac.commit-header-present` and `mac.commit-valid` record `skip` with a "pending" reason, not a fail. That's what pds.js does.
-- `mac.commit-bound-to-repo` needs a reader who isn't the author. It requires the `harness.credential_reads` capability, so it's not applicable everywhere for now.
+- `mac.commit-bound-to-repo` needs a reader who isn't the author. At these pins it required a `harness.credential_reads` capability that no manifest claimed. Since phase 7 the harness reads with a space credential, so the row applies to every repo host.
 
 Part of HappyView's `a_commit_from_another_repo_does_not_verify_as_ours` checks a commit against another account's keys. At these pins that's Bob's signing key against the old signed commit. With a 0016 commit, it would be a MAC checked against Bob's KEM key. The host never sees that key, so that part can't fail, and the suite doesn't grade it. The test's other half presents Alice's commit as Bob's, a real repo-binding check. That half maps to `records.commit-repo-space-match`.
 
