@@ -1322,6 +1322,8 @@ assertions:
     variants:
       "2026-11-12":
         section: "#registering-for-notifications"
+        # The expiry part waits out the host's credential (--slow).
+        needs_slow: true
         quote: >-
           A registration stays active while the credential from its latest authorization is valid.
         lexicon: [com.atproto.space.authorizeSpaceSync, com.atproto.space.confirmRegistration]
