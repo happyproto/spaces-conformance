@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Account } from '../harness/adapter.ts';
 import type { RunContext } from '../harness/context.ts';
+import { SLOW_REASON } from '../harness/assert.ts';
 import { ROOT } from '../harness/schema.ts';
 
 export const SPACE_TYPE = 'com.example.conformance.space';
@@ -49,4 +50,4 @@ export const settled = (ctx: RunContext) => ctx.revision >= SETTLED;
 
 /** Whether this run has --slow: checks that wait out a host-issued credential run only then. */
 export const slow = () => process.env.CONFORMANCE_SLOW === '1';
-export const SLOW_PENDING = 'needs --slow: waits out a host-issued credential';
+export const SLOW_PENDING = SLOW_REASON;
