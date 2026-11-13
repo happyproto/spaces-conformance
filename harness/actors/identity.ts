@@ -48,7 +48,11 @@ export interface ServiceAuthCheck {
   reason?: string;
   iss?: string;
   claims?: Record<string, unknown>;
-  /** Whether the token names its method. 0016 doesn't require lxm here, so a missing one is accepted but visible. */
+  /**
+   * Whether the token names its method. 0016 doesn't require lxm here, so a
+   * missing one is accepted but visible. `ok` doesn't depend on this or on
+   * aud_form: a row that grades either must assert on it itself.
+   */
   lxm_present?: boolean;
   /** The audience the token named, when it was one the harness accepts. */
   aud?: string;

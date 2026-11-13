@@ -1,3 +1,6 @@
+# Credential binding: the credential rows grade cnf.kid (a P-256 did:key) at
+# every revision. A credential bound to a DPoP key thumbprint (dpopJkt) is not
+# accepted as conformant, so G0 rows, when they're written, must refuse it.
 id: pdsjs
 name: pds.js
 source: https://tangled.org/chadtmiller.com/pds.js

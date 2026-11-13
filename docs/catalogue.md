@@ -22,6 +22,7 @@ Each row ties one check to one sentence of Proposal 0016 at a revision `spec/rev
 | `since`, `until` | Revision keys from `spec/revisions.json`: the first and last revision the row applies to, both inclusive. `since` defaults to the catalogue's base `revision`. |
 | `variants` | Per revision key, the fields that read differently from that revision on: `section`, `quote`, `level`, `basis`, `lexicon`, `params`, `error`, `checks`, `areas`, `no_crypto`. See "Revisions" below. |
 | `provisional` | Marks a row provisional by hand, whatever the evidence. The lineage rule below applies to every row regardless. |
+| `needs_slow` | Part of the row waits out a credential the host issued (10 minutes by default), so it runs only with `--slow`. A variant can set it for one revision. The pass index counts the row's passes only from a run with `--slow`, and lists the refused ones as the source's `fast_passes`. |
 | `areas` | Required on every row. It lists the harness crypto areas the check runs through (`cbor`, `lthash`, `mac`, `httpsig`, `jwt`, `star`), or is `[]` to acknowledge it uses none, so no row can be left unfenced by omission. It can't be empty in the `digest`, `mac` and `export` suites, unless the row's `no_crypto` says why it uses none. While any listed area has a pending vector cross-check (`vectors/README.md`), the assertion is provisional. After that, it stays provisional until the lineage rule below clears it. |
 
 **Level rule.**
@@ -146,7 +147,7 @@ One JSON file per run (design ch. 7.1). Statuses are raw: `pass`, `fail`, `error
 
 A rerun after an `error` (`cli/run.ts`) keeps the earlier attempt in `run.previous_attempts`, with its failed and errored ids. A result that passed only on the rerun carries `flaky`. `verdict` shows it as "pass (flaky)": it's scored as a pass but warns. When the stack or bootstrap failed first, `run.infrastructure` says where.
 
-`run.slow` records whether the run had `--slow`. Some checks wait out a credential the host issued, which takes 10 minutes by default: the expiry part of `writers.register-expiry`, and the lapsed registration in `deletion.notify-space-deleted`. Without `--slow` those parts pend with "needs --slow: waits out a host-issued credential", and the rest of each row is still graded. A file with no `run.slow` predates the flag and counts as a run without it.
+`run.slow` records whether the run had `--slow`. A row marked `needs_slow` waits out a credential the host issued for part of its check. Without `--slow` that part pends with "needs --slow: waits out a host-issued credential", and the rest of the row is still graded. A file with no `run.slow` predates the flag and counts as a run without it. The pass index enforces the difference: a `needs_slow` row's pass counts only from a source with `run.slow: true`, so a fast run can't stand in for a slow one. Committed results runs use `--slow`.
 
 ## Pending or fail
 
