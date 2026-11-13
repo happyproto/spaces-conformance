@@ -1,15 +1,15 @@
 {
   "schema": 1,
   "run": {
-    "id": "2026-11-13T19-00-46Z-zds-18ab",
+    "id": "2026-11-13T19-04-24Z-zds-6071",
     "kind": "local",
-    "started_at": "2026-11-13T19:00:46.340Z",
-    "finished_at": "2026-11-13T19:01:05.201Z",
+    "started_at": "2026-11-13T19:04:24.304Z",
+    "finished_at": "2026-11-13T19:04:43.481Z",
     "attempt": 1
   },
   "suite": {
-    "commit": "4b86b8724a",
-    "assertions_digest": "sha256:9e286b03fcbd76203ac02499ea1caf7c915bbdeb4f1ef11b82596192ece57bd8",
+    "commit": "de52c940f7",
+    "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
     "assertion_digests": {
       "addressing.record-uri-shape": "sha256:1b070e190996c114106183bc98c46543c94360c7102a84f86b18b78c5135ae0e",
       "addressing.skey-limits": "sha256:f475fb135f2a19d7e3142bb99bfe53d54ca267d5a533dd9237ad1edfc38d2e0d",
@@ -33,10 +33,10 @@
       "cred.revocation-idempotent": "sha256:f7640d4786d18d4bc83a85fca381b60d2cf6fe7ec43af409bdb8c76c4ac87a83",
       "cred.revoked-jti-rejected": "sha256:fa31d1d0d462adde8ed1e0faf13ebce058b93f5d3e535af01621067478fa91dd",
       "cred.scheme-case-insensitive": "sha256:9862bcae2bf3ff4b6f76810d59b862a08ff085f5ab4c11bb859ab3649ff05dda",
-      "deletion.credential-error": "sha256:0d7c8afddc5e8924ee755631ead8ede5d669ea2668ad6cda55abfd683832d65e",
+      "deletion.credential-error": "sha256:a089ae44ac0ca64fd230883f8efffecc7e6d645547443dd282eaafcb151311cd",
       "deletion.member-records-survive": "sha256:51465951dee6fbdd882dc8069f3a633544c7cfa7b4ead93d700d051f84a11f3a",
-      "deletion.notify-retry": "sha256:7a7e9b9f636d0897d0f27fc243010ba68b6e674e18a053ea11ad32ca3ef0b71a",
-      "deletion.notify-space-deleted": "sha256:e549bb674340253f277055a65a662ebeb9647f25c517a1ba98a6a3eb276fab86",
+      "deletion.notify-retry": "sha256:4377ad223c3ed7a9a5c6c1d90390c14a0a87f47212ff18e812cae2d2d40121a5",
+      "deletion.notify-space-deleted": "sha256:f3ecb60deb4e5db63e2d9d6aff96710edc78f0262c99a26eeef10a38e6457ee7",
       "digest.cid-drisl-plain": "sha256:810c58365a1bf70007e6fa792d0ae280aba3cd2607ae75444971a80af69d0001",
       "digest.cid-drisl-typed": "sha256:c7cf555fc85355a8825e1b6cfd062737a017e97af2d3b948f8fa834ed8846324",
       "digest.covers-overwrite-and-delete": "sha256:c44f1358bc8ff9247883614c0ccc8b088ea737701a7eb1b0db96b937c7180efc",
@@ -123,7 +123,7 @@
       "xrpc.error.PolicyMismatch": "sha256:7715a5f8b3491f3d04623bd571194f36fe11608368e7a47f3e14958da6010722",
       "xrpc.error.RecordNotFound": "sha256:576c5561e5307bc4ed9bd2371fe863f36091294886cb4dc0d478c9c990180bb4",
       "xrpc.error.RepoNotFound": "sha256:f1fd533065112223c8e1b054f37eaee0f0ed3ae48f8a8b8fd2429974f81146be",
-      "xrpc.error.SpaceDeleted": "sha256:68401878308104207d235e07db11341486a6b19b0024ee03a89125843aeeb270",
+      "xrpc.error.SpaceDeleted": "sha256:b305f77591931b05f857d05408845aaa9769931f2491c433c29ce789a7b99722",
       "xrpc.error.SpaceNotFound": "sha256:d5bf79582bbb7a957cd10f8450d553ca99788789017e7331c0f1c700283e2451",
       "xrpc.error.UnsupportedPolicy": "sha256:c8a43391ab029137a2cc043ee6f226971ea42a5749eaabf67675d17b16c04c4e"
     }
@@ -167,75 +167,75 @@
       "id": "cred.revocation-idempotent",
       "suite": "credentials",
       "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority, deleteSpace)"
+      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
     },
     {
       "id": "deletion.credential-error",
       "suite": "deletion",
       "status": "pass",
-      "ms": 218
+      "ms": 407
     },
     {
       "id": "deletion.notify-retry",
       "suite": "deletion",
       "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority, deleteSpace)"
+      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
     },
     {
       "id": "deletion.notify-space-deleted",
       "suite": "deletion",
       "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority, deleteSpace)"
+      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
     },
     {
       "id": "digest.cid-drisl-plain",
       "suite": "digest",
       "status": "pass",
-      "ms": 212
+      "ms": 413
     },
     {
       "id": "digest.cid-drisl-typed",
       "suite": "digest",
       "status": "pass",
-      "ms": 26
+      "ms": 83
     },
     {
       "id": "digest.covers-overwrite-and-delete",
       "suite": "digest",
       "status": "pass",
-      "ms": 42
+      "ms": 41
     },
     {
       "id": "digest.matches-record-set",
       "suite": "digest",
       "status": "pass",
-      "ms": 261
+      "ms": 329
     },
     {
       "id": "digest.multi-batch",
       "suite": "digest",
       "status": "pass",
-      "ms": 70
+      "ms": 73
     },
     {
       "id": "info.read-auth-status",
       "suite": "records",
       "status": "pass",
-      "ms": 1,
+      "ms": 3,
       "message": "listRecords with no auth answered 401"
     },
     {
       "id": "info.unknown-method-status",
       "suite": "records",
       "status": "pass",
-      "ms": 2,
+      "ms": 3,
       "message": "an unknown method answered 404"
     },
     {
       "id": "lifecycle.implicit-create",
       "suite": "lifecycle",
       "status": "pass",
-      "ms": 294
+      "ms": 413
     },
     {
       "id": "mac.commit-bound-to-repo",
@@ -247,187 +247,187 @@
       "id": "mac.commit-header-present",
       "suite": "mac",
       "status": "pass",
-      "ms": 92
+      "ms": 102
     },
     {
       "id": "mac.commit-valid",
       "suite": "mac",
       "status": "pass",
-      "ms": 39
+      "ms": 139
     },
     {
       "id": "mac.kem-key-published",
       "suite": "mac",
       "status": "pass",
-      "ms": 336
+      "ms": 384
     },
     {
       "id": "mac.list-repo-ops-every-page",
       "suite": "mac",
       "status": "pass",
-      "ms": 76
+      "ms": 84
     },
     {
       "id": "mac.malformed-request-rejected",
       "suite": "mac",
       "status": "pass",
-      "ms": 97
+      "ms": 90
     },
     {
       "id": "mac.record-valid",
       "suite": "mac",
       "status": "pass",
-      "ms": 65
+      "ms": 38
     },
     {
       "id": "mac.vary-header",
       "suite": "mac",
       "status": "pass",
-      "ms": 26
+      "ms": 93
     },
     {
       "id": "oplog.commit-every-page",
       "suite": "oplog",
       "status": "pass",
-      "ms": 107
+      "ms": 96
     },
     {
       "id": "oplog.entry-shape",
       "suite": "oplog",
       "status": "pass",
-      "ms": 352
+      "ms": 361
     },
     {
       "id": "oplog.fold-matches-commit",
       "suite": "oplog",
       "status": "pass",
-      "ms": 106
+      "ms": 140
     },
     {
       "id": "oplog.pagination-batch-boundary",
       "suite": "oplog",
       "status": "pass",
-      "ms": 35
+      "ms": 62
     },
     {
       "id": "oplog.pagination-complete",
       "suite": "oplog",
       "status": "pass",
-      "ms": 125
+      "ms": 131
     },
     {
       "id": "oplog.since-exclusive",
       "suite": "oplog",
       "status": "pass",
-      "ms": 48
+      "ms": 68
     },
     {
       "id": "oplog.stale-values-omitted",
       "suite": "oplog",
       "status": "pass",
-      "ms": 54
+      "ms": 158
     },
     {
       "id": "policy.create-get-roundtrip",
       "suite": "policy",
       "status": "pass",
-      "ms": 259
+      "ms": 312
     },
     {
       "id": "policy.member-methods",
       "suite": "policy",
       "status": "pass",
-      "ms": 168
+      "ms": 202
     },
     {
       "id": "policy.put-member-upsert",
       "suite": "policy",
       "status": "pass",
-      "ms": 16
+      "ms": 13
     },
     {
       "id": "records.apply-writes-atomic",
       "suite": "records",
       "status": "pass",
-      "ms": 211
+      "ms": 72
     },
     {
       "id": "records.commit-bytes-encoding",
       "suite": "records",
       "status": "pass",
-      "ms": 10
+      "ms": 15
     },
     {
       "id": "records.commit-fields",
       "suite": "records",
       "status": "pass",
-      "ms": 199
+      "ms": 252
     },
     {
       "id": "records.commit-repo-space-match",
       "suite": "records",
       "status": "pass",
-      "ms": 10
+      "ms": 13
     },
     {
       "id": "records.crud-roundtrip",
       "suite": "records",
       "status": "pass",
-      "ms": 294
+      "ms": 319
     },
     {
       "id": "records.read-requires-auth",
       "suite": "records",
       "status": "pass",
-      "ms": 178
+      "ms": 227
     },
     {
       "id": "writers.list-repos",
       "suite": "writer-set",
       "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority, deleteSpace)"
+      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
     },
     {
       "id": "writers.list-repos-since-space-rev",
       "suite": "writer-set",
       "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority, deleteSpace)"
+      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
     },
     {
       "id": "writers.notify-write-forwarded",
       "suite": "writer-set",
       "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority, deleteSpace)"
+      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
     },
     {
       "id": "writers.notify-write-sent",
       "suite": "writer-set",
       "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority, deleteSpace)"
+      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
     },
     {
       "id": "writers.register-expiry",
       "suite": "writer-set",
       "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority, deleteSpace)"
+      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
     },
     {
       "id": "writers.remove-writer",
       "suite": "writer-set",
       "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority, deleteSpace)"
+      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
     },
     {
       "id": "writers.removed-writer-retracked",
       "suite": "writer-set",
       "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority, deleteSpace)"
+      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
     },
     {
       "id": "xrpc.error.SpaceDeleted",
       "suite": "deletion",
       "status": "pass",
-      "ms": 17
+      "ms": 44
     }
   ],
   "summary": {
