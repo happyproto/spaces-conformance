@@ -131,7 +131,7 @@ export function assemble(env: NodeJS.ProcessEnv, setupMode: SetupMode, raw: RawR
   const { summary } = judgeAll(
     raw,
     new Map(catalogue.assertions.map((a) => [a.id, a])),
-    new Set(applied.map((d) => d.assertion)),
+    new Map(applied.map((d) => [d.assertion, d])),
     vectorStatus(),
     manifest.roles,
     loadIndependence(),

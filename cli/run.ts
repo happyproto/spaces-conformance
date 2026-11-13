@@ -21,10 +21,11 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { loadCatalogue } from '../harness/catalogue.ts';
+import { loadDeviations } from '../harness/deviations.ts';
 import { loadManifest } from '../harness/manifest.ts';
 import { formatProblem } from '../harness/problems.ts';
 import { validateResults } from '../harness/results.ts';
-import { ROOT } from '../harness/schema.ts';
+import { checkSchema, ROOT } from '../harness/schema.ts';
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -89,6 +90,14 @@ const deviations =
   values.deviations ?? (typeof manifest.deviations === 'string' ? `implementations/${impl}/${manifest.deviations}` : undefined);
 if (manifest.deviations && typeof manifest.deviations === 'object' && !values.deviations)
   console.warn(`note: ${impl}'s deviations live in ${manifest.deviations.repo}; pass --deviations to apply them`);
+// Refuse a list without `expect` before the stack starts: an entry without it would cover any failure.
+if (deviations) {
+  const problems = checkSchema('deviations', loadDeviations(join(ROOT, deviations)), deviations);
+  if (problems.length) {
+    for (const p of problems) console.error(formatProblem(p));
+    process.exit(2);
+  }
+}
 
 type Outcome =
   | { kind: 'results'; runId: string; out: string; file: any }

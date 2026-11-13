@@ -52,19 +52,39 @@ The schema follows design ch. 4.1. The validator also checks these:
 
 ## Deviations
 
-A deviation file is a list of entries, each with `assertion`, `cause`, `reason`, `spec`, `tracking` and `since`. The validator rejects:
+A deviation file is a list of entries, each with `assertion`, `cause`, `reason`, `spec`, `tracking`, `since` and `expect`. The validator rejects:
 - an assertion id that isn't in the catalogue at this commit, so retired ids get pruned;
 - an assertion listed twice;
 - a `spec` value that isn't a heading anchor;
-- a `since` date in the future.
+- a `since` date in the future;
+- an entry without `expect`, or with a pattern that doesn't compile.
 
 `tracking` must name a real issue: `HAP-123`, `HAP-388 (PR 6)`, `owner/repo#12` or an https URL. `pending` is refused.
+
+**`expect`** states the failure the entry covers, so a known deviation can't hide a new failure on the same assertion:
+
+```yaml
+expect:
+  message: following cursor with limit=2 returned p0 2 times, not once
+  evidence:
+    pages: \[2,2\]
+```
+
+- `message` is a JavaScript regular expression. It must match the whole result message: the harness anchors it at both ends.
+- `evidence` is optional. Each key names an evidence field, and its pattern must match that field's whole value. A string is matched as it is, anything else as its JSON. A key missing from the evidence is a mismatch.
+- A listed `fail` that matches is a *known deviation*. One that doesn't is *deviation changed*: it fails the gate, or only warns while the assertion is provisional. `verdict` prints how it differs.
+- An `error` stays an `error`, whatever the entry expects.
+- Write the patterns from a real run's result, and keep them as tight as the failure is stable. A count or a fixture name belongs in the pattern. A DID, a CID or a timestamp doesn't.
+
+Result files written before `expect` existed embed entries without it. `verdict` judges those as it did then.
 
 To check a list that lives in another repo, such as HappyView's:
 
 ```sh
 node cli/validate.ts --deviations ../happyview/interop/conformance-deviations.yaml
 ```
+
+`verdict --deviations <file>` refuses a list that fails the schema.
 
 ## Independence: the lineage rule
 

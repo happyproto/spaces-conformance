@@ -58,7 +58,7 @@ describe('independence (design S5)', () => {
   it('makes an unindependent fail provisional, and keeps it out of the score', () => {
     const cat = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
     const byId = new Map(cat.assertions.map((a) => [a.id, a]));
-    const { judged, summary } = judgeAll([{ id: 'digest.multi-batch', status: 'fail' }], byId, new Set(), vectorStatus(), ['repo-host'], ind({}, {}));
+    const { judged, summary } = judgeAll([{ id: 'digest.multi-batch', status: 'fail' }], byId, new Map(), vectorStatus(), ['repo-host'], ind({}, {}));
     expect(judged[0]).toMatchObject({ display: 'fail (provisional)', gate: 'warn', scored: false });
     expect(summary.by_role['repo-host']!.must_applicable).toBe(0);
   });

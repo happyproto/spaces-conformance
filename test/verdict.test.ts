@@ -8,7 +8,8 @@ import { assemble, openSetupSteps, readRaw, reconcile } from '../harness/reporte
 import { DeadlineExceeded, fail, Pending, pending, runAssertion, setup, SetupError } from '../harness/assert.ts';
 import { loadManifest, notApplicable } from '../harness/manifest.ts';
 import { checkTimeouts } from '../harness/timeouts.ts';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { loadDeviations } from '../harness/deviations.ts';
 import { tmpdir } from 'node:os';
 import { declaredAssertions } from '../harness/coverage.ts';
 import { validateResults } from '../harness/results.ts';
@@ -30,6 +31,13 @@ describe('display states and gating (design ch. 4.4)', () => {
     ['skip', false, false, 'not applicable', 'ok', false, false],
   ] as const)('raw %s, listed %s, provisional %s -> %s (%s)', (raw, listed, prov, display, gate, scored, passing) => {
     expect(judge(raw, listed, prov)).toEqual({ display, gate, scored, passing });
+  });
+});
+
+describe('deviations whose failure changed', () => {
+  it('gate a listed fail that differs from its expect, and only warn while provisional', () => {
+    expect(judge('fail', true, false, false, false)).toEqual({ display: 'deviation changed', gate: 'fail', scored: true, passing: false });
+    expect(judge('fail', true, true, false, false)).toEqual({ display: 'deviation changed', gate: 'warn', scored: false, passing: false });
   });
 });
 
@@ -248,7 +256,7 @@ describe('scoring', () => {
       { id: 'info.unknown-method-status', suite: 'records', status: 'pass' }, // info: never scored
       { id: 'lifecycle.implicit-create', suite: 'lifecycle', status: 'skip', skip_reason: 'role' },
     ];
-    const { judged, summary } = judgeAll(results, byId, new Set(['records.params-repo']), areas, ['repo-host', 'space-host']);
+    const { judged, summary } = judgeAll(results, byId, new Map([['records.params-repo', {}]]), areas, ['repo-host', 'space-host']);
     expect(summary.by_role['repo-host']).toEqual({ must_applicable: 3, must_pass: 1, should_applicable: 0, should_pass: 0 });
     expect(summary.unexpected).toBe(1); // only records.commit-fields
     expect(judged.find((j) => j.id === 'mac.commit-valid')).toMatchObject({ display: 'fail (provisional)', gate: 'warn' });
@@ -256,10 +264,68 @@ describe('scoring', () => {
   });
 
   it('counts a fixed, still listed result as a pass but gates on it', () => {
-    const { judged, summary } = judgeAll([{ id: 'records.commit-fields', status: 'pass' }], byId, new Set(['records.commit-fields']), areas, ['repo-host']);
+    const { judged, summary } = judgeAll([{ id: 'records.commit-fields', status: 'pass' }], byId, new Map([['records.commit-fields', {}]]), areas, ['repo-host']);
     expect(summary.by_role['repo-host']!.must_pass).toBe(1);
     expect(judged[0].display).toBe('fixed, still listed');
     expect(summary.unexpected).toBe(1);
+  });
+});
+
+describe('expect on deviations', () => {
+  const cat = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
+  const byId = new Map(cat.assertions.map((a) => [a.id, a]));
+  const expectation = { message: 'following cursor with limit=2 returned p0 \\d+ times, not once', evidence: { pages: '\\[2,2\\]' } };
+  const listed = new Map([['records.commit-fields', { expect: expectation }]]);
+  const run = (message: string, evidence?: Record<string, unknown>) =>
+    judgeAll([{ id: 'records.commit-fields', status: 'fail', message, evidence }], byId, listed, vectorStatus(), ['repo-host']);
+
+  it('keeps a fail that matches as a known deviation', () => {
+    const { judged, summary } = run('following cursor with limit=2 returned p0 2 times, not once', { pages: '[2,2]' });
+    expect(judged[0]).toMatchObject({ display: 'known deviation', gate: 'ok' });
+    expect(judged[0].changed).toBeUndefined();
+    expect(summary.unexpected).toBe(0);
+  });
+
+  it('fails the gate on another message, even one that only contains the expected text', () => {
+    const { judged, summary } = run('before: following cursor with limit=2 returned p0 2 times, not once', { pages: '[2,2]' });
+    expect(judged[0]).toMatchObject({ display: 'deviation changed', gate: 'fail', changed: expect.stringMatching(/^message/) });
+    expect(summary.unexpected).toBe(1);
+  });
+
+  it('fails the gate on different or missing evidence', () => {
+    expect(run('following cursor with limit=2 returned p0 2 times, not once', { pages: '[2,1]' }).judged[0]).toMatchObject({
+      display: 'deviation changed',
+      changed: 'evidence pages doesn\'t match /\\[2,2\\]/',
+    });
+    expect(run('following cursor with limit=2 returned p0 2 times, not once').judged[0]).toMatchObject({ changed: 'evidence has no pages' });
+  });
+
+  it('matches non-string evidence as JSON', () => {
+    const l = new Map([['records.commit-fields', { expect: { message: 'x', evidence: { status: '404' } } }]]);
+    const j = judgeAll([{ id: 'records.commit-fields', status: 'fail', message: 'x', evidence: { status: 404 } }], byId, l, vectorStatus(), ['repo-host']);
+    expect(j.judged[0].display).toBe('known deviation');
+  });
+
+  it('leaves an error as an error, whatever the entry expects', () => {
+    const j = judgeAll([{ id: 'records.commit-fields', status: 'error', message: 'setup failed' }], byId, listed, vectorStatus(), ['repo-host']);
+    expect(j.judged[0]).toMatchObject({ display: 'error', gate: 'fail' });
+    expect(j.judged[0].changed).toBeUndefined();
+  });
+
+  it('judges an entry without expect, from a result file that predates it, as before', () => {
+    const j = judgeAll([{ id: 'records.commit-fields', status: 'fail', message: 'anything' }], byId, new Map([['records.commit-fields', {}]]), vectorStatus(), ['repo-host']);
+    expect(j.judged[0].display).toBe('known deviation');
+  });
+});
+
+describe('the shipped deviation lists', () => {
+  // Each list's expect must describe the failure its committed parity run recorded.
+  it.each(['pdsjs', 'zds', 'atproto-pds', 'reference'])('%s matches its parity run', (impl) => {
+    const list = loadDeviations(join(ROOT, 'implementations', impl, 'deviations.yaml'));
+    const run = JSON.parse(readFileSync(join(ROOT, 'test', 'fixtures', 'results', `parity-${impl}-2026-11-12.json`), 'utf8'));
+    const cat = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
+    const { judged } = judgeAll(run.results, new Map(cat.assertions.map((a) => [a.id, a])), new Map(list.map((d) => [d.assertion, d])), vectorStatus(), run.implementation.roles);
+    for (const d of list) expect(judged.find((j) => j.id === d.assertion)).toMatchObject({ display: 'known deviation' });
   });
 });
 

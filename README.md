@@ -40,7 +40,7 @@ node cli/run.ts reference              # --keep leaves the stack up, --suites di
 node cli/verdict.ts results-local/<run-id>.json [--deviations file]
 ```
 
-`verdict` exits 1 on an unexpected result: an unlisted fail, a pass that's still listed as a deviation, or an error. Provisional results (`vectors/README.md`) only warn.
+`verdict` exits 1 on an unexpected result: an unlisted fail, a listed fail that isn't the failure its deviation expects, a pass that's still listed as a deviation, or an error. Provisional results (`vectors/README.md`) only warn.
 
 To bring up a stack by hand:
 
