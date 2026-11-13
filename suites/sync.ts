@@ -17,6 +17,9 @@ import { Resolver } from '../harness/actors/identity.ts';
 import { Plc, serviceEndpoint } from '../harness/actors/plc.ts';
 import { type Received, Receiver } from '../harness/actors/receiver.ts';
 import { authorityOf, SpaceSync } from '../harness/actors/space-sync.ts';
+import { Syncer, type Target } from '../harness/actors/syncer.ts';
+import { verificationKey } from '../harness/actors/plc.ts';
+import { http } from '../harness/http.ts';
 import type { RunContext } from '../harness/context.ts';
 import type { HttpResponse } from '../harness/http.ts';
 import { delegationToken } from './credentials/delegation-token.ts';
@@ -167,4 +170,16 @@ export async function until<T>(read: () => Promise<T>, done: (t: T) => boolean, 
 /** Wait until the receiver holds `n` events matching pred since `from`, or `ms` passes; those events. */
 export async function received(rx: Receiver, from: number, pred: (e: Received) => boolean, n: number, ms = 20_000) {
   return until(async () => rx.since(from, pred), (es) => es.length >= n, ms, 250);
+}
+
+/**
+ * The syncer actor reading with `sync`'s credential instead of a session:
+ * each request presents the credential to the repo it reads (its `repo`
+ * parameter) and asks for a MAC the run revision's way, as a credential
+ * read must (#requesting-a-mac).
+ */
+export async function credentialSyncer(ctx: RunContext, sync: SpaceSync, author: Account): Promise<{ syncer: Syncer; target: Target }> {
+  const doc = await setup('resolve the author DID document', () => ctx.plc.resolve(author.did));
+  const syncer = new Syncer((url, headers) => http(url, { headers: { ...headers, ...sync.present(new URL(url).searchParams.get('repo') ?? author.did) } }), { macsig: settled(ctx) });
+  return { syncer, target: { repoHost: author.repoHost, space: sync.space, repo: author.did, authorKem: verificationKey(doc, 'atproto_kem') ?? undefined } };
 }

@@ -19,7 +19,7 @@ import { generate } from '../../harness/crypto/keys.ts';
 import { http, type HttpResponse, json } from '../../harness/http.ts';
 import { ownerSpace, settled, SPACE_TYPE, xrpcUrl } from '../fixtures.ts';
 import { note, writes } from '../repo.ts';
-import { foreignAuthority, setupOk, short, transient, useReceiver } from '../sync.ts';
+import { credentialSyncer, foreignAuthority, setupOk, short, transient, useReceiver } from '../sync.ts';
 
 const receiver = useReceiver();
 
@@ -43,7 +43,11 @@ async function foreignRepo(ctx: RunContext) {
   return { authority, owner, space, c1: minted(authority, space), c2: minted(authority, space) };
 }
 
-const read = (owner: Account, c: { sync: SpaceSync }) => c.sync.latestCommit(owner.repoHost, owner.did);
+/** getLatestCommit with the credential, with a MAC request: a host may require one on credential reads. */
+const read = async (ctx: RunContext, owner: Account, c: { sync: SpaceSync }) => {
+  const { syncer, target } = await credentialSyncer(ctx, c.sync, owner);
+  return (await syncer.commit(target)).response;
+};
 
 /** The aud forms the harness tries for service auth to the repo host, in order. */
 const audiences = (owner: Account) => [owner.did, `did:web:${new URL(owner.repoHost).host}`];
@@ -61,15 +65,15 @@ async function revoke(ctx: RunContext, authority: ForeignAuthority, owner: Accou
 }
 
 /** Controls: both credentials read the repo, or nothing below says anything. */
-async function bothRead(owner: Account, c1: { sync: SpaceSync }, c2: { sync: SpaceSync }) {
-  const [a, b] = [await read(owner, c1), await read(owner, c2)];
+async function bothRead(ctx: RunContext, owner: Account, c1: { sync: SpaceSync }, c2: { sync: SpaceSync }) {
+  const [a, b] = [await read(ctx, owner, c1), await read(ctx, owner, c2)];
   if (a.status !== 200 || b.status !== 200)
     pending(`the host doesn't serve the repo to the harness authority's credentials before any revocation (${short(a)}; ${short(b)}); cred.foreign-authority-accepted grades that`);
 }
 
 assertion('cred.foreign-authority-accepted', async (ctx) => {
   const { owner, c1 } = await foreignRepo(ctx);
-  const r = await read(owner, c1);
+  const r = await read(ctx, owner, c1);
   if (transient(r)) pending(`getLatestCommit with the credential answered ${short(r)}`);
   if (r.status !== 200) fail(`getLatestCommit with a credential from the space's (foreign) authority answered ${short(r)}`, { answer: short(r) });
   // Control: the same read without a credential is refused, or the 200 says nothing about the credential.
@@ -80,11 +84,11 @@ assertion('cred.foreign-authority-accepted', async (ctx) => {
 assertion('cred.revoked-jti-rejected', async (ctx) => {
   if (!(ctx.manifest.capabilities as { repo_host?: { foreign_authorities?: boolean } }).repo_host?.foreign_authorities) pending("needs the adapter's revokeCredential hook: the implementation claims no foreign authorities, so the harness can't be the authority");
   const { authority, owner, space, c1, c2 } = await foreignRepo(ctx);
-  await bothRead(owner, c1, c2);
+  await bothRead(ctx, owner, c1, c2);
   const { r, aud, tried } = await revoke(ctx, authority, owner, space, [c1.jti]);
   if (!r) pending(`the host refused ${revokeMethod(ctx)} on auth grounds for every aud the harness tried (${JSON.stringify(tried)}); the spec doesn't name the aud`);
   setupOk(revokeMethod(ctx), r!);
-  const [a, b] = [await read(owner, c1), await read(owner, c2)];
+  const [a, b] = [await read(ctx, owner, c1), await read(ctx, owner, c2)];
   const evidence = { revoke: short(r!), aud: aud!, revoked: short(a), other: short(b) };
   if (transient(a)) pending(`the read with the revoked credential answered ${short(a)}`);
   if (a.status === 200) fail('after the authority revoked its jti, the credential still reads the repo', evidence);
@@ -94,17 +98,17 @@ assertion('cred.revoked-jti-rejected', async (ctx) => {
 
 assertion('cred.revocation-idempotent', async (ctx) => {
   const { authority, owner, space, c1, c2 } = await foreignRepo(ctx);
-  await bothRead(owner, c1, c2);
+  await bothRead(ctx, owner, c1, c2);
   const method = revokeMethod(ctx);
   const first = await revoke(ctx, authority, owner, space, [c1.jti]);
   if (!first.r) pending(`the host refused ${method} on auth grounds for every aud the harness tried (${JSON.stringify(first.tried)}); the spec doesn't name the aud`);
   if (transient(first.r!)) pending(`the first ${method} answered ${short(first.r!)}`);
   if (first.r!.status >= 300) fail(`the first ${method} answered ${short(first.r!)}`, { aud: first.aud!, tried: JSON.stringify(first.tried) });
-  const afterFirst = [await read(owner, c1), await read(owner, c2)];
+  const afterFirst = [await read(ctx, owner, c1), await read(ctx, owner, c2)];
   if (afterFirst[0].status === 200 || afterFirst[1].status !== 200)
     pending(`after the first revocation, the revoked credential answers ${afterFirst[0].status} and the other ${afterFirst[1].status}; cred.revoked-jti-rejected grades that`);
   const second = await revoke(ctx, authority, owner, space, [c1.jti], first.aud);
-  const afterSecond = [await read(owner, c1), await read(owner, c2)];
+  const afterSecond = [await read(ctx, owner, c1), await read(ctx, owner, c2)];
   const evidence = { aud: first.aud!, first: short(first.r!), second: second.r ? short(second.r) : JSON.stringify(second.tried), revoked: short(afterSecond[0]), other: short(afterSecond[1]) };
   if (!second.r) fail(`the same ${method}, sent again, was refused on auth grounds`, evidence);
   if (transient(second.r!)) pending(`the second ${method} answered ${short(second.r!)}`);

@@ -7,7 +7,11 @@
       "suite_commit": "de52c940f7",
       "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
       "image": "ghcr.io/happyproto/pds-test/zds@sha256:2ec90ddaf8a94618a9654e010586ec503d0dd7c3ec23c9a8646e3b28ad2a998f",
-      "revision": "2026-11-12"
+      "revision": "2026-11-12",
+      "stale_passes": [
+        "deletion.credential-error",
+        "xrpc.error.SpaceDeleted"
+      ]
     },
     {
       "file": "test/fixtures/results/parity-atproto-pds-2026-11-13.json",
@@ -179,9 +183,6 @@
       ]
     },
     "2026-11-12": {
-      "deletion.credential-error": [
-        "zds"
-      ],
       "digest.cid-drisl-plain": [
         "zds"
       ],
@@ -273,9 +274,6 @@
         "zds"
       ],
       "records.read-requires-auth": [
-        "zds"
-      ],
-      "xrpc.error.SpaceDeleted": [
         "zds"
       ]
     }
