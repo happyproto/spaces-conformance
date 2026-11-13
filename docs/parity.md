@@ -10,6 +10,38 @@ This page explains each difference, test by test. The per-test tables map each H
 - [atproto-pds](../test/fixtures/results/parity-atproto-pds-2026-11-12.json)
 - [reference](../test/fixtures/results/parity-reference-2026-11-12.json)
 
+The pins have moved since (HAP-427, Nov 13, 2026), so they no longer equal HappyView's `interop/images.env`. The comparison below stays as it was at the old pins. [At the HAP-427 pins](#at-the-hap-427-pins) has the new results.
+
+## At the HAP-427 pins
+
+On Nov 13, 2026, the four pds-test pins moved to their newest images. PLC is unchanged.
+
+| Implementation | Image | Built from | Revision graded |
+|---|---|---|---|
+| ZDS | `pds-test/zds@sha256:2ec90ddaf8a9…` | zat.dev/zds `8c97e950` | 2026-11-12 |
+| pds.js | `pds-test/pdsjs@sha256:37c16c3499b5…` | chadtmiller.com/pds.js `72a7c998` | 2026-10-29 |
+| atproto-pds | `pds-test/atproto-pds@sha256:0fe098d36c7f…` | ngerakines.me/atproto-crates `dc4adf25` | 2026-10-29 |
+| reference (`pds-spaces-alpha`) | `pds-test/pds-spaces-alpha@sha256:1b3113b40eac…` | bluesky-social/atproto `b27a037c` | not run yet |
+
+These pins differ from HappyView's `interop/images.env`, so these results can't be compared with HappyView's interop runs.
+
+Each implementation is graded at the revision its manifest claims. The results files:
+- [zds](../test/fixtures/results/parity-zds-2026-11-13.json): 0 unexpected. Every must row passes at 2026-11-12. ZDS no longer serves `simplespace.createSpace`, so setup uses `oct29`.
+- [atproto-pds](../test/fixtures/results/parity-atproto-pds-2026-11-13.json): 0 unexpected. Every must row passes at 2026-10-29, with `oct29` setup.
+- [pds.js](../test/fixtures/results/parity-pdsjs-2026-11-13.json): 3 unexpected, the three policy rows (cause D). pds.js still serves only `simplespace.*`, and its `memberspace` methods answer 501.
+- The reference can't run on the machine that made these results yet: it's amd64 only, and amd64 emulation is broken there. Its file is still the one at the old pin.
+
+What changed from the old pins:
+- **Cause A is gone** on ZDS, pds.js and atproto-pds. Each serves the 0016 commit, and every commit and digest row passes, except `digest.cid-drisl-typed` on pds.js (cause F).
+- **Cause B is gone:** ZDS and atproto-pds now publish `#atproto_kem`.
+- **Part of cause C is gone:** pds.js and atproto-pds answer a session read with a MAC, so `mac.commit-header-present` and `mac.commit-valid` pass on both. At 2026-11-12 the MAC rows wait for their G2 variants, so ZDS records them as not in that revision.
+- **Cause D is gone** on ZDS and atproto-pds. It remains on pds.js.
+- **Cause E now covers `oplog.fold-matches-commit` on pds.js too.** The fold pages with `limit=2` and follows `cursor`, so it gets the first page twice and misses the later ops. Unpaged reads of the same writes pass. It's a listed deviation under [pds.js#5](https://tangled.org/chadtmiller.com/pds.js/issues/5).
+- **Cause F narrowed.** The `$link` and `$bytes` fixtures now get DRISL CIDs. The two fixtures with integers past 32 bits still differ, so the deviation expects 2 records, not 4.
+- **`cred.delegation-token-kid-enforced`** passes on pds.js and HappyView. ZDS and atproto-pds record `skip` (pending), because the harness doesn't hold those accounts' signing keys.
+
+HappyView 3.0.0-beta.14 was rerun at 2026-10-29 with its deviation list: [0 unexpected](../test/fixtures/results/happyview-beta14-2026-11-13.json).
+
 ## What was compared
 
 | | HappyView | This suite |
