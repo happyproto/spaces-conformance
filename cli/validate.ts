@@ -36,9 +36,8 @@ const counts: string[] = [];
 
 const revisions = loadRevisions();
 const revisionKeys = Object.keys(revisions.revisions);
-// Revision keys are ISO dates: since, until and variants order them as strings.
-for (const k of [...revisionKeys, revisions.default])
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(k)) problems.push({ file: 'spec/revisions.json', where: k, message: 'revision keys must be YYYY-MM-DD dates, so they order as strings' });
+// Each key's YYYY-MM-DD form is checked by validateCatalogue.
+if (!revisionKeys.includes(revisions.default)) problems.push({ file: 'spec/revisions.json', where: revisions.default, message: 'default is not one of the revision keys' });
 
 const catPath = join(ROOT, 'spec', 'assertions.yaml');
 let cat: ReturnType<typeof loadCatalogue>;
