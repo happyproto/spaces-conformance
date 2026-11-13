@@ -76,16 +76,23 @@ export async function publicSpace(ctx: RunContext, owner: Account, o: { publicWr
   return { ctx, owner, space };
 }
 
-/** The space host for `space`: its authority's #atproto_pds, else the owner's repo host. */
+/**
+ * The space host for `space`: its authority's #atproto_pds (#space-authority).
+ * When the authority is the owner itself, that's the owner's repo host. For
+ * any other authority (e.g. a host's own space DID) the DID document must
+ * name one: if it can't be resolved or names none, the row pends, rather
+ * than falling back to a host the spec doesn't point at.
+ */
 export async function spaceHost(ctx: RunContext, space: string, owner: Account): Promise<string> {
   const did = authorityOf(space);
   if (did === owner.did) return owner.repoHost;
+  let doc;
   try {
-    const resolver = new Resolver(ctx.plc);
-    return serviceEndpoint(await resolver.resolve(did), 'atproto_pds') ?? owner.repoHost;
-  } catch {
-    return owner.repoHost;
+    doc = await new Resolver(ctx.plc).resolve(did);
+  } catch (e) {
+    return pending(`setup can't find the space host: the authority ${did} doesn't resolve (${(e as Error).message})`);
   }
+  return serviceEndpoint(doc, 'atproto_pds') ?? pending(`setup can't find the space host: the authority ${did}'s DID document names no #atproto_pds`);
 }
 
 export interface Credentialed {
@@ -101,6 +108,9 @@ export interface Credentialed {
  * with the receiver. The credential is setup for the rows that use it: a
  * refusal pends. When the space refuses without a delegation token and the
  * harness holds the owner's key, it asks once more with one.
+ *
+ * Not for a row that grades token-less issuance for a publicRead space: it
+ * retries with a delegation token after any 4xx, so it would hide that refusal.
  */
 export async function credentialed(repo: Repo, o: { receiver?: Receiver; register?: boolean } = {}): Promise<Credentialed> {
   const { ctx, owner, space } = repo;
