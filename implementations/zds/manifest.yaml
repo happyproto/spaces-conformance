@@ -5,7 +5,7 @@ image:
   repository: ghcr.io/happyproto/pds-test/zds
   pin: ZDS_IMAGE
   dispatch_target: zds
-spec_revisions: ["2026-11-12", "2026-10-29"]
+spec_revisions: ["2026-11-12"]
 roles: [pds, repo-host, space-host]
 profile: pds
 capabilities:
