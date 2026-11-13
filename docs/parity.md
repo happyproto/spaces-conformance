@@ -189,6 +189,12 @@ Four tests of Oct 22 shapes are retired:
 - `atproto_pds_serves_only_the_canonical_member_method`;
 - `atproto_pds_stores_split_read_and_write_policies`.
 
+## Stack settings for the credential path
+
+From phase 7 the harness is also a syncer and a space authority at `https://harness.test`, so hosts in the stack call it. Two images needed a setting for that. Neither changes what is graded:
+- **ZDS** refuses outbound calls to non-public addresses unless `ZDS_ALLOW_PRIVATE_FETCH` is set. The stack's network is private (`3fff:408::/64`, `internal: true`), so without it ZDS refused its own confirmRegistration and notifyRepoUpdate calls before sending them.
+- **atproto-pds** didn't trust Caddy's local CA. Its image is distroless, so `trust-caddy.sh` can't run. It reads `SSL_CERT_FILE`, which now points at Caddy's root certificate. The stack has no egress, so no public CA is needed.
+
 ## Setup modes
 
 Every adapter can create spaces through the Oct 29 `space.createSpace`, the Oct 22 `simplespace.createSpace`, or `auto`, which tries Oct 29 first (`node cli/run.ts <id> --setup-mode`). None of the pinned images serves the Oct 29 method. A probe on Nov 11, 2026 got:

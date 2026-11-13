@@ -17,6 +17,13 @@ services:
       PDS_PLC_ROTATION_KEY_PRIVATE: did:key:z3vLWVWW3rA4nYExwkkR8AQZZxt5Z2vyZRUvPyjR1mFvmmL7
       # Every account is created from the harness's one address.
       PDS_RATE_LIMIT_AUTH: "0"
+      # Trust Caddy's local CA, so it can call https peers in the stack (the
+      # harness's syncer and authority at harness.test). The image is
+      # distroless, so trust-caddy.sh can't run; it reads SSL_CERT_FILE. The
+      # stack has no egress, so no public CA is needed.
+      SSL_CERT_FILE: /caddy-data/caddy/pki/authorities/local/root.crt
+    volumes:
+      - caddy_data:/caddy-data:ro
     tmpfs:
       - /data
     depends_on:
