@@ -1,4 +1,4 @@
-import { assertion, fail } from '../../harness/assert.ts';
+import { assertion, fail, pending } from '../../harness/assert.ts';
 import { Syncer } from '../../harness/actors/syncer.ts';
 import { hex } from '../../harness/crypto/bytes.ts';
 import { recordCid } from '../../harness/crypto/drisl.ts';
@@ -134,7 +134,8 @@ assertion('oplog.commit-every-page', async (ctx) => {
   if (r.status !== 200) fail(`getLatestCommit answered ${r.status}`, { body: JSON.stringify(r.body).slice(0, 1000) });
   const current = commitOrFail(r.body.commit);
   const evidence = { pages: JSON.stringify(log.pages.map(({ ops, commit, commitRev }) => ({ ops, commit, commitRev }))), current: current.rev };
-  if (log.pages.length < 2) fail(`limit=2 over five writes gave ${log.pages.length} page(s), so there is no earlier page to check`, evidence);
+  // One page leaves nothing to check: that's pagination's row to grade, not this one.
+  if (log.pages.length < 2) pending(`limit=2 over five writes gave ${log.pages.length} page(s), so there is no earlier page to check`);
   log.pages.forEach((p, i) => {
     if (!p.commit) fail(`page ${i + 1} of ${log.pages.length} carries no commit`, evidence);
     if (!p.commitRev) fail(`page ${i + 1} of ${log.pages.length} carries a commit that isn't a 0016 commit`, evidence);

@@ -255,6 +255,12 @@ describe('revisions', () => {
     expect(msgs(lexRow({ lexicon: 'com.atproto.space.listRepos', variants: { [G2]: { lexicon: 'com.atproto.space.listWriters' } } }))).toEqual([]);
   });
 
+  it('refuses revision keys that are not ISO dates, since they order as strings', () => {
+    const p = validateCatalogue(catalogueOf(row({})), 'f', texts, [...revKeys, '2026-1-5']).map((x) => x.message);
+    expect(p).toContain('revision key 2026-1-5 in spec/revisions.json is not a YYYY-MM-DD date');
+    expect(validateCatalogue(catalogueOf(row({ until: 'G1' })), 'f', texts, revKeys).map((x) => x.message).join()).toMatch(/must match pattern/);
+  });
+
   it('refuses variant keys that are unknown, not after since, or past until', () => {
     const msgs = (a: Assertion) => validateCatalogue(catalogueOf(a), 'f', texts, revKeys).map((x) => x.message);
     expect(msgs(row({ variants: { '2027-01-01': { checks: 'x' } } }))).toContain('variant 2027-01-01 is not in spec/revisions.json');

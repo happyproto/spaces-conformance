@@ -71,6 +71,7 @@ const CRYPTO_SUITES = new Set(['digest', 'mac', 'export']);
 const MUST_KEYWORD = /\b(MUST|REQUIRED|SHALL)\b|\bmust\b/;
 const SHOULD_KEYWORD = /\b(SHOULD|RECOMMENDED)\b|\bshould\b/;
 const DEFAULT_WORD = /\bdefaults?\b/i;
+export const REVISION_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
 /** The level-rule problems for one row, as messages. Exported for tests. */
 export function levelProblems(a: Assertion): string[] {
@@ -139,6 +140,8 @@ export function validateCatalogue(
   if (problems.length) return problems;
   const c = cat as Catalogue;
   if (!revisions.includes(c.revision)) problems.push({ file, message: `revision ${c.revision} is not in spec/revisions.json` });
+  // Revision keys order as strings (resolveAt), which holds only for ISO dates.
+  for (const k of revisions) if (!REVISION_KEY.test(k)) problems.push({ file, message: `revision key ${k} in spec/revisions.json is not a YYYY-MM-DD date` });
   const texts = typeof specText === 'string' ? new Map([[c.revision, { text: specText, lex }]]) : specText;
 
   const seen = new Set<string>();
