@@ -975,8 +975,6 @@ assertions:
       trigger through the adapter's revokeCredential hook), the repo host refuses that credential.
 
   - id: cred.revocation-idempotent
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: credentials
     section: "#credential-expiration-and-revocation"
     quote: >-
@@ -991,6 +989,12 @@ assertions:
     areas: [httpsig, jwt]
     checks: >-
       The same notifyCredentialRevoked, sent twice, succeeds both times.
+    variants:
+      "2026-11-12":
+        lexicon: com.atproto.space.notifyCredentialsRevoked
+        checks: >-
+          The same notifyCredentialsRevoked, sent twice, succeeds both times. Not graded yet: needs the
+          phase 7 credential path.
 
   # --- scopes ------------------------------------------------------------------
 
@@ -1191,8 +1195,6 @@ assertions:
           putMembers on a managedspace space answers {error: "PolicyMismatch", message}.
 
   - id: xrpc.error.SpaceDeleted
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: deletion
     level: must
     basis: [lexicon]
@@ -1203,12 +1205,16 @@ assertions:
     checks: >-
       When the host answers getSpaceCredential for a deleted space with SpaceDeleted, the body
       is {error: "SpaceDeleted", message}. Whether it does is deletion.credential-error.
+    variants:
+      "2026-11-12":
+        lexicon: com.atproto.space.authorizeSpaceSync
+        checks: >-
+          When the host answers authorizeSpaceSync for a deleted space with SpaceDeleted, the body is
+          {error: "SpaceDeleted", message}. Whether it does is deletion.credential-error.
 
   # --- writer-set --------------------------------------------------------------
 
   - id: writers.notify-write-sent
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: writer-set
     section: "#write-notifications"
     quote: >-
@@ -1224,10 +1230,20 @@ assertions:
     areas: [jwt]
     checks: >-
       After a write into a space whose authority is the harness, the harness space host receives notifyWrite with the new rev and data.
+    variants:
+      "2026-11-12":
+        quote: >-
+          When an account writes to a space repo, their PDS sends a `com.atproto.space.notifyRepoUpdate`
+          containing the updated repo's `repoRev` and `data` to the space host associated with the space
+          authority (unless the authority is the repo account itself).
+        lexicon: com.atproto.space.notifyRepoUpdate
+        params: [space, repo, repoRev, data]
+        checks: >-
+          After a write into a space whose authority is the harness, the harness space host receives
+          notifyRepoUpdate with the new repoRev and data. Not graded yet: needs the phase 7 credential
+          path.
 
   - id: writers.notify-write-forwarded
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: writer-set
     section: "#write-notifications"
     quote: >-
@@ -1241,6 +1257,17 @@ assertions:
     areas: [httpsig, jwt]
     checks: >-
       A registered syncer receives the forwarded notifyWrite carrying spaceRev and prevSpaceRev, with no gap between consecutive notifications.
+    variants:
+      "2026-11-12":
+        quote: >-
+          The space host sequences updates with a separate revision (TID) for the overall space, and
+          indicates the current and previous space revision in each notification.
+        lexicon: com.atproto.space.notifySpaceUpdate
+        params: [space, update]
+        checks: >-
+          A registered syncer receives notifySpaceUpdate carrying the current and previous space revision,
+          with no gap between consecutive notifications. Not graded yet: needs the phase 7 credential
+          path.
 
   - id: writers.stale-rev-ignored
     suite: writer-set
@@ -1280,8 +1307,6 @@ assertions:
       A notifyWrite from a non-member of a memberspace space without publicWrite doesn't add it to listRepos.
 
   - id: writers.register-expiry
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: writer-set
     section: "#write-notifications"
     quote: >-
@@ -1294,10 +1319,19 @@ assertions:
     areas: [httpsig, jwt]
     checks: >-
       registerNotify returns expiresAt in the future. unregisterNotify, called with the same space credential, stops delivery.
+    variants:
+      "2026-11-12":
+        section: "#registering-for-notifications"
+        quote: >-
+          A registration stays active while the credential from its latest authorization is valid.
+        lexicon: [com.atproto.space.authorizeSpaceSync, com.atproto.space.confirmRegistration]
+        params: [space]
+        checks: >-
+          authorizeSpaceSync with notify registers once the syncer answers confirmRegistration. After the
+          credential expires, the next update sends the syncer an expiry notice instead, and nothing more
+          until it reauthorizes. Not graded yet: needs the phase 7 credential path.
 
   - id: writers.list-repos
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: writer-set
     section: "#the-sync-boundary-writer-set"
     quote: >-
@@ -1311,10 +1345,17 @@ assertions:
     checks: >-
       listRepos lists every account that has written, each with its current rev and data, and
       pages completely.
+    variants:
+      "2026-11-12":
+        quote: >-
+          Alongside each account, `listWriters` returns that repo's current `repoRev` and `data`.
+        lexicon: com.atproto.space.listWriters
+        params: [space, limit, cursor]
+        checks: >-
+          listWriters lists every account that has written, each with its current repoRev and data, and
+          pages completely. Not graded yet: needs the phase 7 credential path.
 
   - id: writers.list-repos-since-space-rev
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: writer-set
     section: "#write-notifications"
     quote: >-
@@ -1330,10 +1371,20 @@ assertions:
     checks: >-
       listRepos with cursor set to a spaceRev from a forwarded notifyWrite returns only the repos
       updated after that space revision (exclusive), per the lexicon's cursor.
+    variants:
+      "2026-11-12":
+        quote: >-
+          Syncers can detect missed notifications from a gap in space revisions, or from the current space
+          revision returned on each [authorization](#authorizing-space-sync), and request a list of all
+          repos in the space updated "since" an earlier space revision using the
+          `com.atproto.space.listWriters` endpoint.
+        lexicon: com.atproto.space.listWriters
+        params: [cursor]
+        checks: >-
+          listWriters with cursor set to an earlier space revision returns only the repos updated after it
+          (exclusive), per the lexicon's cursor. Not graded yet: needs the phase 7 credential path.
 
   - id: writers.remove-writer
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: writer-set
     section: "#the-sync-boundary-writer-set"
     quote: >-
@@ -1346,10 +1397,17 @@ assertions:
     areas: [httpsig, jwt]
     checks: >-
       removeWriter drops the account from listRepos.
+    variants:
+      "2026-11-12":
+        lexicon: com.atproto.space.removeWriter
+        params: [space, repo]
+        quote: >-
+          This can be explicitly requested with `com.atproto.space.removeWriter`.
+        checks: >-
+          removeWriter drops the account from listWriters. Not graded yet: needs the phase 7 credential
+          path.
 
   - id: writers.removed-writer-retracked
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: writer-set
     section: "#memberspace"
     quote: >-
@@ -1362,6 +1420,14 @@ assertions:
     checks: >-
       In a memberspace space with publicWrite, an account removed with removeWriter is back in
       listRepos after its next write.
+    variants:
+      "2026-11-12":
+        quote: >-
+          While `publicWrite` is set, a removed writer is tracked again as soon as it writes, unless it is
+          on the member list with `write` set to false.
+        checks: >-
+          In a memberspace space with publicWrite, an account removed with removeWriter is back in
+          listWriters after its next write. Not graded yet: needs the phase 7 credential path.
 
   - id: writers.repos-resolve-to-host
     suite: writer-set
@@ -1631,8 +1697,6 @@ assertions:
   # --- deletion ----------------------------------------------------------------
 
   - id: deletion.notify-space-deleted
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: deletion
     section: "#space-deletion"
     quote: >-
@@ -1643,10 +1707,17 @@ assertions:
     areas: [httpsig, jwt]
     checks: >-
       A syncer registered with registerNotify receives notifySpaceDeleted after deleteSpace.
+    variants:
+      "2026-11-12":
+        quote: >-
+          The authority then notifies every syncer [registered](#registering-for-notifications) for the
+          space of the deletion with `com.atproto.space.notifySpaceUpdate`, including those whose
+          registrations have lapsed.
+        checks: >-
+          A registered syncer, including one whose registration has lapsed, receives a deletion
+          notifySpaceUpdate after deleteSpace. Not graded yet: needs the phase 7 credential path.
 
   - id: deletion.notify-retry
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: deletion
     section: "#space-deletion"
     quote: >-
@@ -1657,10 +1728,18 @@ assertions:
     areas: [httpsig, jwt]
     checks: >-
       When the harness syncer answers 503 once, notifySpaceDeleted is delivered again.
+    variants:
+      "2026-11-12":
+        section: "#registering-for-notifications"
+        quote: >-
+          The space host is responsible for reliably delivering the expiry notice, and should retry
+          network failures and transient HTTP statuses with exponential backoff for at least 72 hrs.
+        checks: >-
+          A deletion notice gets the same rigor as an expiry notice (#space-deletion): when the harness
+          syncer answers 503 once, the notifySpaceUpdate is delivered again. Not graded yet: needs the
+          phase 7 credential path.
 
   - id: deletion.credential-error
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: deletion
     section: "#space-deletion"
     quote: >-
@@ -1671,6 +1750,15 @@ assertions:
     areas: [jwt]
     checks: >-
       getSpaceCredential for a deleted space fails with SpaceDeleted, not SpaceNotFound.
+    variants:
+      "2026-11-12":
+        quote: >-
+          The authority should answer `authorizeSpaceSync` for a deleted space with an explicit
+          `SpaceDeleted` error, regardless of the request's authorization.
+        checks: >-
+          After deleteSpace, authorizeSpaceSync for the space fails with SpaceDeleted, not SpaceNotFound.
+          The delegation token is signed with the owner's key when the harness holds it, and with a
+          harness key otherwise, since the answer is due regardless of authorization.
 
   - id: deletion.member-records-survive
     suite: deletion
