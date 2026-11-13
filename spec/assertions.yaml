@@ -974,7 +974,14 @@ assertions:
     areas: [httpsig, jwt]
     checks: >-
       After the authority revokes a jti (notifyCredentialRevoked, or the implementation's own
-      trigger through the adapter's revokeCredential hook), the repo host refuses that credential.
+      trigger through the adapter's revokeCredential hook), the repo host refuses that credential,
+      and still serves another credential for the same space.
+    variants:
+      "2026-11-12":
+        checks: >-
+          After the authority revokes a jti (notifyCredentialsRevoked, or the implementation's own
+          trigger through the adapter's revokeCredential hook), the repo host refuses that credential,
+          and still serves another credential for the same space.
 
   - id: cred.revocation-idempotent
     suite: credentials
@@ -990,13 +997,14 @@ assertions:
     requires: [repo_host.foreign_authorities]
     areas: [httpsig, jwt]
     checks: >-
-      The same notifyCredentialRevoked, sent twice, succeeds both times.
+      The same notifyCredentialRevoked, sent twice, succeeds both times, and the second leaves the
+      same state as the first: the revoked credential is still refused and another still reads.
     variants:
       "2026-11-12":
         lexicon: com.atproto.space.notifyCredentialsRevoked
         checks: >-
-          The same notifyCredentialsRevoked, sent twice, succeeds both times. Not graded yet: needs the
-          phase 7 credential path.
+          The same notifyCredentialsRevoked, sent twice, succeeds both times, and the second leaves the
+          same state as the first: the revoked credential is still refused and another still reads.
 
   # --- scopes ------------------------------------------------------------------
 
@@ -1715,7 +1723,8 @@ assertions:
           registrations have lapsed.
         checks: >-
           A registered syncer, including one whose registration has lapsed, receives a deletion
-          notifySpaceUpdate after deleteSpace. Not graded yet: needs the phase 7 credential path.
+          notifySpaceUpdate after deleteSpace. The lapsed registration waits out the host's credential,
+          so that part runs only with --slow.
 
   - id: deletion.notify-retry
     suite: deletion
@@ -1727,7 +1736,8 @@ assertions:
     roles: [space-host]
     areas: [httpsig, jwt]
     checks: >-
-      When the harness syncer answers 503 once, notifySpaceDeleted is delivered again.
+      When the harness syncer answers 503 once, notifySpaceDeleted is delivered again, within 120 s
+      (15 minutes with --slow).
     variants:
       "2026-11-12":
         section: "#registering-for-notifications"
@@ -1736,8 +1746,8 @@ assertions:
           network failures and transient HTTP statuses with exponential backoff for at least 72 hrs.
         checks: >-
           A deletion notice gets the same rigor as an expiry notice (#space-deletion): when the harness
-          syncer answers 503 once, the notifySpaceUpdate is delivered again. Not graded yet: needs the
-          phase 7 credential path.
+          syncer answers 503 once, the notifySpaceUpdate is delivered again, within 120 s (15 minutes
+          with --slow).
 
   - id: deletion.credential-error
     suite: deletion

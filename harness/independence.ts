@@ -39,6 +39,8 @@ export interface PassSource {
   image: string;
   /** The spec revision the run graded. */
   revision: string;
+  /** Whether the run had --slow (results run.slow). */
+  slow: boolean;
   /** Passes refused because the row or its test changed since the run (its digest differs). */
   stale_passes?: string[];
 }
@@ -69,7 +71,7 @@ export interface Independence {
 }
 
 interface ResultsFile {
-  run: { id: string };
+  run: { id: string; slow?: boolean };
   suite: { commit: string; assertions_digest: string; assertion_digests?: Record<string, string> };
   spec: { revision: string };
   implementation: { id: string; image: string };
@@ -112,6 +114,7 @@ export function buildPassIndex(
       assertions_digest: file.suite.assertions_digest,
       image: file.implementation.image,
       revision,
+      slow: file.run.slow === true,
       ...(stale.length ? { stale_passes: stale.sort() } : {}),
     });
   }
@@ -197,7 +200,9 @@ export function pinnedImages(): Map<string, string> {
  * The committed index must be exactly what its sources rebuild to, so a pass
  * can't be added by hand. Every source must validate, and every committed
  * results file must be either a source or excluded with a reason.
- * Every source must also have run the image its implementation pins now.
+ * Every source must also have run the image its implementation pins now,
+ * and with --slow, so a run that skipped the slow checks can't replace one
+ * that ran them.
  */
 export function validatePassIndex(cat: Catalogue, indexPath = PASS_INDEX, resultsDir = RESULTS_DIR, pinned: Map<string, string> = pinnedImages()): Problem[] {
   if (!existsSync(indexPath)) return [];
@@ -218,6 +223,9 @@ export function validatePassIndex(cat: Catalogue, indexPath = PASS_INDEX, result
     const image = pinned.get(src.implementation);
     if (image && image !== src.image) coverage.push(at(src.file, `ran ${src.image}, but ${src.implementation} now pins ${image}: rerun it, or exclude it with a reason`));
   }
+  const { files: sourceFiles } = readSources(index.sources.map((s) => s.file), cat);
+  for (const { path, file } of sourceFiles)
+    if (file.run.slow !== true) coverage.push(at(path, 'ran without --slow: a pass-index source must run with --slow, so a fast run cannot stand in for a slow one'));
   const { files, problems } = readSources(index.sources.map((s) => s.file), cat);
   problems.unshift(...coverage);
   if (problems.length) return problems;
