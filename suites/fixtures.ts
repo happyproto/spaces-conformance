@@ -48,4 +48,4 @@ export const SETTLED = '2026-11-12';
 export const settled = (ctx: RunContext) => ctx.revision >= SETTLED;
 
 /** Why a row the spec still has isn't graded yet: the harness can't act out its setup. */
-export const PHASE7_PENDING = 'needs the phase 7 credential path (Receiver as syncer, foreign authority, deleteSpace)';
+export const PHASE7_PENDING = 'needs the phase 7 credential path (Receiver as syncer, foreign authority)';

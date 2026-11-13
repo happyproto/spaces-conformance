@@ -1760,7 +1760,8 @@ assertions:
         checks: >-
           After deleteSpace, authorizeSpaceSync for the space fails with SpaceDeleted, not SpaceNotFound.
           The delegation token is signed with the owner's key when the harness holds it, and with a
-          harness key otherwise, since the answer is due regardless of authorization.
+          harness key otherwise, since the answer is due regardless of authorization. The same request
+          before the deletion, and for a second space that wasn't deleted, must not answer SpaceDeleted.
 
   - id: deletion.member-records-survive
     suite: deletion

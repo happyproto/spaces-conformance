@@ -3,7 +3,8 @@
 // authority answers SpaceDeleted "regardless of the request's authorization",
 // so the delegation token is signed with the owner's key when the harness
 // holds it and with a throwaway key otherwise. At 2026-10-29 the text has no
-// such clause, so the row needs the owner's key there.
+// such clause, so the row needs the owner's key there. Controls before the
+// deletion and on a second, undeleted space must not answer SpaceDeleted.
 //
 // The notification rows need a syncer registered with the space host, which
 // is the phase 7 credential path; they pend until then.
@@ -32,6 +33,11 @@ async function credentialForDeletedSpace(ctx: RunContext) {
   if (del.status >= 300) pending(`deleteSpace answered ${short(del)}, so there's no deleted space to ask about`);
   const r = await requestCredential(ctx, owner, space, delegationToken(owner, space, key));
   if (r.status === 429 || r.status >= 500) pending(`the credential request answered ${short(r)}, which says nothing about the space`);
+  // Control after: a second space that wasn't deleted must not answer
+  // SpaceDeleted, or the answer above isn't about this deletion.
+  const other = await freshRepo(ctx);
+  const live = await requestCredential(ctx, owner, other.space, delegationToken(owner, other.space, key));
+  if (live.body?.error === 'SpaceDeleted') fail('the credential request answered SpaceDeleted for a space that was not deleted', { live: short(live) });
   return { r, evidence: { status: r.status, body: JSON.stringify(r.body).slice(0, 500), token_key: owner.keys ? 'owner' : 'harness', before: short(before) } };
 }
 
