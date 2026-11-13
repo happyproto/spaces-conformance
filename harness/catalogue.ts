@@ -42,6 +42,8 @@ export interface Assertion {
   checks: string;
   since?: string;
   until?: string;
+  /** Why the row stops at `until` although its citation still reads the same later. */
+  ended?: string;
   provisional?: boolean;
   areas: ('cbor' | 'lthash' | 'mac' | 'httpsig' | 'jwt' | 'star')[];
   /** Why a row in a crypto suite uses no harness crypto (areas: []). */
@@ -69,6 +71,7 @@ const CRYPTO_SUITES = new Set(['digest', 'mac', 'export']);
 const MUST_KEYWORD = /\b(MUST|REQUIRED|SHALL)\b|\bmust\b/;
 const SHOULD_KEYWORD = /\b(SHOULD|RECOMMENDED)\b|\bshould\b/;
 const DEFAULT_WORD = /\bdefaults?\b/i;
+export const REVISION_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
 /** The level-rule problems for one row, as messages. Exported for tests. */
 export function levelProblems(a: Assertion): string[] {
@@ -137,6 +140,8 @@ export function validateCatalogue(
   if (problems.length) return problems;
   const c = cat as Catalogue;
   if (!revisions.includes(c.revision)) problems.push({ file, message: `revision ${c.revision} is not in spec/revisions.json` });
+  // Revision keys order as strings (resolveAt), which holds only for ISO dates.
+  for (const k of revisions) if (!REVISION_KEY.test(k)) problems.push({ file, message: `revision key ${k} in spec/revisions.json is not a YYYY-MM-DD date` });
   const texts = typeof specText === 'string' ? new Map([[c.revision, { text: specText, lex }]]) : specText;
 
   const seen = new Set<string>();
@@ -160,30 +165,59 @@ export function validateCatalogue(
     for (const a of resolveCatalogue(c, rev)) {
       const at = (message: string) => problems.push({ file, where: texts.size > 1 ? `${a.id}@${rev}` : a.id, message });
       for (const m of levelProblems(a)) at(m);
-      if (a.section && !specAnchors.has(a.section)) at(`section ${a.section} is not a heading anchor in revision ${rev}`);
-      if (a.quote && !specPlain.includes(plainText(a.quote))) at(`quote not found verbatim in revision ${rev}`);
-      else if (a.quote && a.section && specAnchors.has(a.section)) {
-        const section = sectionText(text, a.section) ?? '';
-        if (!plainText(section).includes(plainText(a.quote))) at(`quote is in revision ${rev} but not under ${a.section}`);
-      }
+      for (const m of citationProblems(a, rev, text, specPlain, specAnchors)) at(m);
       if (a.id.startsWith('info.') && a.level !== 'info') at('info.* ids must be level info');
       if (CRYPTO_SUITES.has(a.suite) && !a.areas?.length && !a.no_crypto)
         at(`suite ${a.suite} relies on harness crypto, so areas can't be empty without a no_crypto reason`);
       if (a.no_crypto && a.areas?.length) at('no_crypto is only for a row with areas: []');
-      if (revLex && a.lexicon) {
-        for (const nsid of lexiconsOf(a)) {
-          if (!revLex.has(nsid)) {
-            at(`lexicon ${nsid} is not in the lexicons pinned for ${rev}`);
-            continue;
-          }
-          const fields = revLex.fields(nsid);
-          for (const p of a.params ?? []) if (!fields.has(p)) at(`lexicon ${nsid} defines no parameter or input field ${p}`);
-          if (a.error && !revLex.errors(nsid).has(a.error)) at(`lexicon ${nsid} declares no error ${a.error}`);
-        }
-      }
+      for (const m of lexiconProblems(a, rev, revLex)) at(m);
     }
   }
+
+  // An until must not quietly drop a row that still applies: if the row, as
+  // it reads at its until, passes every citation check at each later pinned
+  // revision, the spec didn't change it, so the until needs an ended reason.
+  for (const a of c.assertions) {
+    if (!a.until) continue;
+    const later = [...texts.keys()].filter((r) => r > a.until!).sort();
+    if (!later.length) continue;
+    const last = resolveAt(a, a.until, c.revision);
+    if (!last) continue;
+    const stillReads = later.every((rev) => {
+      const { text, lex: revLex } = texts.get(rev)!;
+      return !citationProblems(last, rev, text, plainText(text), anchors(text)).length && !lexiconProblems(last, rev, revLex).length;
+    });
+    if (stillReads && !a.ended)
+      problems.push({ file, where: a.id, message: `until ${a.until}, but its quote, section and lexicons still hold at ${later.join(', ')}: give it a variant, or an ended reason` });
+    if (!stillReads && a.ended) problems.push({ file, where: a.id, message: 'ended is only for an until whose citation still holds at a later revision' });
+  }
   return problems;
+}
+
+function citationProblems(a: Assertion, rev: string, text: string, specPlain: string, specAnchors: Set<string>): string[] {
+  const out: string[] = [];
+  if (a.section && !specAnchors.has(a.section)) out.push(`section ${a.section} is not a heading anchor in revision ${rev}`);
+  if (a.quote && !specPlain.includes(plainText(a.quote))) out.push(`quote not found verbatim in revision ${rev}`);
+  else if (a.quote && a.section && specAnchors.has(a.section)) {
+    const section = sectionText(text, a.section) ?? '';
+    if (!plainText(section).includes(plainText(a.quote))) out.push(`quote is in revision ${rev} but not under ${a.section}`);
+  }
+  return out;
+}
+
+function lexiconProblems(a: Assertion, rev: string, revLex: Lexicons | undefined): string[] {
+  const out: string[] = [];
+  if (!revLex || !a.lexicon) return out;
+  for (const nsid of lexiconsOf(a)) {
+    if (!revLex.has(nsid)) {
+      out.push(`lexicon ${nsid} is not in the lexicons pinned for ${rev}`);
+      continue;
+    }
+    const fields = revLex.fields(nsid);
+    for (const p of a.params ?? []) if (!fields.has(p)) out.push(`lexicon ${nsid} defines no parameter or input field ${p}`);
+    if (a.error && !revLex.errors(nsid).has(a.error)) out.push(`lexicon ${nsid} declares no error ${a.error}`);
+  }
+  return out;
 }
 
 /** Whether a row applies at revision `rev`: since (default the catalogue's base revision) to until, both inclusive. */

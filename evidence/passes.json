@@ -39,8 +39,8 @@
     {
       "file": "test/fixtures/results/happyview-beta14-2026-11-13.json",
       "implementation": "happyview",
-      "run": "2026-11-13T17-41-46Z-happyview-d0c9",
-      "suite_commit": "92be513bc5",
+      "run": "2026-11-13T18-29-08Z-happyview-f35c",
+      "suite_commit": "9d8cee60a9",
       "assertions_digest": "sha256:ef34c2a891b609a1d7ea22ffe2026a828889c3c77d9dbc092cc5a3a19c26e078",
       "image": "ghcr.io/gamesgamesgamesgamesgames/happyview@sha256:147a27668f0fc87c2dcfde5103d01f51efe55c329273c8ae7ae292cdb87a7b93",
       "revision": "2026-10-29"

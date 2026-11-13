@@ -12,7 +12,8 @@
   "properties": {
     "revision": {
       "description": "The base revision (a key in spec/revisions.json): rows read as of this one unless their since is later. Every revision in spec/revisions.json is checked.",
-      "type": "string"
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
     },
     "assertions": {
       "type": "array",
@@ -159,11 +160,18 @@
         },
         "since": {
           "description": "First revision the assertion applies to (a key in spec/revisions.json). Defaults to the catalogue's base revision.",
-          "type": "string"
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
         },
         "until": {
           "description": "Last revision the assertion applies to, inclusive.",
-          "type": "string"
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "ended": {
+          "description": "Why the row stops at its until, when its citation still reads the same in a later revision (the validator refuses such an until without it).",
+          "type": "string",
+          "minLength": 1
         },
         "provisional": {
           "description": "Marks a row provisional by hand. The lineage rule (harness/independence.ts) applies regardless.",
