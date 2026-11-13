@@ -1,21 +1,21 @@
 {
   "schema": 1,
   "run": {
-    "id": "2026-11-13T19-00-00Z-happyview-f9fe",
+    "id": "2026-11-13T19-05-36Z-happyview-c93a",
     "kind": "local",
-    "started_at": "2026-11-13T19:00:00.567Z",
-    "finished_at": "2026-11-13T19:00:14.228Z",
+    "started_at": "2026-11-13T19:05:36.555Z",
+    "finished_at": "2026-11-13T19:05:52.984Z",
     "attempt": 1
   },
   "suite": {
-    "commit": "47993a172f",
-    "assertions_digest": "sha256:c0993f6b4c1d5966a8def57e290819520456dbbf20ac50b73c5e9f390f97e63e",
+    "commit": "de52c940f7",
+    "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
     "assertion_digests": {
       "addressing.record-uri-shape": "sha256:2221a0422839dda216d3474cf0b02c77fffd942370e8d997d0e515ba1ae1ec0b",
       "addressing.skey-limits": "sha256:efe12199438eaf3b4566f814751865780f05612b9554458c81355c305aa07e48",
       "cred.credential-lifetime-default": "sha256:06b8642d76971d9c959e3cb713262b41b7b1f82330d2bb659947473b5f4ab481",
       "cred.credential-shape": "sha256:5f28fe62d6b6c3eeb6120ece262199a2e4686b664ff649fe65cd62bcae1f5c50",
-      "cred.delegation-token-kid-enforced": "sha256:1e8888ac3336455f33b4f331cd672638208f765f02279fc3fd2925abf3c2ae02",
+      "cred.delegation-token-kid-enforced": "sha256:5a7710d6bed75a28115d6c87026412992c1e651b9281615637c13d258cf127ec",
       "cred.delegation-token-lifetime": "sha256:c6192a701c752d6ede248293516c1b400daf783e629539733bc4eaefafba7865",
       "cred.delegation-token-shape": "sha256:50c5a21fc99f59ee6fe897f0469f90fe3b807f3e08ca436696ee9a3af75977e3",
       "cred.delegation-token-single-use": "sha256:9d22d67901e7a184e544aaff4d2e39c21a20ebca0b997d8abd6696058b830448",
@@ -30,13 +30,13 @@
       "cred.httpsig-wrong-components": "sha256:ed278f1636ef96f4fef2fa0b5d69d159ea940504a662e50ba1d935522f4eeb76",
       "cred.httpsig-wrong-tag": "sha256:e55d2eff437e6efd5b850b62390360c80c566e90019f61d0205844ec01cc5619",
       "cred.reuse-allowed": "sha256:209594880c7bb523a525b2b3412b9712238625e90c54a559453e20a05d59c6e7",
-      "cred.revocation-idempotent": "sha256:42649e83d9d49165e90df7f041582e561b2079b1138cb2582ae8e637b654a273",
+      "cred.revocation-idempotent": "sha256:a0c3021c594dbb5edc5eaf06d113dd4c552c2a14ac430966ecd96868788c7988",
       "cred.revoked-jti-rejected": "sha256:cfcb6f8829a5aec952ac5e1974afdb1d9aab28e00c42951b395342f750192c0e",
       "cred.scheme-case-insensitive": "sha256:5d04366e18a77b61a500f6aff8d64d6202152833d9182170d7296d3de5830b37",
-      "deletion.credential-error": "sha256:58cad041ad34edf4875e5ed27cca166194e13793f5ecc5214d8ff01d7add2a64",
+      "deletion.credential-error": "sha256:b6a6f2217d1a0ed0dda86cc71eeb09b2672a235b37818b979cadd9db07f2c659",
       "deletion.member-records-survive": "sha256:a25f2bf9f9c755b5783454ecde8e81d2b1a8398273eb2b34181caa31552a2609",
-      "deletion.notify-retry": "sha256:ec41e7da639f6ee68b3eea5dd09eff46013d2c9812132a5ef89698d223544c9e",
-      "deletion.notify-space-deleted": "sha256:cc706ff849633db7881e5976f948a1e0183c71f42ebfc910f39ca01c43720d64",
+      "deletion.notify-retry": "sha256:2750e4eb869db52587bda3ce5c7a855acb66136103058b1e596d66d2c47b7260",
+      "deletion.notify-space-deleted": "sha256:7eff68839c7e8222019b6b3b056d5a9e8498e337a4b664a5d64b2a4f6f78cc4a",
       "digest.cid-drisl-plain": "sha256:ca6377729da5649327b308200d83794493b804d43c83cee8048ed7a0274c5d11",
       "digest.cid-drisl-typed": "sha256:af9d13820b853bd0522c97b553daa606a6a2a57a3109225d0645cf2429398d4b",
       "digest.covers-overwrite-and-delete": "sha256:3f910a173bf850af161d957c67e474d7ba9ec72aff6946c74ac7b1b0f76bbd5e",
@@ -109,20 +109,20 @@
       "scope.read-self-own-repo-only": "sha256:02ed1fb5b05edf735975fd3f8e8e4362b970a28673da9ed75d11641216b2fc42",
       "scope.wildcard-type-no-writes": "sha256:f68b043a2814a3123e195f0b328ae7b32003b1bf30b0b695a7a7e57d39ea87bb",
       "writers.future-rev-rejected": "sha256:a4f8a9cb7ab0a770230e1cc78b9683c97eb5beacd98158c25cc7802c6b8af61b",
-      "writers.list-repos": "sha256:69f5e238c753bfb5decf135ff71d5a8cec8b057a948bf50b4e18e50925d41508",
-      "writers.list-repos-since-space-rev": "sha256:4e75433b1ee9f7845f82e63ed39859d4981db7412a96b76fe9b2266d5ef0c644",
-      "writers.notify-write-forwarded": "sha256:42d7b9eabb1b581ec5a72134514a993ebe726c61a92bdbb67a2bfcdbb67fa6aa",
-      "writers.notify-write-sent": "sha256:a3a229e146a4329f5369caaee4f967ae3a43f4e1c4dd4337104d8ce1d15adf4a",
-      "writers.register-expiry": "sha256:3de2a0595eba056e09ae345f2656bb81e75be564a9c6475c1aecf51437c9da9e",
-      "writers.remove-writer": "sha256:bfdedffcc6842b13c22d0b96085317a33ac8db3c4a06b00239a9fa9fe81e803d",
-      "writers.removed-writer-retracked": "sha256:dce03030bfc3de6f94fb4f66cf200a750d245da8e1703e108622cf7a61af9f99",
+      "writers.list-repos": "sha256:5a7cd642795d038114345c7346070b0fa75f4898e8eea1bf7dfce5b95630932d",
+      "writers.list-repos-since-space-rev": "sha256:6517f611b72b15537b479bc0a0ad7595eea8665587ef914997802e15e0b89bb7",
+      "writers.notify-write-forwarded": "sha256:3524640561002bb765899e87d30d91a44e36cf48692d27a01598c23441b87e70",
+      "writers.notify-write-sent": "sha256:22c30565e20d7fa7ca00a7be8e665ed74d6c67d82ff6d0e44d7b82fe1fa692f1",
+      "writers.register-expiry": "sha256:8fecdc8d6f186f5a6f03a17095a623dae35fe2e03814f86b924dbadd7729b3d1",
+      "writers.remove-writer": "sha256:a856912ea05d1195d214126cbe03508ef6e4a283bb0e7eb48417a4584ee9549f",
+      "writers.removed-writer-retracked": "sha256:0cc4376d329a32582b91157ea9f7a4a871cbbd8b3c854037f3c6945fd8823731",
       "writers.repos-resolve-to-host": "sha256:add356f7d41af96c5c81e7eeff25315c23f04e9a979cd59fc899102e2890fce5",
       "writers.stale-rev-ignored": "sha256:a59e7166171732ea3eb74a9ce73264ccc4c3a2ef03800e549e403b60a9b8ed67",
       "writers.unauthorized-write-rejected": "sha256:d82a264a313f86cbe13e3d02a76977adf92cebc0697e0e38a75981e759ba2a3e",
       "xrpc.error.PolicyMismatch": "sha256:eed23aae1e31a9306fa217226927b042acfea44e6a255b416a60f4aaf3a0c466",
       "xrpc.error.RecordNotFound": "sha256:c7ed2adf048fbf503c242c44767bfd8b08e79b61d97fd6f5ec374f3d6bf5551e",
       "xrpc.error.RepoNotFound": "sha256:7674934fcd9d6751c26b8ec78acc7bf9bf99d65f7497a64e6c157cb43ef59cf9",
-      "xrpc.error.SpaceDeleted": "sha256:22a8c6d7ef39d08bff26733c31b5d0c894520b66fc87bacabc52c36f53a123b2",
+      "xrpc.error.SpaceDeleted": "sha256:a5571fdd1ce0e479575c2b07b22c956561231249b92693df68629b25d30c3444",
       "xrpc.error.SpaceNotFound": "sha256:225fb18be862665e77f8f97f4048ea9c3d5a85371b679ce5c363ff044a09f885",
       "xrpc.error.UnsupportedPolicy": "sha256:f99cb26889805737090ba78853003750cb9ed538ebb2c7b0b94598ed9b4be256"
     }
@@ -450,6 +450,20 @@
       }
     },
     {
+      "assertion": "deletion.credential-error",
+      "cause": "space-deleted-error",
+      "reason": "After deleteSpace, getSpaceCredential answers SpaceNotFound rather than the SpaceDeleted error 0016 asks for.",
+      "spec": "#space-deletion",
+      "tracking": "HAP-388 (PR 7)",
+      "since": "2026-11-13",
+      "revisions": [
+        "2026-10-29"
+      ],
+      "expect": {
+        "message": "getSpaceCredential for a deleted space answered SpaceNotFound, not SpaceDeleted"
+      }
+    },
+    {
       "assertion": "policy.member-methods",
       "cause": "memberspace-under-simplespace",
       "reason": "The memberspace methods aren't routed in this release. Members are served only under com.atproto.simplespace.*, so com.atproto.memberspace.putMember falls through to the proxy and fails.",
@@ -483,25 +497,56 @@
       "id": "cred.delegation-token-kid-enforced",
       "suite": "credentials",
       "status": "pass",
-      "ms": 147
+      "ms": 234
+    },
+    {
+      "id": "cred.revocation-idempotent",
+      "suite": "credentials",
+      "status": "skip",
+      "skip_reason": "capability repo_host.foreign_authorities not claimed"
+    },
+    {
+      "id": "deletion.credential-error",
+      "suite": "deletion",
+      "status": "fail",
+      "ms": 215,
+      "message": "getSpaceCredential for a deleted space answered SpaceNotFound, not SpaceDeleted",
+      "evidence": {
+        "status": 400,
+        "body": "{\"error\":\"SpaceNotFound\",\"message\":\"space not found\"}",
+        "token_key": "owner",
+        "before": "200 {\"credential\":\"eyJhbGciOiJFUzI1NiIsImtpZCI6IiNhdHByb3RvIiwidHlwIjoiYXRwcm90by1zcGFjZS1jcmVkZW50aWFsK2p3dCJ9.eyJpc3MiOiJkaWQ6cGxjOjJ6N29kZ3F5MjZ6N3l0NHZncXp3ZXB5ciIsInN1YiI6ImF0Oi8vZGlkOnBsYzoyejdvZGdxeTI2ejd5dDR2Z3F6d2VweXIvc3BhY2UvY29tLmV4YW1wbGUuY29uZm9ybWFuY2Uuc3BhY2UvMzRhMjMzYTE2OWQ5IiwiaWF0Ijox"
+      }
+    },
+    {
+      "id": "deletion.notify-retry",
+      "suite": "deletion",
+      "status": "skip",
+      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
+    },
+    {
+      "id": "deletion.notify-space-deleted",
+      "suite": "deletion",
+      "status": "skip",
+      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
     },
     {
       "id": "digest.cid-drisl-plain",
       "suite": "digest",
       "status": "pass",
-      "ms": 151
+      "ms": 240
     },
     {
       "id": "digest.cid-drisl-typed",
       "suite": "digest",
       "status": "pass",
-      "ms": 34
+      "ms": 51
     },
     {
       "id": "digest.covers-overwrite-and-delete",
       "suite": "digest",
       "status": "fail",
-      "ms": 40,
+      "ms": 58,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -511,7 +556,7 @@
       "id": "digest.matches-record-set",
       "suite": "digest",
       "status": "fail",
-      "ms": 183,
+      "ms": 289,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -521,7 +566,7 @@
       "id": "digest.multi-batch",
       "suite": "digest",
       "status": "fail",
-      "ms": 16,
+      "ms": 20,
       "message": "applyWrites (20 writes) answered 422",
       "evidence": {
         "body": "\"Failed to deserialize the JSON body into the target type: writes[0]: missing field `action` at line 1 column 414\""
@@ -538,7 +583,7 @@
       "id": "info.unknown-method-status",
       "suite": "records",
       "status": "pass",
-      "ms": 1,
+      "ms": 2,
       "message": "an unknown method answered 502"
     },
     {
@@ -557,7 +602,7 @@
       "id": "mac.commit-header-present",
       "suite": "mac",
       "status": "fail",
-      "ms": 36,
+      "ms": 44,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "read_auth": "oauth-dpop",
@@ -570,7 +615,7 @@
       "id": "mac.commit-valid",
       "suite": "mac",
       "status": "fail",
-      "ms": 34,
+      "ms": 50,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "status": 400
@@ -580,7 +625,7 @@
       "id": "mac.kem-key-published",
       "suite": "mac",
       "status": "pass",
-      "ms": 224
+      "ms": 335
     },
     {
       "id": "mac.list-repo-ops-every-page",
@@ -604,7 +649,7 @@
       "id": "mac.vary-header",
       "suite": "mac",
       "status": "fail",
-      "ms": 28,
+      "ms": 43,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "read_auth": "oauth-dpop",
@@ -623,7 +668,7 @@
       "id": "oplog.entry-shape",
       "suite": "oplog",
       "status": "fail",
-      "ms": 179,
+      "ms": 307,
       "message": "listRepoOps answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -633,7 +678,7 @@
       "id": "oplog.fold-matches-commit",
       "suite": "oplog",
       "status": "fail",
-      "ms": 46,
+      "ms": 85,
       "message": "listRepoOps answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -643,7 +688,7 @@
       "id": "oplog.pagination-batch-boundary",
       "suite": "oplog",
       "status": "fail",
-      "ms": 16,
+      "ms": 25,
       "message": "applyWrites (3 writes) answered 422",
       "evidence": {
         "body": "\"Failed to deserialize the JSON body into the target type: writes[0]: missing field `action` at line 1 column 309\""
@@ -653,7 +698,7 @@
       "id": "oplog.pagination-complete",
       "suite": "oplog",
       "status": "fail",
-      "ms": 64,
+      "ms": 114,
       "message": "listRepoOps answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -663,7 +708,7 @@
       "id": "oplog.since-exclusive",
       "suite": "oplog",
       "status": "fail",
-      "ms": 27,
+      "ms": 42,
       "message": "listRepoOps answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -673,7 +718,7 @@
       "id": "oplog.stale-values-omitted",
       "suite": "oplog",
       "status": "fail",
-      "ms": 47,
+      "ms": 72,
       "message": "listRepoOps answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -683,13 +728,13 @@
       "id": "policy.create-get-roundtrip",
       "suite": "policy",
       "status": "pass",
-      "ms": 128
+      "ms": 175
     },
     {
       "id": "policy.member-methods",
       "suite": "policy",
       "status": "fail",
-      "ms": 106,
+      "ms": 151,
       "message": "memberspace.putMember answered 502",
       "evidence": {
         "body": "{\"error\":\"failed to resolve authority for com.atproto.memberspace.putMember: bad request: DNS TXT lookup failed for _lexicon.memberspace.atproto.com.: DNS error: error response: Server Failure\"}"
@@ -709,7 +754,7 @@
       "id": "records.apply-writes-atomic",
       "suite": "records",
       "status": "fail",
-      "ms": 17,
+      "ms": 28,
       "message": "applyWrites answered 422",
       "evidence": {
         "body": "\"Failed to deserialize the JSON body into the target type: writes[0]: missing field `action` at line 1 column 309\""
@@ -719,7 +764,7 @@
       "id": "records.commit-bytes-encoding",
       "suite": "records",
       "status": "fail",
-      "ms": 9,
+      "ms": 15,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "status": 400,
@@ -730,7 +775,7 @@
       "id": "records.commit-fields",
       "suite": "records",
       "status": "fail",
-      "ms": 132,
+      "ms": 188,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "status": 400,
@@ -741,7 +786,7 @@
       "id": "records.commit-repo-space-match",
       "suite": "records",
       "status": "fail",
-      "ms": 7,
+      "ms": 15,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "status": 400,
@@ -752,19 +797,67 @@
       "id": "records.crud-roundtrip",
       "suite": "records",
       "status": "fail",
-      "ms": 135,
-      "message": "createRecord's uri at://did:plc:kdgiin47ncsmtbztw3v3gcox/space/com.example.conformance.space/d65876fbf6a6/did:plc:3bx263nlz66kgduo53zx6zwm/com.example.conformance.note/3n27o6v3deytg doesn't end in the chosen rkey",
+      "ms": 186,
+      "message": "createRecord's uri at://did:plc:p7zb6g2dxl4uvdx4k2srls7x/space/com.example.conformance.space/582025b9dc44/did:plc:5jrdfv45f6eqkcriilb4nvhh/com.example.conformance.note/3n27oiwy7ki2q doesn't end in the chosen rkey",
       "evidence": {
         "step": "createRecord",
         "status": 201,
-        "body": "{\"cid\":\"bafyreia4jtc4ze6so42sixu6vigyofqmzloeypzibf6oe47y5x7oztqtbi\",\"uri\":\"at://did:plc:kdgiin47ncsmtbztw3v3gcox/space/com.example.conformance.space/d65876fbf6a6/did:plc:3bx263nlz66kgduo53zx6zwm/com.example.conformance.note/3n27o6v3deytg\"}"
+        "body": "{\"cid\":\"bafyreia4jtc4ze6so42sixu6vigyofqmzloeypzibf6oe47y5x7oztqtbi\",\"uri\":\"at://did:plc:p7zb6g2dxl4uvdx4k2srls7x/space/com.example.conformance.space/582025b9dc44/did:plc:5jrdfv45f6eqkcriilb4nvhh/com.example.conformance.note/3n27oiwy7ki2q\"}"
       }
     },
     {
       "id": "records.read-requires-auth",
       "suite": "records",
       "status": "pass",
-      "ms": 119
+      "ms": 185
+    },
+    {
+      "id": "writers.list-repos",
+      "suite": "writer-set",
+      "status": "skip",
+      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
+    },
+    {
+      "id": "writers.list-repos-since-space-rev",
+      "suite": "writer-set",
+      "status": "skip",
+      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
+    },
+    {
+      "id": "writers.notify-write-forwarded",
+      "suite": "writer-set",
+      "status": "skip",
+      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
+    },
+    {
+      "id": "writers.notify-write-sent",
+      "suite": "writer-set",
+      "status": "skip",
+      "skip_reason": "capability repo_host.foreign_authorities not claimed"
+    },
+    {
+      "id": "writers.register-expiry",
+      "suite": "writer-set",
+      "status": "skip",
+      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
+    },
+    {
+      "id": "writers.remove-writer",
+      "suite": "writer-set",
+      "status": "skip",
+      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
+    },
+    {
+      "id": "writers.removed-writer-retracked",
+      "suite": "writer-set",
+      "status": "skip",
+      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
+    },
+    {
+      "id": "xrpc.error.SpaceDeleted",
+      "suite": "deletion",
+      "status": "skip",
+      "skip_reason": "pending: the host did not answer SpaceDeleted (deletion.credential-error grades whether it does)"
     }
   ],
   "summary": {
