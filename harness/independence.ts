@@ -174,11 +174,6 @@ export function readSources(paths: string[], cat: Catalogue): { files: { path: s
   return { files, problems };
 }
 
-/**
- * The committed index must be exactly what its sources rebuild to, so a pass
- * can't be added by hand. Every source must validate, and every committed
- * results file must be either a source or excluded with a reason.
- */
 /** implementation id -> the image its manifest pins now (pins/images.env). */
 export function pinnedImages(): Map<string, string> {
   const values = new Map(
@@ -198,6 +193,12 @@ export function pinnedImages(): Map<string, string> {
   return out;
 }
 
+/**
+ * The committed index must be exactly what its sources rebuild to, so a pass
+ * can't be added by hand. Every source must validate, and every committed
+ * results file must be either a source or excluded with a reason.
+ * Every source must also have run the image its implementation pins now.
+ */
 export function validatePassIndex(cat: Catalogue, indexPath = PASS_INDEX, resultsDir = RESULTS_DIR, pinned: Map<string, string> = pinnedImages()): Problem[] {
   if (!existsSync(indexPath)) return [];
   const index: PassIndex = JSON.parse(readFileSync(indexPath, 'utf8'));
