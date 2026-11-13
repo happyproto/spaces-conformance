@@ -35,7 +35,7 @@ spaces:
   authority: account
   # Setup only (ungraded). The pinned image serves only the Oct 22
   # simplespace.createSpace; cli/run.ts --setup-mode picks another mode.
-  create: simplespace
+  create: oct29
   modes: [oct29, simplespace, auto]
 setup: adapter.ts
 deviations: deviations.yaml
