@@ -18,7 +18,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import type { Assertion, Catalogue } from './catalogue.ts';
+import { type Assertion, type Catalogue, resolveCatalogue } from './catalogue.ts';
 import { assertionDigests } from './digests.ts';
 import { loadManifest } from './manifest.ts';
 import type { Problem } from './problems.ts';
@@ -39,6 +39,10 @@ export interface PassSource {
   image: string;
   /** The spec revision the run graded. */
   revision: string;
+  /** Whether the run had --slow (results run.slow). */
+  slow: boolean;
+  /** Passes of needs_slow rows refused because the run had no --slow. */
+  fast_passes?: string[];
   /** Passes refused because the row or its test changed since the run (its digest differs). */
   stale_passes?: string[];
 }
@@ -69,7 +73,7 @@ export interface Independence {
 }
 
 interface ResultsFile {
-  run: { id: string };
+  run: { id: string; slow?: boolean };
   suite: { commit: string; assertions_digest: string; assertion_digests?: Record<string, string> };
   spec: { revision: string };
   implementation: { id: string; image: string };
@@ -80,11 +84,14 @@ interface ResultsFile {
  * Build the index from results files (already validated by the caller).
  * `current` gives the current per-assertion digests at a revision; a pass
  * from a source that recorded digests counts only where they still match.
+ * `needsSlow` gives the rows that read needs_slow at a revision: their passes
+ * count only from a source that ran with --slow.
  */
 export function buildPassIndex(
   files: { path: string; file: ResultsFile }[],
   excluded: PassExclusion[] = [],
   current: (revision: string) => Record<string, string> = () => ({}),
+  needsSlow: (revision: string) => Set<string> = () => new Set(),
 ): PassIndex {
   const passes = new Map<string, Map<string, Set<string>>>();
   const sources: PassSource[] = [];
@@ -93,12 +100,19 @@ export function buildPassIndex(
     const digests = file.suite.assertion_digests;
     const now = digests ? current(revision) : {};
     const stale: string[] = [];
+    const fast: string[] = [];
+    const slow = file.run.slow === true;
+    const slowRows = slow ? new Set<string>() : needsSlow(revision);
     if (!passes.has(revision)) passes.set(revision, new Map());
     const at = passes.get(revision)!;
     for (const r of file.results) {
       if (r.status !== 'pass') continue;
       if (digests && digests[r.id] !== now[r.id]) {
         stale.push(r.id);
+        continue;
+      }
+      if (slowRows.has(r.id)) {
+        fast.push(r.id);
         continue;
       }
       if (!at.has(r.id)) at.set(r.id, new Set());
@@ -112,6 +126,8 @@ export function buildPassIndex(
       assertions_digest: file.suite.assertions_digest,
       image: file.implementation.image,
       revision,
+      slow,
+      ...(fast.length ? { fast_passes: fast.sort() } : {}),
       ...(stale.length ? { stale_passes: stale.sort() } : {}),
     });
   }
@@ -221,7 +237,7 @@ export function validatePassIndex(cat: Catalogue, indexPath = PASS_INDEX, result
   const { files, problems } = readSources(index.sources.map((s) => s.file), cat);
   problems.unshift(...coverage);
   if (problems.length) return problems;
-  const rebuilt = buildPassIndex(files, index.excluded ?? [], currentDigests(cat));
+  const rebuilt = buildPassIndex(files, index.excluded ?? [], currentDigests(cat), slowRows(cat));
   if (JSON.stringify(rebuilt) !== JSON.stringify(index))
     problems.push({ file: 'evidence/passes.json', where: 'passes', message: 'does not match its sources: regenerate it with node cli/passes.ts' });
   return problems;
@@ -253,4 +269,13 @@ export function staleSources(indexPath = PASS_INDEX): PassSource[] {
 function hasDigests(path: string): boolean {
   const abs = join(ROOT, path);
   return existsSync(abs) && !!JSON.parse(readFileSync(abs, 'utf8')).suite?.assertion_digests;
+}
+
+/** The rows that read needs_slow at each revision, computed once per revision. */
+export function slowRows(cat: Catalogue): (revision: string) => Set<string> {
+  const memo = new Map<string, Set<string>>();
+  return (revision) => {
+    if (!memo.has(revision)) memo.set(revision, new Set(resolveCatalogue(cat, revision).filter((a) => a.needs_slow).map((a) => a.id)));
+    return memo.get(revision)!;
+  };
 }
