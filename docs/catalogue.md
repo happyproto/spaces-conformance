@@ -125,6 +125,7 @@ Equal lineage strings count as one, so two hosts built on the same `@atproto/*` 
 The passes come from `evidence/passes.json`. Per revision, it maps each assertion to the implementations it passed on, and it lists the results files it was built from. A pass at one revision says nothing about another, so each revision's rows clear on that revision's passes only.
 - Rebuild it with `node cli/passes.ts <results.json>...`. With no arguments, it rebuilds from the index's current sources.
 - Every source must be a committed results file of a real run, and must validate. Today the sources are `test/fixtures/results/parity-*`.
+- Every source must have run the image its implementation's manifest pins now. The lineage rule reads lineage from the current manifest, so an older image's passes would be credited with the new image's lineage. After a pin bump, rerun the source or exclude it with a reason.
 - `bun run validate` rebuilds the index from its sources and refuses any difference, so a pass can't be added by hand.
 - Every file in `test/fixtures/results/` must be either a source or listed under `excluded`, with a reason. `cli/passes.ts` keeps the exclusions.
 - **Per-assertion digests (HAP-432).** A run records, for each row that applies at its revision, a digest of the row as it reads there, the suite file that declares its test, the revision's text and lexicon commits, and the vector files of each area the row lists (`suite.assertion_digests`, `harness/digests.ts`).

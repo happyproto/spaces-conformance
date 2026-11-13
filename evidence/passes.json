@@ -28,15 +28,6 @@
       "revision": "2026-10-29"
     },
     {
-      "file": "test/fixtures/results/parity-reference-2026-11-12.json",
-      "implementation": "reference",
-      "run": "2026-11-12T18-03-47Z-reference-6a0f",
-      "suite_commit": "42a99dc9e1",
-      "assertions_digest": "sha256:fa1c42076a585234f089877bbfe0d38bb81eedee883d50bb18f1e5cd4b1e9f24",
-      "image": "ghcr.io/happyproto/pds-test/pds-spaces-alpha@sha256:1cf9349e9f0e89789784569fed376cd647742ea7c368948625f44779ba03f150",
-      "revision": "2026-10-29"
-    },
-    {
       "file": "test/fixtures/results/happyview-beta14-2026-11-13.json",
       "implementation": "happyview",
       "run": "2026-11-13T18-45-19Z-happyview-c0da",
@@ -66,6 +57,10 @@
     {
       "file": "test/fixtures/results/parity-pdsjs-2026-11-12.json",
       "reason": "The phase 3 parity run at HappyView's interop pins; superseded by parity-pdsjs-2026-11-13.json at the HAP-427 pins. Kept for docs/parity.md."
+    },
+    {
+      "file": "test/fixtures/results/parity-reference-2026-11-12.json",
+      "reason": "The phase 3 parity run at the old pds-spaces-alpha pin (1cf9349e). The manifest now pins 1b3113b4, so this run's passes would be credited with the new image's lineage. Kept for docs/parity.md; the reference counts again once it runs at the new pin."
     }
   ],
   "passes": {
@@ -77,13 +72,11 @@
       "digest.cid-drisl-plain": [
         "atproto-pds",
         "happyview",
-        "pdsjs",
-        "reference"
+        "pdsjs"
       ],
       "digest.cid-drisl-typed": [
         "atproto-pds",
-        "happyview",
-        "reference"
+        "happyview"
       ],
       "digest.covers-overwrite-and-delete": [
         "atproto-pds",
@@ -100,19 +93,16 @@
       "info.read-auth-status": [
         "atproto-pds",
         "happyview",
-        "pdsjs",
-        "reference"
+        "pdsjs"
       ],
       "info.unknown-method-status": [
         "atproto-pds",
         "happyview",
-        "pdsjs",
-        "reference"
+        "pdsjs"
       ],
       "lifecycle.implicit-create": [
         "atproto-pds",
-        "pdsjs",
-        "reference"
+        "pdsjs"
       ],
       "mac.commit-header-present": [
         "atproto-pds",
@@ -133,29 +123,24 @@
       ],
       "oplog.entry-shape": [
         "atproto-pds",
-        "pdsjs",
-        "reference"
+        "pdsjs"
       ],
       "oplog.fold-matches-commit": [
         "atproto-pds"
       ],
       "oplog.pagination-batch-boundary": [
-        "atproto-pds",
-        "reference"
+        "atproto-pds"
       ],
       "oplog.pagination-complete": [
-        "atproto-pds",
-        "reference"
+        "atproto-pds"
       ],
       "oplog.since-exclusive": [
         "atproto-pds",
-        "pdsjs",
-        "reference"
+        "pdsjs"
       ],
       "oplog.stale-values-omitted": [
         "atproto-pds",
-        "pdsjs",
-        "reference"
+        "pdsjs"
       ],
       "policy.create-get-roundtrip": [
         "atproto-pds",
@@ -169,8 +154,7 @@
       ],
       "records.apply-writes-atomic": [
         "atproto-pds",
-        "pdsjs",
-        "reference"
+        "pdsjs"
       ],
       "records.commit-bytes-encoding": [
         "atproto-pds",
@@ -186,14 +170,12 @@
       ],
       "records.crud-roundtrip": [
         "atproto-pds",
-        "pdsjs",
-        "reference"
+        "pdsjs"
       ],
       "records.read-requires-auth": [
         "atproto-pds",
         "happyview",
-        "pdsjs",
-        "reference"
+        "pdsjs"
       ]
     },
     "2026-11-12": {

@@ -29,7 +29,7 @@ Each implementation is graded at the revision its manifest claims. The results f
 - [zds](../test/fixtures/results/parity-zds-2026-11-13.json): 0 unexpected. Every must row passes at 2026-11-12. ZDS no longer serves `simplespace.createSpace`, so setup uses `oct29`.
 - [atproto-pds](../test/fixtures/results/parity-atproto-pds-2026-11-13.json): 0 unexpected. Every must row passes at 2026-10-29, with `oct29` setup.
 - [pds.js](../test/fixtures/results/parity-pdsjs-2026-11-13.json): 3 unexpected, the three policy rows (cause D). pds.js still serves only `simplespace.*`, and its `memberspace` methods answer 501.
-- The reference can't run on the machine that made these results yet: it's amd64 only, and amd64 emulation is broken there. Its file is still the one at the old pin.
+- The reference can't run on the machine that made these results yet: it's amd64 only, and amd64 emulation is broken there. Its file is still the one at the old pin, so it's excluded from the pass index: the reference counts toward the lineage rule again once it runs at the new pin.
 
 What changed from the old pins:
 - **Cause A is gone** on ZDS, pds.js and atproto-pds. Each serves the 0016 commit, and every commit and digest row passes, except `digest.cid-drisl-typed` on pds.js (cause F).
