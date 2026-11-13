@@ -48,12 +48,18 @@ export interface Assertion {
   areas: ('cbor' | 'lthash' | 'mac' | 'httpsig' | 'jwt' | 'star')[];
   /** Why a row in a crypto suite uses no harness crypto (areas: []). */
   no_crypto?: string;
+  /**
+   * Part of the row waits out a host-issued credential, so it runs only with
+   * --slow, and a run without it can't pass the row in full. The pass index
+   * refuses this row's passes from a source that ran without --slow.
+   */
+  needs_slow?: boolean;
   /** Per revision key, the fields that read differently from that revision on. */
   variants?: Record<string, Variant>;
 }
 
 /** What a later revision may change about a row: its spec citation, what it checks, and the crypto that check uses. */
-export type Variant = Partial<Pick<Assertion, 'section' | 'quote' | 'level' | 'basis' | 'lexicon' | 'params' | 'error' | 'checks' | 'areas' | 'no_crypto'>>;
+export type Variant = Partial<Pick<Assertion, 'section' | 'quote' | 'level' | 'basis' | 'lexicon' | 'params' | 'error' | 'checks' | 'areas' | 'no_crypto' | 'needs_slow'>>;
 
 export interface Catalogue {
   /** The base revision: every row's fields read as of this one, unless the row's since is later. */

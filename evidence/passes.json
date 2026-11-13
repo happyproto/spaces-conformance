@@ -7,7 +7,8 @@
       "suite_commit": "de52c940f7",
       "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
       "image": "ghcr.io/happyproto/pds-test/zds@sha256:2ec90ddaf8a94618a9654e010586ec503d0dd7c3ec23c9a8646e3b28ad2a998f",
-      "revision": "2026-11-12"
+      "revision": "2026-11-12",
+      "slow": false
     },
     {
       "file": "test/fixtures/results/parity-atproto-pds-2026-11-13.json",
@@ -16,7 +17,8 @@
       "suite_commit": "de52c940f7",
       "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
       "image": "ghcr.io/happyproto/pds-test/atproto-pds@sha256:0fe098d36c7fd8beedcdc3f68f4f8431eb4571cdf764599ee42520b22fa07a5f",
-      "revision": "2026-10-29"
+      "revision": "2026-10-29",
+      "slow": false
     },
     {
       "file": "test/fixtures/results/parity-pdsjs-2026-11-13.json",
@@ -25,7 +27,8 @@
       "suite_commit": "de52c940f7",
       "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
       "image": "ghcr.io/happyproto/pds-test/pdsjs@sha256:37c16c3499b54b799399118a24154d64e5397ea93a2b4da74c182f133f9e1bca",
-      "revision": "2026-10-29"
+      "revision": "2026-10-29",
+      "slow": false
     },
     {
       "file": "test/fixtures/results/happyview-beta14-2026-11-13.json",
@@ -34,7 +37,18 @@
       "suite_commit": "de52c940f7",
       "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
       "image": "ghcr.io/gamesgamesgamesgamesgames/happyview@sha256:147a27668f0fc87c2dcfde5103d01f51efe55c329273c8ae7ae292cdb87a7b93",
-      "revision": "2026-10-29"
+      "revision": "2026-10-29",
+      "slow": false
+    },
+    {
+      "file": "test/fixtures/results/parity-reference-2026-11-13.json",
+      "implementation": "reference",
+      "run": "2026-11-13T22-23-46Z-reference-8dc9",
+      "suite_commit": "58decb1d3e",
+      "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
+      "image": "ghcr.io/happyproto/pds-test/pds-spaces-alpha@sha256:1b3113b40eac2581b8f928bcec8840c8a0912c3a3d90bf3b965a775f8a97067a",
+      "revision": "2026-11-12",
+      "slow": false
     }
   ],
   "excluded": [
@@ -60,7 +74,11 @@
     },
     {
       "file": "test/fixtures/results/parity-reference-2026-11-12.json",
-      "reason": "The phase 3 parity run at the old pds-spaces-alpha pin (1cf9349e). The manifest now pins 1b3113b4, so this run's passes would be credited with the new image's lineage. Kept for docs/parity.md; the reference counts again once it runs at the new pin."
+      "reason": "The phase 3 parity run at the old pds-spaces-alpha pin (1cf9349e); superseded by parity-reference-2026-11-13.json at the HAP-427 pin. Kept for docs/parity.md."
+    },
+    {
+      "file": "test/fixtures/results/parity-reference-g1-2026-11-13.json",
+      "reason": "The reference at the HAP-427 pin graded at 2026-10-29, a revision it no longer claims: its lexicons are the 2026-11-12 set. It fails only the three policy rows that revision names differently. Kept for docs/parity.md."
     }
   ],
   "passes": {
@@ -180,102 +198,135 @@
     },
     "2026-11-12": {
       "deletion.credential-error": [
+        "reference",
         "zds"
       ],
       "digest.cid-drisl-plain": [
+        "reference",
         "zds"
       ],
       "digest.cid-drisl-typed": [
+        "reference",
         "zds"
       ],
       "digest.covers-overwrite-and-delete": [
+        "reference",
         "zds"
       ],
       "digest.matches-record-set": [
+        "reference",
         "zds"
       ],
       "digest.multi-batch": [
+        "reference",
         "zds"
       ],
       "info.read-auth-status": [
+        "reference",
         "zds"
       ],
       "info.unknown-method-status": [
+        "reference",
         "zds"
       ],
       "lifecycle.implicit-create": [
+        "reference",
         "zds"
       ],
       "mac.commit-header-present": [
+        "reference",
         "zds"
       ],
       "mac.commit-valid": [
+        "reference",
         "zds"
       ],
       "mac.kem-key-published": [
+        "reference",
         "zds"
       ],
       "mac.list-repo-ops-every-page": [
+        "reference",
         "zds"
       ],
       "mac.malformed-request-rejected": [
+        "reference",
         "zds"
       ],
       "mac.record-valid": [
+        "reference",
         "zds"
       ],
       "mac.vary-header": [
+        "reference",
         "zds"
       ],
       "oplog.commit-every-page": [
+        "reference",
         "zds"
       ],
       "oplog.entry-shape": [
+        "reference",
         "zds"
       ],
       "oplog.fold-matches-commit": [
+        "reference",
         "zds"
       ],
       "oplog.pagination-batch-boundary": [
+        "reference",
         "zds"
       ],
       "oplog.pagination-complete": [
+        "reference",
         "zds"
       ],
       "oplog.since-exclusive": [
+        "reference",
         "zds"
       ],
       "oplog.stale-values-omitted": [
+        "reference",
         "zds"
       ],
       "policy.create-get-roundtrip": [
+        "reference",
         "zds"
       ],
       "policy.member-methods": [
+        "reference",
         "zds"
       ],
       "policy.put-member-upsert": [
+        "reference",
         "zds"
       ],
       "records.apply-writes-atomic": [
+        "reference",
         "zds"
       ],
       "records.commit-bytes-encoding": [
+        "reference",
         "zds"
       ],
       "records.commit-fields": [
+        "reference",
         "zds"
       ],
       "records.commit-repo-space-match": [
+        "reference",
         "zds"
       ],
       "records.crud-roundtrip": [
+        "reference",
         "zds"
       ],
       "records.read-requires-auth": [
+        "reference",
         "zds"
       ],
       "xrpc.error.SpaceDeleted": [
+        "reference",
         "zds"
       ]
     }

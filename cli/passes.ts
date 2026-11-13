@@ -7,7 +7,7 @@
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative } from 'node:path';
 import { loadCatalogue } from '../harness/catalogue.ts';
-import { buildPassIndex, currentDigests, PASS_INDEX, type PassIndex, readSources } from '../harness/independence.ts';
+import { buildPassIndex, currentDigests, PASS_INDEX, type PassIndex, readSources, slowRows } from '../harness/independence.ts';
 import { formatProblem } from '../harness/problems.ts';
 import { ROOT } from '../harness/schema.ts';
 
@@ -29,7 +29,7 @@ if (problems.length) {
 }
 // Keep the reasoned exclusions; they're edited by hand.
 const excluded = existsSync(PASS_INDEX) ? ((JSON.parse(readFileSync(PASS_INDEX, 'utf8')) as PassIndex).excluded ?? []) : [];
-const index = buildPassIndex(files, excluded, currentDigests(cat));
+const index = buildPassIndex(files, excluded, currentDigests(cat), slowRows(cat));
 mkdirSync(dirname(PASS_INDEX), { recursive: true });
 writeFileSync(PASS_INDEX, `${JSON.stringify(index, null, 2)}\n`);
 const counts = Object.entries(index.passes).map(([rev, ids]) => `${Object.keys(ids).length} at ${rev}`);
