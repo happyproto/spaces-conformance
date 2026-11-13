@@ -180,9 +180,18 @@ export function runAssertion<C>(id: string, suite: string, ctx: C, fn: (ctx: C) 
   });
 }
 
+export interface AssertionOptions {
+  /**
+   * Vitest's timeout for this one test, for rows that must wait on the host
+   * (a retry, a credential's lifetime). The assertion deadline stays 2 s below it.
+   */
+  timeoutMs?: number;
+}
+
 /** fn may return a string: the observation, recorded as the result message (how info rows report). */
-export function assertion(id: string, fn: (ctx: RunContext) => Promise<void | string>) {
-  test(id, async (t) => {
+export function assertion(id: string, fn: (ctx: RunContext) => Promise<void | string>, o: AssertionOptions = {}) {
+  const deadlineMs = o.timeoutMs ? o.timeoutMs - 2_000 : ASSERTION_DEADLINE_MS;
+  test(id, { timeout: o.timeoutMs }, async (t) => {
     const ctx = await runContext();
     const a = ctx.byId.get(id);
     if (!a) {
@@ -201,7 +210,7 @@ export function assertion(id: string, fn: (ctx: RunContext) => Promise<void | st
       return;
     }
     try {
-      await runAssertion(id, a.suite, ctx, fn);
+      await runAssertion(id, a.suite, ctx, fn, deadlineMs);
     } catch (e) {
       if (e instanceof Pending) return t.skip(e.message);
       throw e;

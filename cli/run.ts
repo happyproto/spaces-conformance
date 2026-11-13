@@ -5,6 +5,7 @@
 //   node cli/run.ts pdsjs --suites digest,records --deviations path.yaml
 //   node cli/run.ts zds --setup-mode oct29    space creation through Oct 29 createSpace
 //   node cli/run.ts happyview --revision 2026-11-12   grade another revision it claims
+//   node cli/run.ts zds --slow                also run the checks that wait out a host-issued credential
 //
 // It brings up base + the implementation's fragment (+ its partner's), runs
 // the implementation's bootstrap.sh if it has one, runs the suites inside the
@@ -41,11 +42,12 @@ const { values, positionals } = parseArgs({
     'no-retry': { type: 'boolean', default: false },
     'setup-mode': { type: 'string' },
     revision: { type: 'string' },
+    slow: { type: 'boolean', default: false },
   },
 });
 const impl = positionals[0];
 if (!impl) {
-  console.error('usage: node cli/run.ts <implementation> [--keep] [--suites a,b] [--deviations file] [--setup-mode oct29|simplespace|auto] [--revision key] [--kind local]');
+  console.error('usage: node cli/run.ts <implementation> [--keep] [--suites a,b] [--deviations file] [--setup-mode oct29|simplespace|auto] [--revision key] [--slow] [--kind local]');
   process.exit(2);
 }
 const manifest = loadManifest(join(ROOT, 'implementations', impl, 'manifest.yaml'));
@@ -173,6 +175,7 @@ function attempt(n: number): Outcome {
       CONFORMANCE_PEERS: JSON.stringify(peers),
       SUITE_COMMIT: suiteCommit,
       CONFORMANCE_REVISION: revision,
+      CONFORMANCE_SLOW: values.slow ? '1' : '0',
       ...(values.suites ? { CONFORMANCE_SUITES: values.suites } : {}),
       ...(setupMode ? { CONFORMANCE_SPACES_MODE: setupMode } : {}),
       ...(deviations ? { CONFORMANCE_DEVIATIONS: `/suite/${deviations}` } : {}),
