@@ -19,12 +19,12 @@ capabilities:
 # Per area, at the pinned image's revision 8c97e950 (zat.dev/zds v0.12.2), with
 # zat v0.7.0-alpha.8. From this pin zds calls zat.space for all of them; zat's
 # space modules are its own Zig code, written to mirror @atproto/space's design.
-#   cbor    zat: src/storage/store.zig encodes and hashes records with zat.cbor
-#   lthash  zat: zat.space.LtHash (src/internal/space/lthash.zig, std Blake3)
-#   mac     zat: zat.space.mac (src/internal/space/mac.zig, std HKDF and HMAC)
-#   httpsig zat: zat.space.verifyCredentialUse (src/internal/space/http_signature.zig)
-#   jwt     zat: zat.space.token (src/internal/space/token.zig, over zat's crypto/jwt.zig)
-#   star    zat: getRepo serves STAR via zat.space.archive (src/internal/repo/star.zig)
+#   cbor    zat: zds's src/storage/store.zig encodes and hashes records with zat.cbor
+#   lthash  zat: zat.space.LtHash (zat's src/internal/space/lthash.zig, std Blake3)
+#   mac     zat: zat.space.mac (zat's src/internal/space/mac.zig with std HMAC; HKDF in kem.zig)
+#   httpsig zat: zat.space.verifyCredentialUse (zat's src/internal/space/http_signature.zig)
+#   jwt     zat: zat.space.token (zat's src/internal/space/token.zig, over its crypto/jwt.zig)
+#   star    zat: getRepo serves STAR via zat.space.archive (zat's src/internal/repo/star.zig)
 lineage: { cbor: zat, lthash: zat, mac: zat, httpsig: zat, jwt: zat, star: zat }
 compose: compose.yml
 base_url: https://zds.test
