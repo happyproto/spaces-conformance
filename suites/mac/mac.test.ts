@@ -15,7 +15,7 @@ import { CREDENTIAL_PENDING, requireAuthorKem, requireMac, requireMacHeader } fr
 import type { MacCheck } from '../../harness/actors/syncer.ts';
 import { didKey, generate, parseMultikey } from '../../harness/crypto/keys.ts';
 import { REPO_TYPE, parseMacHeader } from '../../harness/crypto/mac.ts';
-import { COMMIT_PROFILE, MAC_ALG, macRequestList } from '../../harness/crypto/macsig.ts';
+import { COMMIT_PROFILE, MAC_ALG, macRequestList, recordFromFields } from '../../harness/crypto/macsig.ts';
 import { isInnerList, parseDictionary, serializeDictionary, type SfDictionary, type SfInnerList } from '../../harness/crypto/sf.ts';
 import { COLLECTION, ownerSpace, settled } from '../fixtures.ts';
 import { commitOrFail, freshRepo, note, type Repo, setupWrites, syncerFor } from '../repo.ts';
@@ -151,8 +151,10 @@ assertion('mac.malformed-request-rejected', async (ctx) => {
   requireAuthorKem(target);
   // Control: a host that doesn't MAC this read at all (no space credential)
   // can't show that it refuses a bad request rather than ignoring it.
+  // getLatestCommit failing at all is graded elsewhere, so here it's pending.
   const control = await syncer.commit(target);
-  if (control.response.status !== 200) fail(`getLatestCommit answered ${control.response.status} to a well-formed MAC request`, { status: control.response.status });
+  if (control.response.status !== 200)
+    pending(`getLatestCommit answered ${control.response.status} to a well-formed MAC request, so a refusal below couldn't be told apart`);
   requireMac(control.mac);
   const list = (o: { params?: [string, string][]; keyid?: string } = {}): SfInnerList => {
     const l = macRequestList(COMMIT_PROFILE, o.keyid ?? didKey(generate('p256')));
@@ -176,6 +178,11 @@ assertion('mac.malformed-request-rejected', async (ctx) => {
   }
   if (answered.length) fail(`getLatestCommit answered ${answered.join('; ')} instead of refusing it`, { ...readAuth(repo), answers: JSON.stringify(answers) });
   if (unanswered.length) pending(`the host answered 429 or 5xx for ${unanswered.join('; ')}, so those requests weren't judged`);
+  // Control again: if a well-formed request no longer gets a MAC, the
+  // refusals above may be the host's state (a limit, a revoked session).
+  const after = await syncer.commit(target);
+  if (after.response.status !== 200 || !after.mac.present)
+    pending(`after the malformed requests a well-formed one got ${after.response.status}${after.response.status === 200 ? ' with no MAC' : ''}, so the refusals can't be told apart from host state`);
 });
 
 // A real check reads the author's repo as another account (caller != author)
@@ -215,4 +222,10 @@ assertion('mac.record-valid', async (ctx) => {
   if (response.status !== 200) fail(`getRecord answered ${response.status}`, evidence);
   requireMac(mac);
   if (!mac.verified) fail(`the record MAC doesn't verify: ${mac.reason}`, evidence);
+  // The body's own uri and cid, when given, must name the record the MAC covers.
+  const covered = recordFromFields(parseDictionary(mac.header!));
+  if (typeof covered !== 'string') {
+    if (response.body?.uri !== undefined && response.body.uri !== covered.uri) fail(`getRecord's uri ${response.body.uri} differs from the MAC's ${covered.uri}`, evidence);
+    if (response.body?.cid !== undefined && response.body.cid !== covered.cid) fail(`getRecord's cid ${response.body.cid} differs from the MAC's ${covered.cid}`, evidence);
+  }
 });

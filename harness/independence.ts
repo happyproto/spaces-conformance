@@ -179,7 +179,26 @@ export function readSources(paths: string[], cat: Catalogue): { files: { path: s
  * can't be added by hand. Every source must validate, and every committed
  * results file must be either a source or excluded with a reason.
  */
-export function validatePassIndex(cat: Catalogue, indexPath = PASS_INDEX, resultsDir = RESULTS_DIR): Problem[] {
+/** implementation id -> the image its manifest pins now (pins/images.env). */
+export function pinnedImages(): Map<string, string> {
+  const values = new Map(
+    readFileSync(join(ROOT, 'pins', 'images.env'), 'utf8')
+      .split('\n')
+      .map((l) => l.match(/^([A-Z0-9_]+)=(\S+)/))
+      .filter((m): m is RegExpMatchArray => !!m)
+      .map((m) => [m[1], m[2]] as const),
+  );
+  const out = new Map<string, string>();
+  const dir = join(ROOT, 'implementations');
+  for (const id of readdirSync(dir)) {
+    const m = join(dir, id, 'manifest.yaml');
+    const image = existsSync(m) ? values.get(loadManifest(m).image.pin) : undefined;
+    if (image) out.set(id, image);
+  }
+  return out;
+}
+
+export function validatePassIndex(cat: Catalogue, indexPath = PASS_INDEX, resultsDir = RESULTS_DIR, pinned: Map<string, string> = pinnedImages()): Problem[] {
   if (!existsSync(indexPath)) return [];
   const index: PassIndex = JSON.parse(readFileSync(indexPath, 'utf8'));
   const at = (where: string, message: string) => ({ file: 'evidence/passes.json', where, message });
@@ -191,6 +210,13 @@ export function validatePassIndex(cat: Catalogue, indexPath = PASS_INDEX, result
       if (!listed.has(path)) coverage.push(at(path, 'committed results file is neither a source nor excluded with a reason'));
     }
   for (const e of index.excluded ?? []) if (!existsSync(join(ROOT, e.file))) coverage.push(at(e.file, 'excluded file does not exist'));
+  // S5 reads each passer's lineage from its current manifest, so a source must
+  // have run the image that manifest pins: an older image's passes would be
+  // credited with the new image's lineage.
+  for (const src of index.sources) {
+    const image = pinned.get(src.implementation);
+    if (image && image !== src.image) coverage.push(at(src.file, `ran ${src.image}, but ${src.implementation} now pins ${image}: rerun it, or exclude it with a reason`));
+  }
   const { files, problems } = readSources(index.sources.map((s) => s.file), cat);
   problems.unshift(...coverage);
   if (problems.length) return problems;
