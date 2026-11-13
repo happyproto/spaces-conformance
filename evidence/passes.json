@@ -3,27 +3,27 @@
     {
       "file": "test/fixtures/results/parity-zds-2026-11-13.json",
       "implementation": "zds",
-      "run": "2026-11-13T18-09-22Z-zds-992c",
-      "suite_commit": "3205a7c158",
-      "assertions_digest": "sha256:bf633aed3981bed847ed69f10c4fb98b6ad69635735376e4e0b0ca0b5ff6e653",
+      "run": "2026-11-13T18-33-54Z-zds-9ef4",
+      "suite_commit": "ced098ff0d",
+      "assertions_digest": "sha256:dbb1305112b3b0b97bc143f8af3e0fabdaf5e331e89023a39144611443d62849",
       "image": "ghcr.io/happyproto/pds-test/zds@sha256:2ec90ddaf8a94618a9654e010586ec503d0dd7c3ec23c9a8646e3b28ad2a998f",
       "revision": "2026-11-12"
     },
     {
       "file": "test/fixtures/results/parity-atproto-pds-2026-11-13.json",
       "implementation": "atproto-pds",
-      "run": "2026-11-13T18-09-38Z-atproto-pds-de62",
-      "suite_commit": "3205a7c158",
-      "assertions_digest": "sha256:bf633aed3981bed847ed69f10c4fb98b6ad69635735376e4e0b0ca0b5ff6e653",
+      "run": "2026-11-13T18-34-12Z-atproto-pds-1eb1",
+      "suite_commit": "ced098ff0d",
+      "assertions_digest": "sha256:dbb1305112b3b0b97bc143f8af3e0fabdaf5e331e89023a39144611443d62849",
       "image": "ghcr.io/happyproto/pds-test/atproto-pds@sha256:0fe098d36c7fd8beedcdc3f68f4f8431eb4571cdf764599ee42520b22fa07a5f",
       "revision": "2026-10-29"
     },
     {
       "file": "test/fixtures/results/parity-pdsjs-2026-11-13.json",
       "implementation": "pdsjs",
-      "run": "2026-11-13T18-09-07Z-pdsjs-7506",
-      "suite_commit": "3205a7c158",
-      "assertions_digest": "sha256:bf633aed3981bed847ed69f10c4fb98b6ad69635735376e4e0b0ca0b5ff6e653",
+      "run": "2026-11-13T18-34-30Z-pdsjs-8a81",
+      "suite_commit": "ced098ff0d",
+      "assertions_digest": "sha256:dbb1305112b3b0b97bc143f8af3e0fabdaf5e331e89023a39144611443d62849",
       "image": "ghcr.io/happyproto/pds-test/pdsjs@sha256:37c16c3499b54b799399118a24154d64e5397ea93a2b4da74c182f133f9e1bca",
       "revision": "2026-10-29"
     },
@@ -39,9 +39,9 @@
     {
       "file": "test/fixtures/results/happyview-beta14-2026-11-13.json",
       "implementation": "happyview",
-      "run": "2026-11-13T18-09-53Z-happyview-0a24",
-      "suite_commit": "3205a7c158",
-      "assertions_digest": "sha256:bf633aed3981bed847ed69f10c4fb98b6ad69635735376e4e0b0ca0b5ff6e653",
+      "run": "2026-11-13T18-38-49Z-happyview-b34d",
+      "suite_commit": "ced098ff0d",
+      "assertions_digest": "sha256:dbb1305112b3b0b97bc143f8af3e0fabdaf5e331e89023a39144611443d62849",
       "image": "ghcr.io/gamesgamesgamesgamesgames/happyview@sha256:147a27668f0fc87c2dcfde5103d01f51efe55c329273c8ae7ae292cdb87a7b93",
       "revision": "2026-10-29"
     }

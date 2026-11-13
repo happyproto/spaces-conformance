@@ -239,11 +239,26 @@ describe('revisions', () => {
     expect(msgs(row({ ...listRepoOps, variants: { [G2]: { quote: g2Quote, section: g2Section, basis: ['definition'] } } }))).toEqual([]);
   });
 
+  it('refuses an until that drops a row whose citation still holds later, unless it says why', () => {
+    const msgs = (a: Assertion) => validateCatalogue(catalogueOf(a), 'f', texts, revKeys).map((x) => x.message);
+    const crud = cat.assertions.find((a) => a.id === 'records.crud-roundtrip')!;
+    expect(msgs({ ...crud, until: G1 })).toEqual([`until ${G1}, but its quote, section and lexicons still hold at ${G2}: give it a variant, or an ended reason`]);
+    expect(msgs({ ...crud, until: G1, ended: 'test: retired on purpose' })).toEqual([]);
+    const listRepoOps = row({ section: '#incremental-sync', quote: g1Quote, basis: ['keyword'], suite: 'mac', areas: ['mac'] });
+    expect(msgs({ ...listRepoOps, until: G1, ended: 'not needed' })).toEqual(['ended is only for an until whose citation still holds at a later revision']);
+  });
+
   it('checks lexicons at each revision against that revision\'s pins', () => {
     const lexRow = (over: Partial<Assertion>) => row({ basis: ['lexicon'], quote: undefined, section: undefined, suite: 'writer-set', areas: [], ...over });
     const msgs = (a: Assertion) => validateCatalogue(catalogueOf(a), 'f', texts, revKeys).map((x) => x.message);
     expect(msgs(lexRow({ lexicon: 'com.atproto.space.listRepos' }))).toEqual([`lexicon com.atproto.space.listRepos is not in the lexicons pinned for ${G2}`]);
     expect(msgs(lexRow({ lexicon: 'com.atproto.space.listRepos', variants: { [G2]: { lexicon: 'com.atproto.space.listWriters' } } }))).toEqual([]);
+  });
+
+  it('refuses revision keys that are not ISO dates, since they order as strings', () => {
+    const p = validateCatalogue(catalogueOf(row({})), 'f', texts, [...revKeys, '2026-1-5']).map((x) => x.message);
+    expect(p).toContain('revision key 2026-1-5 in spec/revisions.json is not a YYYY-MM-DD date');
+    expect(validateCatalogue(catalogueOf(row({ until: 'G1' })), 'f', texts, revKeys).map((x) => x.message).join()).toMatch(/must match pattern/);
   });
 
   it('refuses variant keys that are unknown, not after since, or past until', () => {

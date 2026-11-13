@@ -340,8 +340,19 @@ describe('per-assertion digests (HAP-432)', () => {
     const d = assertionDigest(base, 'src');
     expect(assertionDigest({ ...base, checks: `${base.checks} more` }, 'src')).not.toBe(d);
     expect(assertionDigest(base, 'src2')).not.toBe(d);
+    expect(assertionDigest(base, 'src', 'pin other')).not.toBe(d);
     const reordered = Object.fromEntries(Object.entries(base).reverse()) as typeof base;
     expect(assertionDigest(reordered, 'src')).toBe(d);
+  });
+
+  it('folds in the revision pins and the vector files of the row\'s areas', () => {
+    const one = (a: typeof base, rev: string) => assertionDigests({ ...cat, assertions: [a] }, rev, new Map())[a.id];
+    const plain = { ...base, variants: undefined, until: undefined, since: undefined };
+    // The same row, unchanged, digests differently at each pinned revision.
+    expect(one(plain, '2026-10-29')).not.toBe(one(plain, '2026-11-12'));
+    // A row's areas bring their vector files in; a row with none digests without them.
+    expect(one({ ...plain, areas: ['cbor'] }, '2026-10-29')).not.toBe(one({ ...plain, areas: [] }, '2026-10-29'));
+    expect(one({ ...plain, areas: ['cbor'] }, '2026-10-29')).not.toBe(one({ ...plain, areas: ['star'] }, '2026-10-29'));
   });
 
   it('covers exactly the rows that apply at a revision', () => {
