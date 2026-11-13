@@ -3,7 +3,7 @@ import { Syncer } from '../../harness/actors/syncer.ts';
 import { hex } from '../../harness/crypto/bytes.ts';
 import { recordCid } from '../../harness/crypto/drisl.ts';
 import { COLLECTION, xrpcUrl } from '../fixtures.ts';
-import { commitOrFail, createOp, expectedDigest, freshRepo, note, type Repo, setupWrites, syncerFor } from '../repo.ts';
+import { commitOrFail, createOp, expectedDigest, freshRepo, gradedApply, note, type Repo, setupWrites, syncerFor } from '../repo.ts';
 
 const cid = (v: unknown) => recordCid(v).toString();
 type Op = { rev: string; collection: string; rkey: string; cid: string | null; prev: string | null; value?: unknown };
@@ -82,7 +82,8 @@ assertion('oplog.pagination-complete', async (ctx) => {
 
 assertion('oplog.pagination-batch-boundary', async (ctx) => {
   const repo = await freshRepo(ctx);
-  await setupWrites(repo).apply([createOp('m1', note(1)), createOp('m2', note(2)), createOp('m3', note(3))]);
+  // The batch is what this row checks, so a refused applyWrites is a fail.
+  await gradedApply(repo, [createOp('m1', note(1)), createOp('m2', note(2)), createOp('m3', note(3))]);
   const log = await readLog(repo, { limit: 2 });
   const got = log.ops.map((o) => o.rkey).sort();
   if (got.join() !== 'm1,m2,m3') fail(`a page boundary inside one applyWrites batch lost ops: got [${got.join(', ')}]`, { pages: JSON.stringify(log.pages.map((p) => p.ops)), ops: brief(log.ops) });

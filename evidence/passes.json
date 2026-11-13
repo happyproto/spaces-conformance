@@ -35,6 +35,15 @@
       "assertions_digest": "sha256:fa1c42076a585234f089877bbfe0d38bb81eedee883d50bb18f1e5cd4b1e9f24",
       "image": "ghcr.io/happyproto/pds-test/pds-spaces-alpha@sha256:1cf9349e9f0e89789784569fed376cd647742ea7c368948625f44779ba03f150",
       "revision": "2026-10-29"
+    },
+    {
+      "file": "test/fixtures/results/happyview-beta14-2026-11-13.json",
+      "implementation": "happyview",
+      "run": "2026-11-13T18-29-08Z-happyview-f35c",
+      "suite_commit": "9d8cee60a9",
+      "assertions_digest": "sha256:ef34c2a891b609a1d7ea22ffe2026a828889c3c77d9dbc092cc5a3a19c26e078",
+      "image": "ghcr.io/gamesgamesgamesgamesgames/happyview@sha256:147a27668f0fc87c2dcfde5103d01f51efe55c329273c8ae7ae292cdb87a7b93",
+      "revision": "2026-10-29"
     }
   ],
   "excluded": [
@@ -51,23 +60,27 @@
     "2026-10-29": {
       "digest.cid-drisl-plain": [
         "atproto-pds",
+        "happyview",
         "pdsjs",
         "reference",
         "zds"
       ],
       "digest.cid-drisl-typed": [
         "atproto-pds",
+        "happyview",
         "reference",
         "zds"
       ],
       "info.read-auth-status": [
         "atproto-pds",
+        "happyview",
         "pdsjs",
         "reference",
         "zds"
       ],
       "info.unknown-method-status": [
         "atproto-pds",
+        "happyview",
         "pdsjs",
         "reference",
         "zds"
@@ -79,6 +92,7 @@
         "zds"
       ],
       "mac.kem-key-published": [
+        "happyview",
         "pdsjs"
       ],
       "oplog.entry-shape": [
@@ -109,6 +123,9 @@
         "reference",
         "zds"
       ],
+      "policy.create-get-roundtrip": [
+        "happyview"
+      ],
       "records.apply-writes-atomic": [
         "atproto-pds",
         "pdsjs",
@@ -123,6 +140,7 @@
       ],
       "records.read-requires-auth": [
         "atproto-pds",
+        "happyview",
         "pdsjs",
         "reference",
         "zds"

@@ -20,7 +20,7 @@
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { loadCatalogue } from '../harness/catalogue.ts';
@@ -28,7 +28,7 @@ import { loadCheckedDeviations } from '../harness/deviations.ts';
 import { loadManifest } from '../harness/manifest.ts';
 import { formatProblem } from '../harness/problems.ts';
 import { validateResults } from '../harness/results.ts';
-import { loadRevisions } from '../harness/spec.ts';
+import { loadRevisions, USER_AGENT } from '../harness/spec.ts';
 import { ROOT } from '../harness/schema.ts';
 
 const { values, positionals } = parseArgs({
@@ -99,9 +99,42 @@ const peers = [
   { id: 'plc', image: pins.PLC_IMAGE },
 ];
 const deviations =
-  values.deviations ?? (typeof manifest.deviations === 'string' ? `implementations/${impl}/${manifest.deviations}` : undefined);
-if (manifest.deviations && typeof manifest.deviations === 'object' && !values.deviations)
-  console.warn(`note: ${impl}'s deviations live in ${manifest.deviations.repo}; pass --deviations to apply them`);
+  values.deviations ??
+  (typeof manifest.deviations === 'string'
+    ? `implementations/${impl}/${manifest.deviations}`
+    : manifest.deviations
+      ? await remoteDeviations(manifest.deviations, images[impl])
+      : undefined);
+
+/**
+ * A list kept in the implementation's own repo (design ch. 4.3): read at the
+ * commit the pinned image was built from (its org.opencontainers.image.revision
+ * label), so a fix and the removal of its entry land together. It's saved
+ * under results-local/ so the harness container can read it. With no label,
+ * or no file at that commit, the run goes ahead with no list, and says so.
+ */
+async function remoteDeviations(where: { repo: string; path: string }, image: string): Promise<string | undefined> {
+  const pull = spawnSync('docker', ['pull', '-q', image], { stdio: 'pipe', encoding: 'utf8' });
+  const label = pull.status === 0
+    ? spawnSync('docker', ['image', 'inspect', '--format', '{{index .Config.Labels "org.opencontainers.image.revision"}}', image], { encoding: 'utf8' }).stdout.trim()
+    : '';
+  if (!/^[0-9a-f]{40}$/.test(label)) {
+    console.warn(`note: ${image} has no revision label; running ${impl} with no deviation list (pass --deviations to apply one)`);
+    return undefined;
+  }
+  const url = `https://raw.githubusercontent.com/${where.repo}/${label}/${where.path}`;
+  const r = await fetch(url, { headers: { 'user-agent': USER_AGENT } });
+  if (r.status === 404) {
+    console.warn(`note: ${where.repo} has no ${where.path} at ${label.slice(0, 10)}; running ${impl} with no deviation list (pass --deviations to apply one)`);
+    return undefined;
+  }
+  if (!r.ok) throw new Error(`fetching ${url}: HTTP ${r.status}`);
+  const out = `results-local/deviations/${impl}-${label.slice(0, 10)}.yaml`;
+  mkdirSync(join(ROOT, 'results-local', 'deviations'), { recursive: true });
+  writeFileSync(join(ROOT, out), await r.text());
+  console.log(`deviations: ${where.repo}/${where.path} at ${label.slice(0, 10)}`);
+  return out;
+}
 // Validate the list before the stack starts: an entry without `expect`, or
 // with a pattern that matches anything, would cover any failure.
 if (deviations) {

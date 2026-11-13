@@ -7,6 +7,8 @@ image:
   pin: HAPPYVIEW_IMAGE
   dispatch_target: happyview
   platforms: [linux/amd64, linux/arm64]
+# 3.0.0-beta.14 predates HappyView's 2026-11-12 support (#467), so it claims
+# only the Oct 29 revision. The pin bump to the first release with #467 adds it.
 spec_revisions: ["2026-10-29"]
 roles: [space-host, repo-host]
 profile: bespoke-space-host
@@ -21,13 +23,14 @@ capabilities:
   oauth:
     # Through pds.js's headless consent (phase 0 spike 1).
     scripted: true
-# Per area, at the pinned 9f084f5c:
+# Per area, at the pinned 3.0.0-beta.14 (65c76e35):
 #   cbor    serde_ipld_dagcbor 0.6: crates/happyview-provider/src/cid.rs record_to_dag_cbor
 #   lthash  happyview: src/spaces/lthash.rs
 #   mac     happyview: src/spaces/space_mac.rs
 #   httpsig happyview: src/spaces/http_signature.rs
 #   jwt     happyview: src/spaces/credential.rs verifies credentials and delegation tokens itself
-#   star    none at 9f084f5c (crates/happyview-star landed later), so unknown
+#   star    unknown: crates/happyview-star exists, but getRepo still serves a CAR
+#           (src/spaces/routes.rs, application/vnd.ipld.car), so nothing graded uses it
 lineage: { cbor: serde_ipld_dagcbor, lthash: happyview, mac: happyview, httpsig: happyview, jwt: happyview }
 compose: compose.yml
 base_url: https://happyview.test
@@ -41,6 +44,7 @@ accounts:
 spaces:
   authority: own-did
   create: oct29
+setup: adapter.ts
 bootstrap: seed.sql
 deviations: { repo: gamesgamesgamesgamesgames/happyview, path: interop/conformance-deviations.yaml }
 limits:

@@ -44,6 +44,16 @@ export function writes(repo: Repo) {
   };
 }
 
+/**
+ * applyWrites as a graded step, for rows whose check is about what a batch
+ * does: a refusal of the spec-shaped call is that row's fail, not setup.
+ */
+export async function gradedApply(repo: Repo, ws: unknown[]): Promise<HttpResponse> {
+  const r = await writes(repo).apply(ws);
+  if (r.status >= 300) fail(`applyWrites (${ws.length} writes) answered ${r.status}`, { body: JSON.stringify(r.body).slice(0, 1000) });
+  return r;
+}
+
 /** Writes as setup: a refusal is `error`, because these assertions grade what comes after. */
 export function setupWrites(repo: Repo) {
   const w = writes(repo);
