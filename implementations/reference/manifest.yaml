@@ -6,7 +6,11 @@ image:
   pin: PDS_SPACES_ALPHA_IMAGE
   dispatch_target: pds-spaces-alpha
   platforms: [linux/amd64]
-spec_revisions: ["2026-10-29"]
+# At the HAP-427 pin (atproto b27a037c) the image's space lexicons equal the
+# 2026-11-12 set (d4def6e9), so it claims that revision. Graded at
+# 2026-10-29 it fails only the three policy rows, whose methods that revision
+# names differently.
+spec_revisions: ["2026-11-12"]
 roles: [pds, repo-host, space-host]
 profile: pds
 capabilities:

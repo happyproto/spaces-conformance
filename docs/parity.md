@@ -21,7 +21,7 @@ On Nov 13, 2026, the four pds-test pins moved to their newest images. PLC is unc
 | ZDS | `pds-test/zds@sha256:2ec90ddaf8a9…` | zat.dev/zds `8c97e950` | 2026-11-12 |
 | pds.js | `pds-test/pdsjs@sha256:37c16c3499b5…` | chadtmiller.com/pds.js `72a7c998` | 2026-10-29 |
 | atproto-pds | `pds-test/atproto-pds@sha256:0fe098d36c7f…` | ngerakines.me/atproto-crates `dc4adf25` | 2026-10-29 |
-| reference (`pds-spaces-alpha`) | `pds-test/pds-spaces-alpha@sha256:1b3113b40eac…` | bluesky-social/atproto `b27a037c` | not run yet |
+| reference (`pds-spaces-alpha`) | `pds-test/pds-spaces-alpha@sha256:1b3113b40eac…` | bluesky-social/atproto `b27a037c` | 2026-11-12 |
 
 These pins differ from HappyView's `interop/images.env`, so these results can't be compared with HappyView's interop runs.
 
@@ -29,7 +29,10 @@ Each implementation is graded at the revision its manifest claims. The results f
 - [zds](../test/fixtures/results/parity-zds-2026-11-13.json): 0 unexpected. Every must row passes at 2026-11-12. ZDS no longer serves `simplespace.createSpace`, so setup uses `oct29`.
 - [atproto-pds](../test/fixtures/results/parity-atproto-pds-2026-11-13.json): 0 unexpected. Every must row passes at 2026-10-29, with `oct29` setup.
 - [pds.js](../test/fixtures/results/parity-pdsjs-2026-11-13.json): 3 unexpected, the three policy rows (cause D). pds.js still serves only `simplespace.*`, and its `memberspace` methods answer 501.
-- The reference can't run on the machine that made these results yet: it's amd64 only, and amd64 emulation is broken there. Its file is still the one at the old pin, so it's excluded from the pass index: the reference counts toward the lineage rule again once it runs at the new pin.
+- [reference](../test/fixtures/results/parity-reference-2026-11-13.json): 0 unexpected. Every must row passes at 2026-11-12, with `oct29` setup. Its space lexicons at this pin are the 2026-11-12 set (`d4def6e9`), so its manifest now claims that revision. It runs emulated (amd64) on Apple Silicon.
+  - Graded at 2026-10-29 as well ([results](../test/fixtures/results/parity-reference-g1-2026-11-13.json)), it fails only the three policy rows, whose methods that revision names differently (as ZDS does). That file is kept for the record and excluded from the pass index, since the reference no longer claims the revision.
+  - The old-pin file, `parity-reference-2026-11-12.json`, stays excluded.
+  - With ZDS (zat) and the reference (@atproto/space) both passing at 2026-11-12, 33 rows there now have passes on two implementations of independent lineage.
 
 What changed from the old pins:
 - **Cause A is gone** on ZDS, pds.js and atproto-pds. Each serves the 0016 commit, and every commit and digest row passes, except `digest.cid-drisl-typed` on pds.js (cause F).
