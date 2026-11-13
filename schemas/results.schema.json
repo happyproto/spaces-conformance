@@ -55,6 +55,10 @@
           "type": "integer",
           "minimum": 1
         },
+        "slow": {
+          "description": "Whether the run had --slow: the checks that wait out a host-issued credential ran. Absent in files from before the flag, which means false.",
+          "type": "boolean"
+        },
         "ci_url": {
           "type": "string",
           "format": "uri"

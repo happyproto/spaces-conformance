@@ -145,3 +145,20 @@ One JSON file per run (design ch. 7.1). Statuses are raw: `pass`, `fail`, `error
 - no role has more passes than applicable assertions.
 
 A rerun after an `error` (`cli/run.ts`) keeps the earlier attempt in `run.previous_attempts`, with its failed and errored ids. A result that passed only on the rerun carries `flaky`. `verdict` shows it as "pass (flaky)": it's scored as a pass but warns. When the stack or bootstrap failed first, `run.infrastructure` says where.
+
+`run.slow` records whether the run had `--slow`. Some checks wait out a credential the host issued, which takes 10 minutes by default: the expiry part of `writers.register-expiry`, and the lapsed registration in `deletion.notify-space-deleted`. Without `--slow` those parts pend with "needs --slow: waits out a host-issued credential", and the rest of each row is still graded. A file with no `run.slow` predates the flag and counts as a run without it.
+
+## Pending or fail
+
+A row's test grades one thing: the method or behaviour its `checks` names. Everything else it calls is setup or a control. One rule applies across the suites:
+
+| The host answers... | On a setup step or control | On the method under test |
+|---|---|---|
+| 2xx as expected | the test goes on | graded |
+| a refusal (4xx) | `skip` (pending): the row can't be set up | `fail` |
+| 501 (not implemented) | `skip` (pending) | `fail`: not implementing a required method is a real gap |
+| 429, or a 5xx other than 501 | `skip` (pending) | `skip` (pending): says nothing about the row |
+
+- A setup step that throws in harness or adapter code (an account, a space for an ordinary row) is `error`, through `setup()`.
+- A negative check (the host must refuse something) runs a control before it, and after it where host state could change, so a refusal caused by the host's state isn't graded as the refusal under test.
+- A notification that never arrives within the row's window is a `fail` once its controls passed. The window is in the evidence.

@@ -50,6 +50,8 @@ export interface ServiceAuthCheck {
   claims?: Record<string, unknown>;
   /** Whether the token names its method. 0016 doesn't require lxm here, so a missing one is accepted but visible. */
   lxm_present?: boolean;
+  /** The audience the token named, when it was one the harness accepts. */
+  aud?: string;
   /** Which form of `aud` the token used: the bare DID, or DID#service. */
   aud_form?: 'did' | 'did#service';
 }
@@ -57,9 +59,9 @@ export interface ServiceAuthCheck {
 /**
  * Verify an inbound service-auth JWT (atproto inter-service auth): signed by
  * the issuer's #atproto key, addressed to `aud` (with or without the service
- * fragment), for method `lxm`, not expired.
+ * fragment; any of several when `aud` is a list), for method `lxm`, not expired.
  */
-export async function verifyServiceAuth(authorization: string | undefined, want: { aud: string; lxm: string }, resolver: Resolver): Promise<ServiceAuthCheck> {
+export async function verifyServiceAuth(authorization: string | undefined, want: { aud: string | string[]; lxm: string }, resolver: Resolver): Promise<ServiceAuthCheck> {
   const token = /^Bearer (.+)$/i.exec(authorization ?? '')?.[1];
   if (!token) return { ok: false, reason: 'no Bearer service auth' };
   let jwt;
@@ -70,9 +72,13 @@ export async function verifyServiceAuth(authorization: string | undefined, want:
   }
   const c = jwt.payload;
   const iss = String(c.iss ?? '');
-  const audOk = c.aud === want.aud || c.aud === want.aud.split('#')[0];
-  const shape = { lxm_present: c.lxm !== undefined, ...(audOk ? { aud_form: (String(c.aud).includes('#') ? 'did#service' : 'did') as ServiceAuthCheck['aud_form'] } : {}) };
-  if (!audOk) return { ok: false, reason: `aud ${String(c.aud)} is not ${want.aud}`, iss, claims: c, ...shape };
+  const auds = Array.isArray(want.aud) ? want.aud : [want.aud];
+  const audOk = auds.some((a) => c.aud === a || c.aud === a.split('#')[0]);
+  const shape = {
+    lxm_present: c.lxm !== undefined,
+    ...(audOk ? { aud: String(c.aud), aud_form: (String(c.aud).includes('#') ? 'did#service' : 'did') as ServiceAuthCheck['aud_form'] } : {}),
+  };
+  if (!audOk) return { ok: false, reason: `aud ${String(c.aud)} is not ${auds.join(' or ') || 'one the harness serves'}`, iss, claims: c, ...shape };
   if (c.lxm !== undefined && c.lxm !== want.lxm) return { ok: false, reason: `lxm ${String(c.lxm)} is not ${want.lxm}`, iss, claims: c, ...shape };
   if (typeof c.exp !== 'number' || c.exp * 1000 < Date.now()) return { ok: false, reason: 'expired or no exp', iss, claims: c, ...shape };
   const issDid = iss.split('#')[0];

@@ -3,11 +3,14 @@ import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { HARNESS_DID, MANAGING_APP_SERVICE, Resolver, SYNCER_SERVICE, verifyServiceAuth } from '../harness/actors/identity.ts';
 import type { DidDocument, Plc } from '../harness/actors/plc.ts';
+import { authorityKey, ForeignAuthority } from '../harness/actors/authority.ts';
 import { Receiver } from '../harness/actors/receiver.ts';
+import { latestByRepo, SpaceSync } from '../harness/actors/space-sync.ts';
+import { verifyPresentation } from '../harness/crypto/httpsig.ts';
 import { checkCommitMac, checkCommitMacSig, checkRecordMacSig, Syncer } from '../harness/actors/syncer.ts';
 import { b64, hex } from '../harness/crypto/bytes.ts';
 import { recordCid, encode, fromLexJson } from '../harness/crypto/drisl.ts';
-import { signJwt } from '../harness/crypto/jwt.ts';
+import { decodeJwt, signJwt, verifyJwt } from '../harness/crypto/jwt.ts';
 import { hostExportSecret, hostSharedSecret, syncerExportSecret } from '../harness/crypto/kem.ts';
 import { COMMIT_PROFILE, commitHeader, macRequestList, macResponseHeaders, RECORD_PROFILE, recordHeader } from '../harness/crypto/macsig.ts';
 import { didKey, generate, multikey, parseDidKey } from '../harness/crypto/keys.ts';
@@ -220,7 +223,7 @@ describe('service auth and the receiver', () => {
   it('records notifyWrite with its auth check, and refuses bad auth', async () => {
     const ok = await post('com.atproto.space.notifyWrite', { space: SPACE, repo: REPO, repoRev: '3mzu00000002' });
     expect(ok.status).toBe(200);
-    const e = await rx.waitFor((x) => x.method === 'com.atproto.space.notifyWrite' && x.auth.ok);
+    const e = await rx.waitFor((x) => x.method === 'com.atproto.space.notifyWrite' && x.auth?.ok === true);
     expect(e.input.repoRev).toBe('3mzu00000002');
     const badAuth = await post('com.atproto.space.notifyWrite', { space: SPACE }, token({ aud: 'did:web:other' }));
     expect(badAuth.status).toBe(401);
@@ -242,7 +245,7 @@ describe('service auth and the receiver', () => {
     expect((await ask('did:plc:member', 'read')).body).toEqual({ authorized: true });
     expect((await ask('did:plc:member', 'write')).body).toEqual({ authorized: false });
     const e = await rx.waitFor((x) => x.method === 'com.atproto.managedspace.checkUserAccess' && x.input.access === 'write');
-    expect(e.auth.ok).toBe(true);
+    expect(e.auth?.ok).toBe(true);
   });
 
   it('waitFor from a mark ignores earlier events', async () => {
@@ -258,5 +261,173 @@ describe('service auth and the receiver', () => {
 
   it('round trips a did:key through multikey', () => {
     expect(parseDidKey(`did:key:${multikey(key)}`).curve).toBe('p256');
+  });
+});
+
+describe('the receiver as syncer and as a foreign authority\'s space host', () => {
+  const repoKey = generate('p256');
+  const repoDid = 'did:plc:repohost-user';
+  const foreign = new ForeignAuthority('did:plc:harness-authority', authorityKey('unit'));
+  const resolver = stubResolver({
+    [repoDid]: { id: repoDid, verificationMethod: [{ id: `${repoDid}#atproto`, type: 'Multikey', controller: repoDid, publicKeyMultibase: multikey(repoKey) }] },
+  });
+  let rx: Receiver, url: string;
+  beforeAll(async () => {
+    rx = new Receiver(resolver);
+    rx.hostFor(foreign.did);
+    await rx.listen(0, '127.0.0.1');
+    url = `http://127.0.0.1:${((rx as any).server.address() as AddressInfo).port}`;
+  });
+  afterAll(() => rx.close());
+  const post = (method: string, body: unknown, headers: Record<string, string> = {}) =>
+    http(`${url}/xrpc/${method}`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) });
+  const serviceAuth = (aud: string, lxm: string) =>
+    `Bearer ${signJwt({ typ: 'JWT' }, { iss: repoDid, aud, lxm, exp: Math.floor(Date.now() / 1000) + 60 }, repoKey)}`;
+
+  it('echoes confirmRegistration only for a token it issued for that space', async () => {
+    const token = rx.issue(SPACE);
+    const ok = await post('com.atproto.space.confirmRegistration', { space: SPACE, token, challenge: 'c-1' });
+    expect(ok.status).toBe(200);
+    expect(ok.body).toEqual({ challenge: 'c-1' });
+    const otherSpace = await post('com.atproto.space.confirmRegistration', { space: `${SPACE}x`, token, challenge: 'c-2' });
+    expect(otherSpace.status).toBe(400);
+    const unknown = await post('com.atproto.space.confirmRegistration', { space: SPACE, token: 'nope', challenge: 'c-3' });
+    expect(unknown.status).toBe(400);
+    expect(rx.since(0, (e) => e.method === 'com.atproto.space.confirmRegistration').map((e) => e.token_ok)).toEqual([true, false, false]);
+  });
+
+  it('can be scripted to answer a wrong challenge', async () => {
+    const token = rx.issue(SPACE);
+    rx.respond('com.atproto.space.confirmRegistration', () => ({ status: 200, body: { challenge: 'not-it' } }));
+    expect((await post('com.atproto.space.confirmRegistration', { space: SPACE, token, challenge: 'c-4' })).body).toEqual({ challenge: 'not-it' });
+    rx.respond('com.atproto.space.confirmRegistration', undefined);
+  });
+
+  it('records notifySpaceUpdate with its token check and refuses unknown tokens', async () => {
+    const token = rx.issue(SPACE);
+    const from = rx.mark();
+    const update = { $type: 'com.atproto.space.defs#repoWrite', repo: repoDid, repoRev: '3mzu00000005', data: { $bytes: 'AA' }, spaceRev: '3mzu00000006' };
+    expect((await post('com.atproto.space.notifySpaceUpdate', { space: SPACE, token, update })).status).toBe(200);
+    expect((await post('com.atproto.space.notifySpaceUpdate', { space: SPACE, token: 'nope', update })).status).toBe(400);
+    expect(rx.since(from).map((e) => [e.token_ok, e.answered])).toEqual([[true, 200], [false, 400]]);
+  });
+
+  it('takes notifyRepoUpdate addressed to the authority it hosts, and refuses other audiences', async () => {
+    const m = 'com.atproto.space.notifyRepoUpdate';
+    const from = rx.mark();
+    expect((await post(m, { space: SPACE, repo: repoDid }, { authorization: serviceAuth(`${foreign.did}#atproto_pds`, m) })).status).toBe(200);
+    expect((await post(m, { space: SPACE, repo: repoDid }, { authorization: serviceAuth(foreign.did, m) })).status).toBe(200);
+    expect((await post(m, { space: SPACE, repo: repoDid }, { authorization: serviceAuth(SYNCER_SERVICE, m) })).status).toBe(401);
+    expect(rx.since(from).map((e) => e.auth?.aud ?? e.auth?.reason)).toEqual([`${foreign.did}#atproto_pds`, foreign.did, expect.stringMatching(/aud/)]);
+  });
+
+  it('takes G1 notifyWrite addressed either to the syncer or to the authority', async () => {
+    const m = 'com.atproto.space.notifyWrite';
+    expect((await post(m, { space: SPACE }, { authorization: serviceAuth(SYNCER_SERVICE, m) })).status).toBe(200);
+    expect((await post(m, { space: SPACE }, { authorization: serviceAuth(foreign.did, m) })).status).toBe(200);
+  });
+
+  it('maybe() answers undefined when nothing comes', async () => {
+    expect(await rx.maybe(() => false, 20)).toBeUndefined();
+  });
+});
+
+describe('the foreign authority', () => {
+  it('derives the same key from the same run id, and a different one otherwise', () => {
+    expect(hex(authorityKey('run-a').secret)).toBe(hex(authorityKey('run-a').secret));
+    expect(hex(authorityKey('run-a').secret)).not.toBe(hex(authorityKey('run-b').secret));
+  });
+
+  it('mints a space credential a host can verify, bound to the syncer key', () => {
+    const a = new ForeignAuthority('did:plc:harness-authority', authorityKey('unit'));
+    const space = a.space('com.example.conformance.space', 'k1');
+    expect(space).toBe('at://did:plc:harness-authority/space/com.example.conformance.space/k1');
+    const cnf = generate('p256');
+    const c = a.credential(space, cnf, { jti: 'j-1', ttlSec: 120 });
+    const jwt = decodeJwt(c.token);
+    expect(jwt.header).toMatchObject({ typ: 'atproto-space-credential+jwt', kid: '#atproto', alg: 'ES256' });
+    expect(jwt.payload).toMatchObject({ iss: a.did, sub: space, cnf: { kid: didKey(cnf) }, jti: 'j-1' });
+    expect(jwt.payload.aud).toBeUndefined();
+    expect(Number(jwt.payload.exp) - Number(jwt.payload.iat)).toBe(120);
+    expect(verifyJwt(jwt, a.key)).toBe(true);
+    const sync = new SpaceSync('http://unused', space, true);
+    sync.adopt(c.token, cnf);
+    expect(verifyPresentation(sync.present('did:plc:repo'), parseDidKey(String((jwt.payload.cnf as { kid: string }).kid)))).toBeNull();
+  });
+
+  it('signs service auth as itself', () => {
+    const a = new ForeignAuthority('did:plc:harness-authority', authorityKey('unit'));
+    const jwt = decodeJwt(a.serviceAuth('did:web:zds.test', 'com.atproto.space.notifyCredentialsRevoked'));
+    expect(jwt.payload).toMatchObject({ iss: a.did, aud: 'did:web:zds.test', lxm: 'com.atproto.space.notifyCredentialsRevoked' });
+    expect(verifyJwt(jwt, a.key)).toBe(true);
+  });
+});
+
+describe('the credentialed syncer', () => {
+  const space = 'at://did:plc:authority/space/com.example.conformance.space/k';
+  let server: Server, url: string;
+  const seen: { path: string; headers: Record<string, string | string[] | undefined>; body?: any }[] = [];
+  // listWriters with limit=1 over three entries, the last a removal; listRepos the G1 shape.
+  const g2 = [
+    { $type: 'com.atproto.space.defs#repoWrite', repo: 'did:plc:a', repoRev: 'r1', data: { $bytes: 'AQ' }, spaceRev: 's1' },
+    { $type: 'com.atproto.space.defs#repoWrite', repo: 'did:plc:b', repoRev: 'r2', data: { $bytes: 'Ag' }, spaceRev: 's2' },
+    { $type: 'com.atproto.space.defs#repoRemoved', repo: 'did:plc:a', spaceRev: 's3' },
+  ];
+  beforeAll(async () => {
+    server = createServer(async (req, res) => {
+      const u = new URL(req.url!, 'http://x');
+      let body = '';
+      for await (const c of req) body += c;
+      seen.push({ path: u.pathname, headers: req.headers, ...(body ? { body: JSON.parse(body) } : {}) });
+      res.setHeader('content-type', 'application/json');
+      if (u.pathname.endsWith('authorizeSpaceSync') || u.pathname.endsWith('getSpaceCredential')) return res.end(JSON.stringify({ credential: 'a.b.c', spaceRev: 's0' }));
+      if (u.pathname.endsWith('listWriters')) {
+        const i = u.searchParams.get('cursor') ? Number(u.searchParams.get('cursor')) : 0;
+        return res.end(JSON.stringify({ repos: g2.slice(i, i + 1), ...(i + 1 < g2.length ? { cursor: String(i + 1) } : {}) }));
+      }
+      if (u.pathname.endsWith('listRepos')) return res.end(JSON.stringify({ repos: [{ did: 'did:plc:a', repoRev: 'r1', data: { $bytes: 'AQ' }, spaceRev: 's1' }], cursor: 'same' }));
+      res.statusCode = 404;
+      res.end('{}');
+    });
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+    url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  });
+  afterAll(() => new Promise<void>((r) => server.close(() => r())));
+
+  it('authorizes with a fresh P-256 key and the notify registration at 2026-11-12', async () => {
+    const s = new SpaceSync(url, space, true);
+    const r = await s.authorize({ notifyToken: 'tok' });
+    expect(r.status).toBe(200);
+    expect(s.credential).toBe('a.b.c');
+    expect(s.spaceRev).toBe('s0');
+    const b = seen.at(-1)!.body;
+    expect(b).toEqual({ space, credentialKey: didKey(s.key), notify: { endpoint: 'https://harness.test', token: 'tok' } });
+  });
+
+  it('asks getSpaceCredential with credentialKid at 2026-10-29', async () => {
+    const s = new SpaceSync(url, space, false);
+    await s.authorize();
+    expect(seen.at(-1)!.path).toBe('/xrpc/com.atproto.space.getSpaceCredential');
+    expect(seen.at(-1)!.body).toEqual({ space, credentialKid: didKey(s.key) });
+  });
+
+  it('pages listWriters to the end, presenting to the authority, and keeps removals', async () => {
+    const s = new SpaceSync(url, space, true);
+    await s.authorize();
+    const ws = await s.writers({ limit: 1 });
+    expect(ws.pages.map((p) => p.n)).toEqual([1, 1, 1]);
+    expect(ws.writers.map((w) => [w.repo, w.present])).toEqual([['did:plc:a', true], ['did:plc:b', true], ['did:plc:a', false]]);
+    expect(latestByRepo(ws.writers).get('did:plc:a')!.present).toBe(false);
+    const h = seen.at(-1)!.headers;
+    expect(h['atproto-space-audience']).toBe('did:plc:authority');
+    expect(String(h.authorization)).toBe('Atproto-Space-Credential a.b.c');
+  });
+
+  it('stops on a repeated cursor and says so', async () => {
+    const s = new SpaceSync(url, space, false);
+    await s.authorize();
+    const ws = await s.writers();
+    expect(ws.runaway).toMatch(/twice/);
+    expect(ws.writers[0]).toEqual({ repo: 'did:plc:a', present: true, repoRev: 'r1', data: 'AQ', spaceRev: 's1' });
   });
 });
