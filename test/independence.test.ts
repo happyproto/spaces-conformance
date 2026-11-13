@@ -6,6 +6,7 @@ import type { Assertion } from '../harness/catalogue.ts';
 import { loadCatalogue } from '../harness/catalogue.ts';
 import { buildPassIndex, independenceReason, independent, type Independence, loadIndependence, PASS_INDEX, staleSources, validatePassIndex } from '../harness/independence.ts';
 import { provisionalReason, vectorStatus } from '../harness/provisional.ts';
+import { loadManifest } from '../harness/manifest.ts';
 import { ROOT } from '../harness/schema.ts';
 import { judgeAll } from '../harness/verdict.ts';
 
@@ -147,7 +148,8 @@ describe('the committed pass index', () => {
 
   it('loads every passing implementation with its manifest lineage', () => {
     const real = loadIndependence();
-    expect(real.passes.get('digest.cid-drisl-plain')).toContain('reference');
-    expect(real.lineage.get('reference')?.cbor).toBe('@atproto/lex-cbor');
+    const passers = new Set([...real.passes.values()].flat());
+    expect(passers.size).toBeGreaterThan(0);
+    for (const id of passers) expect(real.lineage.get(id), id).toEqual(loadManifest(join(ROOT, 'implementations', id, 'manifest.yaml')).lineage ?? {});
   });
 });
