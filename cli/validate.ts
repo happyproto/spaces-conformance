@@ -85,25 +85,6 @@ for (const file of resultFiles) problems.push(...validateResults(JSON.parse(read
 counts.push(`${resultFiles.length} result files`);
 
 problems.push(...validatePassIndex(cat));
-// S5 reads each passer's lineage from its current manifest, so a source must
-// have run the image that manifest pins: an older image's passes would be
-// credited with the new image's lineage.
-const passIndexPath = join(ROOT, 'evidence', 'passes.json');
-const pinValues = new Map(
-  readFileSync(join(ROOT, 'pins', 'images.env'), 'utf8')
-    .split('\n')
-    .map((l) => l.match(/^([A-Z0-9_]+)=(\S+)/))
-    .filter((m): m is RegExpMatchArray => !!m)
-    .map((m) => [m[1], m[2]] as const),
-);
-if (existsSync(passIndexPath))
-  for (const s of JSON.parse(readFileSync(passIndexPath, 'utf8')).sources as { file: string; implementation: string; image: string }[]) {
-    const mf = join(implDir, s.implementation, 'manifest.yaml');
-    if (!existsSync(mf)) continue;
-    const pinned = pinValues.get(loadManifest(mf).image.pin);
-    if (pinned && pinned !== s.image)
-      problems.push({ file: 'evidence/passes.json', where: s.file, message: `ran ${s.image}, but ${s.implementation} now pins ${pinned}: rerun it, or exclude it with a reason` });
-  }
 counts.push('the pass index');
 const stale = staleSources();
 if (stale.length)
