@@ -13,8 +13,9 @@
 // stack. --setup-mode picks how spaces are created (oct29, simplespace or
 // auto; default: the manifest's spaces.create), and the run records it as
 // setup_mode. --revision picks the spec revision to grade (default: the first
-// of the manifest's spec_revisions); a run grades exactly one. The second attempt stands, but it keeps the first attempt's failing
-// ids, and a fail-to-pass flip is marked flaky (it warns, never gates). Two
+// of the manifest's spec_revisions); a run grades exactly one. The second
+// attempt stands, but it keeps the first attempt's failing ids, and a
+// fail-to-pass flip is marked flaky (it warns, never gates). Two
 // infrastructure failures in a row exit 3 with the step that failed.
 
 import { execFileSync, spawnSync } from 'node:child_process';
