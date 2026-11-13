@@ -2,7 +2,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { RawResult } from '../harness/assert.ts';
 import { capEvidence } from '../harness/assert.ts';
-import { loadCatalogue } from '../harness/catalogue.ts';
+import { loadCatalogue, resolveCatalogue } from '../harness/catalogue.ts';
+import { assertionDigest, assertionDigests } from '../harness/digests.ts';
 import { vectorStatus } from '../harness/provisional.ts';
 import { assemble, openSetupSteps, readRaw, reconcile } from '../harness/reporter.ts';
 import { DeadlineExceeded, fail, Pending, pending, runAssertion, setup, SetupError } from '../harness/assert.ts';
@@ -318,6 +319,23 @@ describe('expect on deviations', () => {
   });
 });
 
+describe('per-assertion digests (HAP-432)', () => {
+  const cat = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
+  const base = cat.assertions.find((a) => a.id === 'digest.cid-drisl-plain')!;
+
+  it('changes with the row and with its test source, not with key order', () => {
+    const d = assertionDigest(base, 'src');
+    expect(assertionDigest({ ...base, checks: `${base.checks} more` }, 'src')).not.toBe(d);
+    expect(assertionDigest(base, 'src2')).not.toBe(d);
+    const reordered = Object.fromEntries(Object.entries(base).reverse()) as typeof base;
+    expect(assertionDigest(reordered, 'src')).toBe(d);
+  });
+
+  it('covers exactly the rows that apply at a revision', () => {
+    for (const rev of ['2026-10-29', '2026-11-12']) expect(Object.keys(assertionDigests(cat, rev)).length).toBe(resolveCatalogue(cat, rev).length);
+  });
+});
+
 describe('the shipped deviation lists', () => {
   // Each list's expect must describe the failure its committed parity run recorded.
   it.each(['pdsjs', 'zds', 'atproto-pds', 'reference'])('%s matches its parity run', (impl) => {
@@ -348,6 +366,32 @@ describe('the reporter', () => {
     expect(file.summary.by_role['repo-host']).toEqual({ must_applicable: 2, must_pass: 1, should_applicable: 0, should_pass: 0 });
     expect(file.summary.unexpected).toBe(1);
     expect(file.implementation.setup_mode).toEqual({ accounts: 'create-account', spaces: 'simplespace' });
+  });
+
+  it('grades the revision it is given, and records a digest per row that applies there', () => {
+    const cat = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
+    const ended = cat.assertions.find((a) => a.until === '2026-10-29')!;
+    const env = {
+      CONFORMANCE_IMPL: 'reference',
+      CONFORMANCE_RUN_ID: '2026-11-13T05-24-57Z-reference-d3e5',
+      CONFORMANCE_IMAGES: JSON.stringify({ reference: `ghcr.io/x/y@sha256:${'a'.repeat(64)}` }),
+      SUITE_COMMIT: 'abc1234',
+      CONFORMANCE_REVISION: '2026-11-12',
+    };
+    const raw: RawResult[] = [
+      { id: 'digest.cid-drisl-plain', suite: 'digest', status: 'pass', ms: 10 },
+      { id: ended.id, suite: ended.suite, status: 'skip', skip_reason: 'not in revision 2026-11-12' },
+    ];
+    const file = assemble(env, { accounts: 'create-account', spaces: 'simplespace' }, raw);
+    expect(validateResults(file, 'r', cat)).toEqual([]);
+    expect(file.spec).toMatchObject({ revision: '2026-11-12', commit: '2755e73a31', lexicons: 'atproto@d4def6e9' });
+    expect(file.suite.assertion_digests['digest.cid-drisl-plain']).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(file.suite.assertion_digests).not.toHaveProperty(ended.id);
+  });
+
+  it('skips a declared row that does not apply at the run\'s revision', () => {
+    const out = reconcile([], new Map(), new Map([['x.gone', 'suites/x/a.test.ts']]), new Map(), (id) => (id === 'x.gone' ? 'not in revision 2026-11-12' : null), () => 'x');
+    expect(out).toEqual([{ id: 'x.gone', suite: 'x', status: 'skip', skip_reason: 'not in revision 2026-11-12' }]);
   });
 
   it('caps evidence at 4 KiB of UTF-8, not UTF-16 units', () => {

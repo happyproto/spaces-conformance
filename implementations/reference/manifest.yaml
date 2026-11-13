@@ -6,7 +6,7 @@ image:
   pin: PDS_SPACES_ALPHA_IMAGE
   dispatch_target: pds-spaces-alpha
   platforms: [linux/amd64]
-spec_revision: "2026-10-29"
+spec_revisions: ["2026-10-29"]
 roles: [pds, repo-host, space-host]
 profile: pds
 capabilities:

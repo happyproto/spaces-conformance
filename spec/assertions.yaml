@@ -64,6 +64,8 @@ assertions:
       The commit's data is lexicon bytes in JSON, {"$bytes": <standard base64>}, decoding to 32 bytes.
 
   - id: records.commit-repo-space-match
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: records
     section: "#commit-mac"
     quote: >-
@@ -208,6 +210,8 @@ assertions:
       A write to a nonexistent space whose authority is the writer is refused.
 
   - id: lifecycle.clear-records-empty-digest
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: lifecycle
     section: "#repo-lifecycle"
     quote: >-
@@ -246,6 +250,8 @@ assertions:
       createSpace returns a uri whose authority is the calling account's DID.
 
   - id: lifecycle.list-spaces
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: lifecycle
     section: "#xrpc-api"
     quote: >-
@@ -367,6 +373,8 @@ assertions:
       Multikey, and a P-256 publicKeyMultibase.
 
   - id: mac.commit-header-present
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: mac
     section: "#authenticity-headers"
     quote: >-
@@ -381,6 +389,8 @@ assertions:
       Atproto-Space-Mac whose type and ver match the request's.
 
   - id: mac.vary-header
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: mac
     section: "#authenticity-headers"
     quote: >-
@@ -394,6 +404,8 @@ assertions:
       The response's Vary lists Atproto-Space-Want-Mac, and the mac is a 32-byte structured-field byte sequence.
 
   - id: mac.malformed-request-rejected
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: mac
     section: "#authenticity-headers"
     quote: >-
@@ -407,6 +419,8 @@ assertions:
       did:key is refused rather than answered without a MAC.
 
   - id: mac.commit-valid
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: mac
     section: "#commit-mac"
     quote: >-
@@ -419,6 +433,8 @@ assertions:
       The commit MAC verifies with the harness's HKDF shared secret and HMAC-SHA256 over the defined context.
 
   - id: mac.commit-bound-to-repo
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: mac
     section: "#shared-secret"
     quote: >-
@@ -436,6 +452,8 @@ assertions:
       #atproto_kem key and not the caller's, i.e. the host does ECDH with the author's key.
 
   - id: mac.list-repo-ops-final-page
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: mac
     section: "#incremental-sync"
     quote: >-
@@ -449,6 +467,8 @@ assertions:
       The page holding the last op carries the commit and a MAC header. Earlier pages carry neither.
 
   - id: mac.record-valid
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: mac
     section: "#record-mac"
     quote: >-
@@ -849,6 +869,8 @@ assertions:
       trigger through the adapter's revokeCredential hook), the repo host refuses that credential.
 
   - id: cred.revocation-idempotent
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: credentials
     section: "#credential-expiration-and-revocation"
     quote: >-
@@ -895,6 +917,8 @@ assertions:
       createSpace is refused for a session whose grant lacks manage=create.
 
   - id: scope.manage-update-required
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: scopes
     section: "#matching"
     quote: >-
@@ -1040,6 +1064,8 @@ assertions:
       createSpace with an unknown policy $type answers {error: "UnsupportedPolicy", message}.
 
   - id: xrpc.error.PolicyMismatch
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: policy
     level: must
     basis: [lexicon]
@@ -1052,6 +1078,8 @@ assertions:
       putMember on a managedspace space answers {error: "PolicyMismatch", message}.
 
   - id: xrpc.error.SpaceDeleted
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: deletion
     level: must
     basis: [lexicon]
@@ -1066,6 +1094,8 @@ assertions:
   # --- writer-set --------------------------------------------------------------
 
   - id: writers.notify-write-sent
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: writer-set
     section: "#write-notifications"
     quote: >-
@@ -1083,6 +1113,8 @@ assertions:
       After a write into a space whose authority is the harness, the harness space host receives notifyWrite with the new rev and data.
 
   - id: writers.notify-write-forwarded
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: writer-set
     section: "#write-notifications"
     quote: >-
@@ -1135,6 +1167,8 @@ assertions:
       A notifyWrite from a non-member of a memberspace space without publicWrite doesn't add it to listRepos.
 
   - id: writers.register-expiry
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: writer-set
     section: "#write-notifications"
     quote: >-
@@ -1149,6 +1183,8 @@ assertions:
       registerNotify returns expiresAt in the future. unregisterNotify, called with the same space credential, stops delivery.
 
   - id: writers.list-repos
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: writer-set
     section: "#the-sync-boundary-writer-set"
     quote: >-
@@ -1164,6 +1200,8 @@ assertions:
       pages completely.
 
   - id: writers.list-repos-since-space-rev
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: writer-set
     section: "#write-notifications"
     quote: >-
@@ -1181,6 +1219,8 @@ assertions:
       updated after that space revision (exclusive), per the lexicon's cursor.
 
   - id: writers.remove-writer
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: writer-set
     section: "#the-sync-boundary-writer-set"
     quote: >-
@@ -1195,6 +1235,8 @@ assertions:
       removeWriter drops the account from listRepos.
 
   - id: writers.removed-writer-retracked
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: writer-set
     section: "#memberspace"
     quote: >-
@@ -1291,6 +1333,8 @@ assertions:
       createSpace accepts personalspace, memberspace and managedspace policies.
 
   - id: policy.personalspace-owner-only
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: policy
     section: "#personalspace"
     quote: >-
@@ -1304,6 +1348,8 @@ assertions:
       getSpaceCredential with another user's delegation token is refused, and another user's notifyWrite isn't tracked.
 
   - id: policy.member-methods
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: policy
     section: "#memberspace"
     quote: >-
@@ -1319,6 +1365,8 @@ assertions:
       com.atproto.memberspace.putMember, removeMember and listMembers exist and work.
 
   - id: policy.put-member-upsert
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: policy
     section: "#memberspace"
     quote: >-
@@ -1375,6 +1423,8 @@ assertions:
       With allowedApps, only a request with a verified attestation from a listed client gets a credential.
 
   - id: policy.remove-member-drops-writer
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: policy
     section: "#memberspace"
     quote: >-
@@ -1418,6 +1468,8 @@ assertions:
       Direct createRecord or putRecord of those records in the authority's repo is refused.
 
   - id: policy.managed-check-user-access
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: policy
     section: "#managedspace"
     quote: >-
@@ -1437,6 +1489,8 @@ assertions:
   # --- deletion ----------------------------------------------------------------
 
   - id: deletion.notify-space-deleted
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: deletion
     section: "#space-deletion"
     quote: >-
@@ -1449,6 +1503,8 @@ assertions:
       A syncer registered with registerNotify receives notifySpaceDeleted after deleteSpace.
 
   - id: deletion.notify-retry
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: deletion
     section: "#space-deletion"
     quote: >-
@@ -1461,6 +1517,8 @@ assertions:
       When the harness syncer answers 503 once, notifySpaceDeleted is delivered again.
 
   - id: deletion.credential-error
+    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
+    until: "2026-10-29"
     suite: deletion
     section: "#space-deletion"
     quote: >-

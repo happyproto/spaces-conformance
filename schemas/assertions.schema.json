@@ -11,7 +11,7 @@
   ],
   "properties": {
     "revision": {
-      "description": "Key into spec/revisions.json that quotes and anchors are checked against.",
+      "description": "The base revision (a key in spec/revisions.json): rows read as of this one unless their since is later. Every revision in spec/revisions.json is checked.",
       "type": "string"
     },
     "assertions": {
@@ -158,11 +158,11 @@
           "minLength": 1
         },
         "since": {
-          "description": "First revision the assertion is valid for.",
+          "description": "First revision the assertion applies to (a key in spec/revisions.json). Defaults to the catalogue's base revision.",
           "type": "string"
         },
         "until": {
-          "description": "Last revision the assertion is valid for.",
+          "description": "Last revision the assertion applies to, inclusive.",
           "type": "string"
         },
         "provisional": {
@@ -203,6 +203,50 @@
             ]
           },
           "uniqueItems": true
+        },
+        "variants": {
+          "description": "Per revision key, the fields that read differently from that revision on. Each variant applies over the row and the variants before it.",
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "minProperties": 1,
+            "properties": {
+              "section": {
+                "$ref": "#/$defs/assertion/properties/section"
+              },
+              "quote": {
+                "$ref": "#/$defs/assertion/properties/quote"
+              },
+              "level": {
+                "$ref": "#/$defs/assertion/properties/level"
+              },
+              "basis": {
+                "$ref": "#/$defs/assertion/properties/basis"
+              },
+              "lexicon": {
+                "$ref": "#/$defs/assertion/properties/lexicon"
+              },
+              "params": {
+                "$ref": "#/$defs/assertion/properties/params"
+              },
+              "error": {
+                "$ref": "#/$defs/assertion/properties/error"
+              },
+              "checks": {
+                "$ref": "#/$defs/assertion/properties/checks"
+              },
+              "areas": {
+                "$ref": "#/$defs/assertion/properties/areas"
+              },
+              "no_crypto": {
+                "$ref": "#/$defs/assertion/properties/no_crypto"
+              }
+            }
+          }
         }
       }
     }

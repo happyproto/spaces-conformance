@@ -11,16 +11,21 @@
 //
 // The passes come from evidence/passes.json, a committed index regenerated
 // from validated results files by `node cli/passes.ts` (docs/catalogue.md).
+// Passes are kept per spec revision: a pass at one revision says nothing
+// about another. A source that records per-assertion digests (HAP-432) counts
+// a pass only while that row's digest still equals the current one.
 
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import type { Assertion, Catalogue } from './catalogue.ts';
+import { assertionDigests } from './digests.ts';
 import { loadManifest } from './manifest.ts';
 import type { Problem } from './problems.ts';
 import type { Area } from './provisional.ts';
 import { validateResults } from './results.ts';
 import { ROOT } from './schema.ts';
+import { loadRevisions } from './spec.ts';
 
 export const PASS_INDEX = join(ROOT, 'evidence', 'passes.json');
 
@@ -32,6 +37,10 @@ export interface PassSource {
   /** The catalogue digest the run used (results suite.assertions_digest). */
   assertions_digest: string;
   image: string;
+  /** The spec revision the run graded. */
+  revision: string;
+  /** Passes refused because the row or its test changed since the run (its digest differs). */
+  stale_passes?: string[];
 }
 
 /** A committed results file that deliberately doesn't feed the index. */
@@ -45,8 +54,8 @@ export interface PassIndex {
   sources: PassSource[];
   /** Committed results files left out on purpose, each with why. */
   excluded: PassExclusion[];
-  /** assertion id -> ids of the implementations it passed on, sorted. */
-  passes: Record<string, string[]>;
+  /** revision -> assertion id -> ids of the implementations it passed on, sorted. */
+  passes: Record<string, Record<string, string[]>>;
 }
 
 /** Where committed results files live: each must be a source or excluded. */
@@ -61,43 +70,69 @@ export interface Independence {
 
 interface ResultsFile {
   run: { id: string };
-  suite: { commit: string; assertions_digest: string };
+  suite: { commit: string; assertions_digest: string; assertion_digests?: Record<string, string> };
+  spec: { revision: string };
   implementation: { id: string; image: string };
   results: { id: string; status: string }[];
 }
 
-/** Build the index from results files (already validated by the caller). */
-export function buildPassIndex(files: { path: string; file: ResultsFile }[], excluded: PassExclusion[] = []): PassIndex {
-  const passes = new Map<string, Set<string>>();
-  for (const { file } of files)
+/**
+ * Build the index from results files (already validated by the caller).
+ * `current` gives the current per-assertion digests at a revision; a pass
+ * from a source that recorded digests counts only where they still match.
+ */
+export function buildPassIndex(
+  files: { path: string; file: ResultsFile }[],
+  excluded: PassExclusion[] = [],
+  current: (revision: string) => Record<string, string> = () => ({}),
+): PassIndex {
+  const passes = new Map<string, Map<string, Set<string>>>();
+  const sources: PassSource[] = [];
+  for (const { path, file } of files) {
+    const revision = file.spec.revision;
+    const digests = file.suite.assertion_digests;
+    const now = digests ? current(revision) : {};
+    const stale: string[] = [];
+    if (!passes.has(revision)) passes.set(revision, new Map());
+    const at = passes.get(revision)!;
     for (const r of file.results) {
       if (r.status !== 'pass') continue;
-      if (!passes.has(r.id)) passes.set(r.id, new Set());
-      passes.get(r.id)!.add(file.implementation.id);
+      if (digests && digests[r.id] !== now[r.id]) {
+        stale.push(r.id);
+        continue;
+      }
+      if (!at.has(r.id)) at.set(r.id, new Set());
+      at.get(r.id)!.add(file.implementation.id);
     }
-  return {
-    sources: files.map(({ path, file }) => ({
+    sources.push({
       file: path,
       implementation: file.implementation.id,
       run: file.run.id,
       suite_commit: file.suite.commit,
       assertions_digest: file.suite.assertions_digest,
       image: file.implementation.image,
-    })),
+      revision,
+      ...(stale.length ? { stale_passes: stale.sort() } : {}),
+    });
+  }
+  const sorted = <T>(m: Map<string, T>) => [...m].sort(([a], [b]) => (a < b ? -1 : 1));
+  return {
+    sources,
     excluded,
-    passes: Object.fromEntries([...passes].sort(([a], [b]) => (a < b ? -1 : 1)).map(([id, s]) => [id, [...s].sort()])),
+    passes: Object.fromEntries(sorted(passes).map(([rev, ids]) => [rev, Object.fromEntries(sorted(ids).map(([id, s]) => [id, [...s].sort()]))])),
   };
 }
 
-/** The committed index plus every manifest's lineage. */
-export function loadIndependence(indexPath = PASS_INDEX): Independence {
+/** The committed index's passes at `revision` (default: the catalogue's default), plus every passer's lineage. */
+export function loadIndependence(revision = loadRevisions().default, indexPath = PASS_INDEX): Independence {
   const index: PassIndex = existsSync(indexPath) ? JSON.parse(readFileSync(indexPath, 'utf8')) : { sources: [], excluded: [], passes: {} };
+  const passes = index.passes[revision] ?? {};
   const lineage = new Map<string, Partial<Record<Area, string>>>();
-  for (const id of new Set(Object.values(index.passes).flat())) {
+  for (const id of new Set(Object.values(passes).flat())) {
     const m = join(ROOT, 'implementations', id, 'manifest.yaml');
     lineage.set(id, existsSync(m) ? ((loadManifest(m).lineage ?? {}) as Partial<Record<Area, string>>) : {});
   }
-  return { passes: new Map(Object.entries(index.passes)), lineage };
+  return { passes: new Map(Object.entries(passes)), lineage };
 }
 
 /** Two implementations count as independent for these areas when each area's lineage is known for both and differs. */
@@ -159,20 +194,36 @@ export function validatePassIndex(cat: Catalogue, indexPath = PASS_INDEX, result
   const { files, problems } = readSources(index.sources.map((s) => s.file), cat);
   problems.unshift(...coverage);
   if (problems.length) return problems;
-  const rebuilt = buildPassIndex(files, index.excluded ?? []);
+  const rebuilt = buildPassIndex(files, index.excluded ?? [], currentDigests(cat));
   if (JSON.stringify(rebuilt) !== JSON.stringify(index))
     problems.push({ file: 'evidence/passes.json', where: 'passes', message: 'does not match its sources: regenerate it with node cli/passes.ts' });
   return problems;
 }
 
+/** The current per-assertion digests at each revision, computed once per revision. */
+export function currentDigests(cat: Catalogue): (revision: string) => Record<string, string> {
+  const memo = new Map<string, Record<string, string>>();
+  return (revision) => {
+    if (!memo.has(revision)) memo.set(revision, assertionDigests(cat, revision));
+    return memo.get(revision)!;
+  };
+}
+
 /**
- * Sources whose run used another catalogue than the current one. They still
- * count: most catalogue edits don't change what a row checks. `bun run
- * validate` names them, so whoever changes a row's check knows to rerun.
+ * Sources from before per-assertion digests whose run used another catalogue
+ * than the current one. They still count: most catalogue edits don't change
+ * what a row checks. `bun run validate` names them, so whoever changes a
+ * row's check knows to rerun. Sources with digests need no such note: their
+ * changed rows are refused outright (stale_passes).
  */
 export function staleSources(indexPath = PASS_INDEX): PassSource[] {
   if (!existsSync(indexPath)) return [];
   const index: PassIndex = JSON.parse(readFileSync(indexPath, 'utf8'));
   const current = `sha256:${createHash('sha256').update(readFileSync(join(ROOT, 'spec', 'assertions.yaml'))).digest('hex')}`;
-  return index.sources.filter((s) => s.assertions_digest !== current);
+  return index.sources.filter((s) => s.assertions_digest !== current && !hasDigests(s.file));
+}
+
+function hasDigests(path: string): boolean {
+  const abs = join(ROOT, path);
+  return existsSync(abs) && !!JSON.parse(readFileSync(abs, 'utf8')).suite?.assertion_digests;
 }

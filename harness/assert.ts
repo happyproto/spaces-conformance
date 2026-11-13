@@ -185,7 +185,15 @@ export function assertion(id: string, fn: (ctx: RunContext) => Promise<void | st
   test(id, async (t) => {
     const ctx = await runContext();
     const a = ctx.byId.get(id);
-    if (!a) throw new Error(`${id} is not in the catalogue`);
+    if (!a) {
+      const row = ctx.catalogue.assertions.find((x) => x.id === id);
+      if (!row) throw new Error(`${id} is not in the catalogue`);
+      // A row of another revision: it isn't graded in this run.
+      const reason = `not in revision ${ctx.revision}`;
+      record({ id, suite: row.suite, status: 'skip', skip_reason: reason });
+      t.skip(reason);
+      return;
+    }
     const reason = notApplicable(a, ctx.manifest);
     if (reason) {
       record({ id, suite: a.suite, status: 'skip', skip_reason: reason });

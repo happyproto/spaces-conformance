@@ -7,7 +7,7 @@ image:
   pin: HAPPYVIEW_IMAGE
   dispatch_target: happyview
   platforms: [linux/amd64, linux/arm64]
-spec_revision: "2026-10-29"
+spec_revisions: ["2026-10-29"]
 roles: [space-host, repo-host]
 profile: bespoke-space-host
 capabilities:

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Assertion } from '../harness/catalogue.ts';
 import { loadCatalogue } from '../harness/catalogue.ts';
-import { independenceReason, independent, type Independence, loadIndependence, PASS_INDEX, staleSources, validatePassIndex } from '../harness/independence.ts';
+import { buildPassIndex, independenceReason, independent, type Independence, loadIndependence, PASS_INDEX, staleSources, validatePassIndex } from '../harness/independence.ts';
 import { provisionalReason, vectorStatus } from '../harness/provisional.ts';
 import { ROOT } from '../harness/schema.ts';
 import { judgeAll } from '../harness/verdict.ts';
@@ -64,6 +64,46 @@ describe('independence (design S5)', () => {
   });
 });
 
+describe('the pass index per revision and per assertion digest (HAP-432)', () => {
+  const file = (impl: string, revision: string, digests?: Record<string, string>) => ({
+    path: `test/${impl}.json`,
+    file: {
+      run: { id: `r-${impl}` },
+      suite: { commit: 'abc1234', assertions_digest: 'sha256:x', ...(digests ? { assertion_digests: digests } : {}) },
+      spec: { revision },
+      implementation: { id: impl, image: 'i' },
+      results: [
+        { id: 'a.one', status: 'pass' },
+        { id: 'a.two', status: 'pass' },
+        { id: 'a.three', status: 'fail' },
+      ],
+    },
+  });
+
+  it('keeps passes apart by revision', () => {
+    const idx = buildPassIndex([file('x', '2026-10-29'), file('y', '2026-11-12')]);
+    expect(idx.passes).toEqual({ '2026-10-29': { 'a.one': ['x'], 'a.two': ['x'] }, '2026-11-12': { 'a.one': ['y'], 'a.two': ['y'] } });
+    expect(idx.sources.map((s) => s.revision)).toEqual(['2026-10-29', '2026-11-12']);
+  });
+
+  it('refuses a pass whose row or test changed since the run, and names it', () => {
+    const idx = buildPassIndex([file('x', '2026-11-12', { 'a.one': 'sha256:old', 'a.two': 'sha256:same' })], [], () => ({ 'a.one': 'sha256:new', 'a.two': 'sha256:same' }));
+    expect(idx.passes['2026-11-12']).toEqual({ 'a.two': ['x'] });
+    expect(idx.sources[0].stale_passes).toEqual(['a.one']);
+  });
+
+  it('still counts every pass of a source from before per-assertion digests', () => {
+    const idx = buildPassIndex([file('x', '2026-10-29')], [], () => ({ 'a.one': 'sha256:new' }));
+    expect(idx.passes['2026-10-29']).toEqual({ 'a.one': ['x'], 'a.two': ['x'] });
+    expect(idx.sources[0].stale_passes).toBeUndefined();
+  });
+
+  it('loads one revision\'s passes', () => {
+    expect(loadIndependence('2026-11-12').passes.size).toBe(0);
+    expect(loadIndependence('2026-10-29').passes.size).toBeGreaterThan(0);
+  });
+});
+
 describe('the committed pass index', () => {
   it('matches its sources', () => {
     expect(validatePassIndex(loadCatalogue(join(ROOT, 'spec', 'assertions.yaml')))).toEqual([]);
@@ -74,7 +114,7 @@ describe('the committed pass index', () => {
     const path = join(dir, 'passes.json');
     copyFileSync(PASS_INDEX, path);
     const index = JSON.parse(readFileSync(path, 'utf8'));
-    index.passes['digest.multi-batch'] = ['pdsjs', 'zds'];
+    index.passes['2026-10-29']['digest.multi-batch'] = ['pdsjs', 'zds'];
     writeFileSync(path, JSON.stringify(index));
     const p = validatePassIndex(loadCatalogue(join(ROOT, 'spec', 'assertions.yaml')), path);
     expect(p.map((x) => x.message).join()).toMatch(/does not match its sources/);

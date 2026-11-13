@@ -6,7 +6,8 @@
       "run": "2026-11-12T18-02-35Z-zds-5ca6",
       "suite_commit": "42a99dc9e1",
       "assertions_digest": "sha256:fa1c42076a585234f089877bbfe0d38bb81eedee883d50bb18f1e5cd4b1e9f24",
-      "image": "ghcr.io/happyproto/pds-test/zds@sha256:809bfa1025271946e78c123e8ff99cb48f0a92c4d37485b985631e9d866380d1"
+      "image": "ghcr.io/happyproto/pds-test/zds@sha256:809bfa1025271946e78c123e8ff99cb48f0a92c4d37485b985631e9d866380d1",
+      "revision": "2026-10-29"
     },
     {
       "file": "test/fixtures/results/parity-atproto-pds-2026-11-12.json",
@@ -14,7 +15,8 @@
       "run": "2026-11-12T18-03-03Z-atproto-pds-6c7f",
       "suite_commit": "42a99dc9e1",
       "assertions_digest": "sha256:fa1c42076a585234f089877bbfe0d38bb81eedee883d50bb18f1e5cd4b1e9f24",
-      "image": "ghcr.io/happyproto/pds-test/atproto-pds@sha256:19a0f54acd6dca38a44097987f8e000504a2cf090c81768f2957bdcee2431848"
+      "image": "ghcr.io/happyproto/pds-test/atproto-pds@sha256:19a0f54acd6dca38a44097987f8e000504a2cf090c81768f2957bdcee2431848",
+      "revision": "2026-10-29"
     },
     {
       "file": "test/fixtures/results/parity-pdsjs-2026-11-12.json",
@@ -22,7 +24,8 @@
       "run": "2026-11-12T18-03-20Z-pdsjs-5720",
       "suite_commit": "42a99dc9e1",
       "assertions_digest": "sha256:fa1c42076a585234f089877bbfe0d38bb81eedee883d50bb18f1e5cd4b1e9f24",
-      "image": "ghcr.io/happyproto/pds-test/pdsjs@sha256:1725c1f8d2cee4c4f5095c9309f6cf27e11336b74452f0ae12628afae5fe22be"
+      "image": "ghcr.io/happyproto/pds-test/pdsjs@sha256:1725c1f8d2cee4c4f5095c9309f6cf27e11336b74452f0ae12628afae5fe22be",
+      "revision": "2026-10-29"
     },
     {
       "file": "test/fixtures/results/parity-reference-2026-11-12.json",
@@ -30,7 +33,8 @@
       "run": "2026-11-12T18-03-47Z-reference-6a0f",
       "suite_commit": "42a99dc9e1",
       "assertions_digest": "sha256:fa1c42076a585234f089877bbfe0d38bb81eedee883d50bb18f1e5cd4b1e9f24",
-      "image": "ghcr.io/happyproto/pds-test/pds-spaces-alpha@sha256:1cf9349e9f0e89789784569fed376cd647742ea7c368948625f44779ba03f150"
+      "image": "ghcr.io/happyproto/pds-test/pds-spaces-alpha@sha256:1cf9349e9f0e89789784569fed376cd647742ea7c368948625f44779ba03f150",
+      "revision": "2026-10-29"
     }
   ],
   "excluded": [
@@ -44,83 +48,85 @@
     }
   ],
   "passes": {
-    "digest.cid-drisl-plain": [
-      "atproto-pds",
-      "pdsjs",
-      "reference",
-      "zds"
-    ],
-    "digest.cid-drisl-typed": [
-      "atproto-pds",
-      "reference",
-      "zds"
-    ],
-    "info.read-auth-status": [
-      "atproto-pds",
-      "pdsjs",
-      "reference",
-      "zds"
-    ],
-    "info.unknown-method-status": [
-      "atproto-pds",
-      "pdsjs",
-      "reference",
-      "zds"
-    ],
-    "lifecycle.implicit-create": [
-      "atproto-pds",
-      "pdsjs",
-      "reference",
-      "zds"
-    ],
-    "mac.kem-key-published": [
-      "pdsjs"
-    ],
-    "oplog.entry-shape": [
-      "atproto-pds",
-      "pdsjs",
-      "reference",
-      "zds"
-    ],
-    "oplog.pagination-batch-boundary": [
-      "atproto-pds",
-      "reference",
-      "zds"
-    ],
-    "oplog.pagination-complete": [
-      "atproto-pds",
-      "reference",
-      "zds"
-    ],
-    "oplog.since-exclusive": [
-      "atproto-pds",
-      "pdsjs",
-      "reference",
-      "zds"
-    ],
-    "oplog.stale-values-omitted": [
-      "atproto-pds",
-      "pdsjs",
-      "reference",
-      "zds"
-    ],
-    "records.apply-writes-atomic": [
-      "atproto-pds",
-      "pdsjs",
-      "reference",
-      "zds"
-    ],
-    "records.crud-roundtrip": [
-      "atproto-pds",
-      "pdsjs",
-      "reference",
-      "zds"
-    ],
-    "records.read-requires-auth": [
-      "atproto-pds",
-      "pdsjs",
-      "reference",
-      "zds"
-    ]
+    "2026-10-29": {
+      "digest.cid-drisl-plain": [
+        "atproto-pds",
+        "pdsjs",
+        "reference",
+        "zds"
+      ],
+      "digest.cid-drisl-typed": [
+        "atproto-pds",
+        "reference",
+        "zds"
+      ],
+      "info.read-auth-status": [
+        "atproto-pds",
+        "pdsjs",
+        "reference",
+        "zds"
+      ],
+      "info.unknown-method-status": [
+        "atproto-pds",
+        "pdsjs",
+        "reference",
+        "zds"
+      ],
+      "lifecycle.implicit-create": [
+        "atproto-pds",
+        "pdsjs",
+        "reference",
+        "zds"
+      ],
+      "mac.kem-key-published": [
+        "pdsjs"
+      ],
+      "oplog.entry-shape": [
+        "atproto-pds",
+        "pdsjs",
+        "reference",
+        "zds"
+      ],
+      "oplog.pagination-batch-boundary": [
+        "atproto-pds",
+        "reference",
+        "zds"
+      ],
+      "oplog.pagination-complete": [
+        "atproto-pds",
+        "reference",
+        "zds"
+      ],
+      "oplog.since-exclusive": [
+        "atproto-pds",
+        "pdsjs",
+        "reference",
+        "zds"
+      ],
+      "oplog.stale-values-omitted": [
+        "atproto-pds",
+        "pdsjs",
+        "reference",
+        "zds"
+      ],
+      "records.apply-writes-atomic": [
+        "atproto-pds",
+        "pdsjs",
+        "reference",
+        "zds"
+      ],
+      "records.crud-roundtrip": [
+        "atproto-pds",
+        "pdsjs",
+        "reference",
+        "zds"
+      ],
+      "records.read-requires-auth": [
+        "atproto-pds",
+        "pdsjs",
+        "reference",
+        "zds"
+      ]
+    }
   }
 }

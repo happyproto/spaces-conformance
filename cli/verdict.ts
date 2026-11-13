@@ -12,8 +12,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
-import { loadCatalogue } from '../harness/catalogue.ts';
-import { type Deviation, loadDeviations } from '../harness/deviations.ts';
+import { loadCatalogue, resolveCatalogue } from '../harness/catalogue.ts';
+import { type Deviation, deviationsAt, loadDeviations } from '../harness/deviations.ts';
 import { loadIndependence } from '../harness/independence.ts';
 import { vectorStatus } from '../harness/provisional.ts';
 import { checkSchema, ROOT } from '../harness/schema.ts';
@@ -26,7 +26,9 @@ if (!positionals[0]) {
 }
 const file = JSON.parse(readFileSync(positionals[0], 'utf8'));
 const catalogue = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
-const byId = new Map(catalogue.assertions.map((a) => [a.id, a]));
+// Judge each row as it read at the revision the run graded.
+const revision: string = file.spec.revision;
+const byId = new Map(resolveCatalogue(catalogue, revision).map((a) => [a.id, a]));
 const deviations: Deviation[] = values.deviations ? loadDeviations(values.deviations) : file.deviations_applied;
 if (values.deviations) {
   const problems = checkSchema('deviations', deviations, values.deviations);
@@ -35,8 +37,8 @@ if (values.deviations) {
     process.exit(2);
   }
 }
-const listed = new Map(deviations.map((d) => [d.assertion, d]));
-const { judged, summary } = judgeAll(file.results, byId, listed, vectorStatus(), file.implementation.roles, loadIndependence());
+const listed = new Map(deviationsAt(deviations, revision).map((d) => [d.assertion, d]));
+const { judged, summary } = judgeAll(file.results, byId, listed, vectorStatus(), file.implementation.roles, loadIndependence(revision));
 
 if (values.json) {
   console.log(JSON.stringify({ judged, summary }, null, 2));

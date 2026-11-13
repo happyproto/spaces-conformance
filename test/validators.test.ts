@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { type Assertion, type Catalogue, levelProblems, loadCatalogue, validateCatalogue } from '../harness/catalogue.ts';
-import { validateDeviations } from '../harness/deviations.ts';
+import { appliesAt, type Assertion, type Catalogue, levelProblems, loadCatalogue, resolveAt, resolveCatalogue, type RevisionText, validateCatalogue } from '../harness/catalogue.ts';
+import { deviationsAt, validateDeviations } from '../harness/deviations.ts';
 import { claims, loadManifest, loadPins, type Manifest, notApplicable, validateManifest } from '../harness/manifest.ts';
 import { validateResults } from '../harness/results.ts';
 import { ROOT } from '../harness/schema.ts';
@@ -14,11 +14,17 @@ const revKeys = Object.keys(revisions.revisions);
 let spec = '';
 let cat: Catalogue;
 let specAnchors: Set<string>;
+const texts = new Map<string, RevisionText>();
+let anchorsByRev: Map<string, Set<string>>;
+const G1 = '2026-10-29';
+const G2 = '2026-11-12';
 
 beforeAll(async () => {
   spec = await loadSpecText(revisions.revisions[revisions.default]);
   specAnchors = anchors(spec);
   cat = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
+  for (const k of revKeys) texts.set(k, { text: await loadSpecText(revisions.revisions[k]), lex: loadLexicons(revisions.revisions[k]) });
+  anchorsByRev = new Map([...texts].map(([k, t]) => [k, anchors(t.text)]));
 });
 
 const row = (over: Partial<Assertion>): Assertion => ({
@@ -109,7 +115,7 @@ describe('catalogue', () => {
     const lexRow = (over: Partial<Assertion>) => row({ basis: ['lexicon'], quote: undefined, section: undefined, ...over });
     const msgs = (a: Assertion) => validateCatalogue(catalogueOf(a), 'f', spec, revKeys, lex).map((x) => x.message);
     expect(msgs(lexRow({ lexicon: 'com.atproto.space.listRepoOps', params: ['space', 'repo', 'since'] }))).toEqual([]);
-    expect(msgs(lexRow({ lexicon: 'com.atproto.space.nope' }))).toContain('lexicon com.atproto.space.nope is not in the pinned lexicons');
+    expect(msgs(lexRow({ lexicon: 'com.atproto.space.nope' }))).toContain('lexicon com.atproto.space.nope is not in the lexicons pinned for 2026-10-29');
     expect(msgs(lexRow({ lexicon: 'com.atproto.space.listRepos', params: ['since'] }))).toContain(
       'lexicon com.atproto.space.listRepos defines no parameter or input field since',
     );
@@ -197,6 +203,58 @@ describe('manifests', () => {
   });
 });
 
+describe('revisions', () => {
+  // A G1 quote that the 2026-11-12 text reworded, and its G2 wording.
+  const g1Quote = "If a given oplog response includes the last available operation that occurred to a repo, then the response must also include the member's current [commit](#space-repos).";
+  const g2Quote = '`getLatestCommit`, `getRepo`, and `listRepoOps` responses carry a [commit](#space-repos).';
+
+  it('checks the shipped catalogue at every pinned revision', () => {
+    expect(validateCatalogue(cat, 'assertions.yaml', texts, revKeys)).toEqual([]);
+  });
+
+  it('applies a row from since (default: the base revision) to until, both inclusive', () => {
+    expect(appliesAt(row({}), G1, G1)).toBe(true);
+    expect(appliesAt(row({}), G2, G1)).toBe(true);
+    expect(appliesAt(row({ until: G1 }), G2, G1)).toBe(false);
+    expect(appliesAt(row({ since: G2 }), G1, G1)).toBe(false);
+    expect(appliesAt(row({ since: G2 }), G2, G1)).toBe(true);
+  });
+
+  it('resolves a variant from its revision on, over the row', () => {
+    const r = row({ checks: 'g1 check', variants: { [G2]: { checks: 'g2 check', quote: 'q2' } } });
+    expect(resolveAt(r, G1, G1)).toMatchObject({ checks: 'g1 check' });
+    expect(resolveAt(r, G1, G1)).not.toHaveProperty('variants');
+    expect(resolveAt(r, G2, G1)).toMatchObject({ checks: 'g2 check', quote: 'q2', section: '#commit-digest' });
+    expect(resolveAt(row({ until: G1 }), G2, G1)).toBeNull();
+    expect(resolveCatalogue(catalogueOf(row({ until: G1 }), row({ id: 'test.two' })), G2).map((a) => a.id)).toEqual(['test.two']);
+  });
+
+  it('checks a row at each revision it applies to, so a reworded quote needs a variant or an until', () => {
+    const msgs = (a: Assertion) => validateCatalogue(catalogueOf(a), 'f', texts, revKeys).map((x) => `${x.where}: ${x.message}`);
+    const listRepoOps = { section: '#incremental-sync', quote: g1Quote, basis: ['keyword' as const], suite: 'mac', areas: ['mac' as const] };
+    const g2Section = '#commit-mac';
+    expect(plainText(texts.get(G1)!.text).includes(plainText(g1Quote))).toBe(true);
+    expect(msgs(row(listRepoOps))).toEqual([`test.row@${G2}: quote not found verbatim in revision ${G2}`]);
+    expect(msgs(row({ ...listRepoOps, until: G1 }))).toEqual([]);
+    expect(msgs(row({ ...listRepoOps, variants: { [G2]: { quote: g2Quote, section: g2Section, basis: ['definition'] } } }))).toEqual([]);
+  });
+
+  it('checks lexicons at each revision against that revision\'s pins', () => {
+    const lexRow = (over: Partial<Assertion>) => row({ basis: ['lexicon'], quote: undefined, section: undefined, suite: 'writer-set', areas: [], ...over });
+    const msgs = (a: Assertion) => validateCatalogue(catalogueOf(a), 'f', texts, revKeys).map((x) => x.message);
+    expect(msgs(lexRow({ lexicon: 'com.atproto.space.listRepos' }))).toEqual([`lexicon com.atproto.space.listRepos is not in the lexicons pinned for ${G2}`]);
+    expect(msgs(lexRow({ lexicon: 'com.atproto.space.listRepos', variants: { [G2]: { lexicon: 'com.atproto.space.listWriters' } } }))).toEqual([]);
+  });
+
+  it('refuses variant keys that are unknown, not after since, or past until', () => {
+    const msgs = (a: Assertion) => validateCatalogue(catalogueOf(a), 'f', texts, revKeys).map((x) => x.message);
+    expect(msgs(row({ variants: { '2027-01-01': { checks: 'x' } } }))).toContain('variant 2027-01-01 is not in spec/revisions.json');
+    expect(msgs(row({ variants: { [G1]: { checks: 'x' } } })).join()).toMatch(/not after the row's first revision/);
+    expect(msgs(row({ until: G1, variants: { [G2]: { checks: 'x' } } }))).toContain(`variant ${G2} is after until ${G1}`);
+    expect(msgs(row({ since: G2, until: G1 }))).toContain(`until ${G1} is before since ${G2}`);
+  });
+});
+
 describe('deviations', () => {
   const entry = {
     assertion: 'records.params-repo',
@@ -229,6 +287,25 @@ describe('deviations', () => {
 
   it('rejects an assertion listed twice', () => {
     expect(validateDeviations([entry, entry], 'd', cat, specAnchors, '2026-11-09').map((x) => x.message)).toContain('assertion listed twice');
+  });
+
+  it('allows one entry per revision, each expecting its own failure', () => {
+    const g1 = { ...entry, assertion: 'records.commit-fields', spec: '#space-repos', revisions: [G1] };
+    const g2 = { ...g1, revisions: [G2], expect: { message: 'other' } };
+    expect(validateDeviations([g1, g2], 'd', cat, anchorsByRev, '2026-11-13')).toEqual([]);
+    expect(validateDeviations([g1, { ...g2, revisions: undefined }], 'd', cat, anchorsByRev, '2026-11-13').map((x) => x.message)).toContain(
+      `assertion listed twice for revision ${G1}`,
+    );
+    expect(deviationsAt([g1, g2], G2)).toEqual([g2]);
+    expect(deviationsAt([{ ...g1, revisions: undefined }], G2)).toHaveLength(1);
+  });
+
+  it('refuses an entry for a revision its assertion does not apply at, or an anchor missing there', () => {
+    const ended = cat.assertions.find((a) => a.until === G1)!;
+    const e = { ...entry, assertion: ended.id, spec: ended.section ?? '#xrpc-api', revisions: [G2] };
+    expect(validateDeviations([e], 'd', cat, anchorsByRev, '2026-11-13').map((x) => x.message)).toContain(`assertion does not apply at revision ${G2}`);
+    const gone = { ...entry, assertion: 'records.commit-fields', spec: '#authenticity-headers', revisions: [G2] };
+    expect(validateDeviations([gone], 'd', cat, anchorsByRev, '2026-11-13').map((x) => x.message)).toContain(`spec #authenticity-headers is not a heading anchor in revision ${G2}`);
   });
 });
 
