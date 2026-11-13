@@ -1,21 +1,21 @@
 {
   "schema": 1,
   "run": {
-    "id": "2026-11-13T17-41-46Z-happyview-d0c9",
+    "id": "2026-11-13T18-09-53Z-happyview-0a24",
     "kind": "local",
-    "started_at": "2026-11-13T17:41:46.079Z",
-    "finished_at": "2026-11-13T17:42:03.650Z",
+    "started_at": "2026-11-13T18:09:53.685Z",
+    "finished_at": "2026-11-13T18:10:08.467Z",
     "attempt": 1
   },
   "suite": {
-    "commit": "92be513bc5",
-    "assertions_digest": "sha256:ef34c2a891b609a1d7ea22ffe2026a828889c3c77d9dbc092cc5a3a19c26e078",
+    "commit": "3205a7c158",
+    "assertions_digest": "sha256:bf633aed3981bed847ed69f10c4fb98b6ad69635735376e4e0b0ca0b5ff6e653",
     "assertion_digests": {
       "addressing.record-uri-shape": "sha256:dc9aab7798161fbff94f41f602ec34e899659c4064d9166046fef4d18d227e63",
       "addressing.skey-limits": "sha256:67b05e2e753e66e04af3ff70dd26cc525db8145a698b76d3572b1a8e728a00af",
       "cred.credential-lifetime-default": "sha256:75a0897cbbc177ab84e5d69564bc2eb8416512738e47f5823094cd98bf94d41f",
       "cred.credential-shape": "sha256:b730478a6f7d90b8dbd6904dade1def055943441876c9bb38e893d45ac4a1e60",
-      "cred.delegation-token-kid-enforced": "sha256:f6bbbe38f67ca5c8823fe3186489b730ae9d8685af10ae659cf55d692dbccac4",
+      "cred.delegation-token-kid-enforced": "sha256:85485c936d523bca18bcd49427e987eba1f7bc050736a9399a7281ecc5ef8f26",
       "cred.delegation-token-lifetime": "sha256:65fb1296ece8ab6167cdda9542a69bf486091facfa4a80616fcf3f586df6a7d7",
       "cred.delegation-token-shape": "sha256:7950cbd28a909ee07ca5c9d4b538e9fe8c535ff6a56cacbc679854362f28e90e",
       "cred.delegation-token-single-use": "sha256:9a96936e72f424a5dbca6bf281c1b77ba8c88eabe211f33749473cc495be85db",
@@ -151,7 +151,7 @@
   "peers": [
     {
       "id": "pdsjs",
-      "image": "ghcr.io/happyproto/pds-test/pdsjs@sha256:1725c1f8d2cee4c4f5095c9309f6cf27e11336b74452f0ae12628afae5fe22be"
+      "image": "ghcr.io/happyproto/pds-test/pdsjs@sha256:37c16c3499b54b799399118a24154d64e5397ea93a2b4da74c182f133f9e1bca"
     },
     {
       "id": "plc",
@@ -463,22 +463,28 @@
   ],
   "results": [
     {
+      "id": "cred.delegation-token-kid-enforced",
+      "suite": "credentials",
+      "status": "pass",
+      "ms": 132
+    },
+    {
       "id": "digest.cid-drisl-plain",
       "suite": "digest",
       "status": "pass",
-      "ms": 236
+      "ms": 168
     },
     {
       "id": "digest.cid-drisl-typed",
       "suite": "digest",
       "status": "pass",
-      "ms": 58
+      "ms": 31
     },
     {
       "id": "digest.covers-overwrite-and-delete",
       "suite": "digest",
       "status": "fail",
-      "ms": 54,
+      "ms": 33,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -488,7 +494,7 @@
       "id": "digest.matches-record-set",
       "suite": "digest",
       "status": "fail",
-      "ms": 298,
+      "ms": 159,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -498,7 +504,7 @@
       "id": "digest.multi-batch",
       "suite": "digest",
       "status": "fail",
-      "ms": 41,
+      "ms": 12,
       "message": "applyWrites (20 writes) answered 422",
       "evidence": {
         "body": "\"Failed to deserialize the JSON body into the target type: writes[0]: missing field `action` at line 1 column 414\""
@@ -508,7 +514,7 @@
       "id": "info.read-auth-status",
       "suite": "records",
       "status": "pass",
-      "ms": 2,
+      "ms": 1,
       "message": "listRecords with no auth answered 401"
     },
     {
@@ -534,7 +540,7 @@
       "id": "mac.commit-header-present",
       "suite": "mac",
       "status": "fail",
-      "ms": 49,
+      "ms": 23,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "read_auth": "oauth-dpop",
@@ -547,7 +553,7 @@
       "id": "mac.commit-valid",
       "suite": "mac",
       "status": "fail",
-      "ms": 60,
+      "ms": 23,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "status": 400
@@ -557,7 +563,7 @@
       "id": "mac.kem-key-published",
       "suite": "mac",
       "status": "pass",
-      "ms": 251
+      "ms": 124
     },
     {
       "id": "oplog.commit-every-page",
@@ -569,7 +575,7 @@
       "id": "oplog.entry-shape",
       "suite": "oplog",
       "status": "fail",
-      "ms": 397,
+      "ms": 314,
       "message": "listRepoOps answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -579,7 +585,7 @@
       "id": "oplog.fold-matches-commit",
       "suite": "oplog",
       "status": "fail",
-      "ms": 60,
+      "ms": 44,
       "message": "listRepoOps answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -589,7 +595,7 @@
       "id": "oplog.pagination-batch-boundary",
       "suite": "oplog",
       "status": "fail",
-      "ms": 48,
+      "ms": 14,
       "message": "applyWrites (3 writes) answered 422",
       "evidence": {
         "body": "\"Failed to deserialize the JSON body into the target type: writes[0]: missing field `action` at line 1 column 309\""
@@ -599,7 +605,7 @@
       "id": "oplog.pagination-complete",
       "suite": "oplog",
       "status": "fail",
-      "ms": 306,
+      "ms": 66,
       "message": "listRepoOps answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -609,7 +615,7 @@
       "id": "oplog.since-exclusive",
       "suite": "oplog",
       "status": "fail",
-      "ms": 44,
+      "ms": 29,
       "message": "listRepoOps answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -619,7 +625,7 @@
       "id": "oplog.stale-values-omitted",
       "suite": "oplog",
       "status": "fail",
-      "ms": 67,
+      "ms": 65,
       "message": "listRepoOps answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -629,13 +635,13 @@
       "id": "policy.create-get-roundtrip",
       "suite": "policy",
       "status": "pass",
-      "ms": 220
+      "ms": 148
     },
     {
       "id": "policy.member-methods",
       "suite": "policy",
       "status": "fail",
-      "ms": 187,
+      "ms": 97,
       "message": "memberspace.putMember answered 502",
       "evidence": {
         "body": "{\"error\":\"failed to resolve authority for com.atproto.memberspace.putMember: bad request: DNS TXT lookup failed for _lexicon.memberspace.atproto.com.: DNS error: error response: Server Failure\"}"
@@ -645,7 +651,7 @@
       "id": "policy.put-member-upsert",
       "suite": "policy",
       "status": "fail",
-      "ms": 5,
+      "ms": 4,
       "message": "memberspace.putMember (write: false) answered 502",
       "evidence": {
         "body": "{\"error\":\"failed to resolve authority for com.atproto.memberspace.putMember: bad request: DNS TXT lookup failed for _lexicon.memberspace.atproto.com.: DNS error: error response: Server Failure\"}"
@@ -655,7 +661,7 @@
       "id": "records.apply-writes-atomic",
       "suite": "records",
       "status": "fail",
-      "ms": 50,
+      "ms": 18,
       "message": "applyWrites answered 422",
       "evidence": {
         "body": "\"Failed to deserialize the JSON body into the target type: writes[0]: missing field `action` at line 1 column 309\""
@@ -665,7 +671,7 @@
       "id": "records.commit-bytes-encoding",
       "suite": "records",
       "status": "fail",
-      "ms": 12,
+      "ms": 9,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "status": 400,
@@ -676,7 +682,7 @@
       "id": "records.commit-fields",
       "suite": "records",
       "status": "fail",
-      "ms": 170,
+      "ms": 117,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "status": 400,
@@ -687,7 +693,7 @@
       "id": "records.commit-repo-space-match",
       "suite": "records",
       "status": "fail",
-      "ms": 13,
+      "ms": 9,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "status": 400,
@@ -698,19 +704,19 @@
       "id": "records.crud-roundtrip",
       "suite": "records",
       "status": "fail",
-      "ms": 274,
-      "message": "createRecord's uri at://did:plc:vpoyin2nkdpsspwxdxas2s5m/space/com.example.conformance.space/6b331f37d848/did:plc:encgbb2jucgezwp3owf4kyze/com.example.conformance.note/3n27jt2zskecn doesn't end in the chosen rkey",
+      "ms": 132,
+      "message": "createRecord's uri at://did:plc:74mltary37fwqk3h6ydligo3/space/com.example.conformance.space/375e5c5ce3c0/did:plc:ilw27ek74dnypjizwibem7ro/com.example.conformance.note/3n27lfcksyrqy doesn't end in the chosen rkey",
       "evidence": {
         "step": "createRecord",
         "status": 201,
-        "body": "{\"cid\":\"bafyreia4jtc4ze6so42sixu6vigyofqmzloeypzibf6oe47y5x7oztqtbi\",\"uri\":\"at://did:plc:vpoyin2nkdpsspwxdxas2s5m/space/com.example.conformance.space/6b331f37d848/did:plc:encgbb2jucgezwp3owf4kyze/com.example.conformance.note/3n27jt2zskecn\"}"
+        "body": "{\"cid\":\"bafyreia4jtc4ze6so42sixu6vigyofqmzloeypzibf6oe47y5x7oztqtbi\",\"uri\":\"at://did:plc:74mltary37fwqk3h6ydligo3/space/com.example.conformance.space/375e5c5ce3c0/did:plc:ilw27ek74dnypjizwibem7ro/com.example.conformance.note/3n27lfcksyrqy\"}"
       }
     },
     {
       "id": "records.read-requires-auth",
       "suite": "records",
       "status": "pass",
-      "ms": 191
+      "ms": 153
     }
   ],
   "summary": {

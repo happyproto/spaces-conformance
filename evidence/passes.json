@@ -1,30 +1,30 @@
 {
   "sources": [
     {
-      "file": "test/fixtures/results/parity-zds-2026-11-12.json",
+      "file": "test/fixtures/results/parity-zds-2026-11-13.json",
       "implementation": "zds",
-      "run": "2026-11-12T18-02-35Z-zds-5ca6",
-      "suite_commit": "42a99dc9e1",
-      "assertions_digest": "sha256:fa1c42076a585234f089877bbfe0d38bb81eedee883d50bb18f1e5cd4b1e9f24",
-      "image": "ghcr.io/happyproto/pds-test/zds@sha256:809bfa1025271946e78c123e8ff99cb48f0a92c4d37485b985631e9d866380d1",
-      "revision": "2026-10-29"
+      "run": "2026-11-13T18-09-22Z-zds-992c",
+      "suite_commit": "3205a7c158",
+      "assertions_digest": "sha256:bf633aed3981bed847ed69f10c4fb98b6ad69635735376e4e0b0ca0b5ff6e653",
+      "image": "ghcr.io/happyproto/pds-test/zds@sha256:2ec90ddaf8a94618a9654e010586ec503d0dd7c3ec23c9a8646e3b28ad2a998f",
+      "revision": "2026-11-12"
     },
     {
-      "file": "test/fixtures/results/parity-atproto-pds-2026-11-12.json",
+      "file": "test/fixtures/results/parity-atproto-pds-2026-11-13.json",
       "implementation": "atproto-pds",
-      "run": "2026-11-12T18-03-03Z-atproto-pds-6c7f",
-      "suite_commit": "42a99dc9e1",
-      "assertions_digest": "sha256:fa1c42076a585234f089877bbfe0d38bb81eedee883d50bb18f1e5cd4b1e9f24",
-      "image": "ghcr.io/happyproto/pds-test/atproto-pds@sha256:19a0f54acd6dca38a44097987f8e000504a2cf090c81768f2957bdcee2431848",
+      "run": "2026-11-13T18-09-38Z-atproto-pds-de62",
+      "suite_commit": "3205a7c158",
+      "assertions_digest": "sha256:bf633aed3981bed847ed69f10c4fb98b6ad69635735376e4e0b0ca0b5ff6e653",
+      "image": "ghcr.io/happyproto/pds-test/atproto-pds@sha256:0fe098d36c7fd8beedcdc3f68f4f8431eb4571cdf764599ee42520b22fa07a5f",
       "revision": "2026-10-29"
     },
     {
-      "file": "test/fixtures/results/parity-pdsjs-2026-11-12.json",
+      "file": "test/fixtures/results/parity-pdsjs-2026-11-13.json",
       "implementation": "pdsjs",
-      "run": "2026-11-12T18-03-20Z-pdsjs-5720",
-      "suite_commit": "42a99dc9e1",
-      "assertions_digest": "sha256:fa1c42076a585234f089877bbfe0d38bb81eedee883d50bb18f1e5cd4b1e9f24",
-      "image": "ghcr.io/happyproto/pds-test/pdsjs@sha256:1725c1f8d2cee4c4f5095c9309f6cf27e11336b74452f0ae12628afae5fe22be",
+      "run": "2026-11-13T18-09-07Z-pdsjs-7506",
+      "suite_commit": "3205a7c158",
+      "assertions_digest": "sha256:bf633aed3981bed847ed69f10c4fb98b6ad69635735376e4e0b0ca0b5ff6e653",
+      "image": "ghcr.io/happyproto/pds-test/pdsjs@sha256:37c16c3499b54b799399118a24154d64e5397ea93a2b4da74c182f133f9e1bca",
       "revision": "2026-10-29"
     },
     {
@@ -39,9 +39,9 @@
     {
       "file": "test/fixtures/results/happyview-beta14-2026-11-13.json",
       "implementation": "happyview",
-      "run": "2026-11-13T17-41-46Z-happyview-d0c9",
-      "suite_commit": "92be513bc5",
-      "assertions_digest": "sha256:ef34c2a891b609a1d7ea22ffe2026a828889c3c77d9dbc092cc5a3a19c26e078",
+      "run": "2026-11-13T18-09-53Z-happyview-0a24",
+      "suite_commit": "3205a7c158",
+      "assertions_digest": "sha256:bf633aed3981bed847ed69f10c4fb98b6ad69635735376e4e0b0ca0b5ff6e653",
       "image": "ghcr.io/gamesgamesgamesgamesgames/happyview@sha256:147a27668f0fc87c2dcfde5103d01f51efe55c329273c8ae7ae292cdb87a7b93",
       "revision": "2026-10-29"
     }
@@ -54,95 +54,218 @@
     {
       "file": "test/fixtures/results/reference-2026-11-10.json",
       "reason": "The first reference run, from before the today suites existed; superseded by parity-reference-2026-11-12.json."
+    },
+    {
+      "file": "test/fixtures/results/parity-zds-2026-11-12.json",
+      "reason": "The phase 3 parity run at HappyView's interop pins; superseded by parity-zds-2026-11-13.json at the HAP-427 pins. Kept for docs/parity.md."
+    },
+    {
+      "file": "test/fixtures/results/parity-atproto-pds-2026-11-12.json",
+      "reason": "The phase 3 parity run at HappyView's interop pins; superseded by parity-atproto-pds-2026-11-13.json at the HAP-427 pins. Kept for docs/parity.md."
+    },
+    {
+      "file": "test/fixtures/results/parity-pdsjs-2026-11-12.json",
+      "reason": "The phase 3 parity run at HappyView's interop pins; superseded by parity-pdsjs-2026-11-13.json at the HAP-427 pins. Kept for docs/parity.md."
     }
   ],
   "passes": {
     "2026-10-29": {
+      "cred.delegation-token-kid-enforced": [
+        "happyview",
+        "pdsjs"
+      ],
       "digest.cid-drisl-plain": [
         "atproto-pds",
         "happyview",
         "pdsjs",
-        "reference",
-        "zds"
+        "reference"
       ],
       "digest.cid-drisl-typed": [
         "atproto-pds",
         "happyview",
-        "reference",
-        "zds"
+        "reference"
+      ],
+      "digest.covers-overwrite-and-delete": [
+        "atproto-pds",
+        "pdsjs"
+      ],
+      "digest.matches-record-set": [
+        "atproto-pds",
+        "pdsjs"
+      ],
+      "digest.multi-batch": [
+        "atproto-pds",
+        "pdsjs"
       ],
       "info.read-auth-status": [
         "atproto-pds",
         "happyview",
         "pdsjs",
-        "reference",
-        "zds"
+        "reference"
       ],
       "info.unknown-method-status": [
         "atproto-pds",
         "happyview",
         "pdsjs",
-        "reference",
-        "zds"
+        "reference"
       ],
       "lifecycle.implicit-create": [
         "atproto-pds",
         "pdsjs",
-        "reference",
-        "zds"
+        "reference"
+      ],
+      "mac.commit-header-present": [
+        "atproto-pds",
+        "pdsjs"
+      ],
+      "mac.commit-valid": [
+        "atproto-pds",
+        "pdsjs"
       ],
       "mac.kem-key-published": [
+        "atproto-pds",
         "happyview",
         "pdsjs"
       ],
       "oplog.entry-shape": [
         "atproto-pds",
         "pdsjs",
-        "reference",
-        "zds"
+        "reference"
+      ],
+      "oplog.fold-matches-commit": [
+        "atproto-pds"
       ],
       "oplog.pagination-batch-boundary": [
         "atproto-pds",
-        "reference",
-        "zds"
+        "reference"
       ],
       "oplog.pagination-complete": [
         "atproto-pds",
-        "reference",
-        "zds"
+        "reference"
       ],
       "oplog.since-exclusive": [
         "atproto-pds",
         "pdsjs",
-        "reference",
-        "zds"
+        "reference"
       ],
       "oplog.stale-values-omitted": [
         "atproto-pds",
         "pdsjs",
-        "reference",
-        "zds"
+        "reference"
       ],
       "policy.create-get-roundtrip": [
+        "atproto-pds",
         "happyview"
+      ],
+      "policy.member-methods": [
+        "atproto-pds"
+      ],
+      "policy.put-member-upsert": [
+        "atproto-pds"
       ],
       "records.apply-writes-atomic": [
         "atproto-pds",
         "pdsjs",
-        "reference",
-        "zds"
+        "reference"
+      ],
+      "records.commit-bytes-encoding": [
+        "atproto-pds",
+        "pdsjs"
+      ],
+      "records.commit-fields": [
+        "atproto-pds",
+        "pdsjs"
+      ],
+      "records.commit-repo-space-match": [
+        "atproto-pds",
+        "pdsjs"
       ],
       "records.crud-roundtrip": [
         "atproto-pds",
         "pdsjs",
-        "reference",
-        "zds"
+        "reference"
       ],
       "records.read-requires-auth": [
         "atproto-pds",
         "happyview",
         "pdsjs",
-        "reference",
+        "reference"
+      ]
+    },
+    "2026-11-12": {
+      "digest.cid-drisl-plain": [
+        "zds"
+      ],
+      "digest.cid-drisl-typed": [
+        "zds"
+      ],
+      "digest.covers-overwrite-and-delete": [
+        "zds"
+      ],
+      "digest.matches-record-set": [
+        "zds"
+      ],
+      "digest.multi-batch": [
+        "zds"
+      ],
+      "info.read-auth-status": [
+        "zds"
+      ],
+      "info.unknown-method-status": [
+        "zds"
+      ],
+      "lifecycle.implicit-create": [
+        "zds"
+      ],
+      "mac.kem-key-published": [
+        "zds"
+      ],
+      "oplog.commit-every-page": [
+        "zds"
+      ],
+      "oplog.entry-shape": [
+        "zds"
+      ],
+      "oplog.fold-matches-commit": [
+        "zds"
+      ],
+      "oplog.pagination-batch-boundary": [
+        "zds"
+      ],
+      "oplog.pagination-complete": [
+        "zds"
+      ],
+      "oplog.since-exclusive": [
+        "zds"
+      ],
+      "oplog.stale-values-omitted": [
+        "zds"
+      ],
+      "policy.create-get-roundtrip": [
+        "zds"
+      ],
+      "policy.member-methods": [
+        "zds"
+      ],
+      "policy.put-member-upsert": [
+        "zds"
+      ],
+      "records.apply-writes-atomic": [
+        "zds"
+      ],
+      "records.commit-bytes-encoding": [
+        "zds"
+      ],
+      "records.commit-fields": [
+        "zds"
+      ],
+      "records.commit-repo-space-match": [
+        "zds"
+      ],
+      "records.crud-roundtrip": [
+        "zds"
+      ],
+      "records.read-requires-auth": [
         "zds"
       ]
     }

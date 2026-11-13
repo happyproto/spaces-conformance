@@ -99,8 +99,13 @@ describe('the pass index per revision and per assertion digest (HAP-432)', () =>
   });
 
   it('loads one revision\'s passes', () => {
-    expect(loadIndependence('2026-11-12').passes.size).toBe(0);
-    expect(loadIndependence('2026-10-29').passes.size).toBeGreaterThan(0);
+    const g1 = loadIndependence('2026-10-29').passes;
+    const g2 = loadIndependence('2026-11-12').passes;
+    expect(g1.size).toBeGreaterThan(0);
+    expect(g2.size).toBeGreaterThan(0);
+    // A row that isn't in 2026-11-12 can't have passed there.
+    expect(g1.has('mac.commit-valid')).toBe(true);
+    expect(g2.has('mac.commit-valid')).toBe(false);
   });
 });
 
@@ -134,7 +139,8 @@ describe('the committed pass index', () => {
     const dir = mkdtempSync(join(tmpdir(), 'passes-'));
     const path = join(dir, 'passes.json');
     const index = JSON.parse(readFileSync(PASS_INDEX, 'utf8'));
-    index.sources[0].assertions_digest = 'sha256:0';
+    // Only a source without per-assertion digests is judged by the whole-file digest.
+    index.sources[0] = { ...index.sources[0], file: 'test/fixtures/results/reference-2026-11-10.json', assertions_digest: 'sha256:0' };
     writeFileSync(path, JSON.stringify(index));
     expect(staleSources(path).map((s) => s.implementation)).toContain(index.sources[0].implementation);
   });
