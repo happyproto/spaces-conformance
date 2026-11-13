@@ -719,7 +719,22 @@ assertions:
     roles: [space-host]
     areas: [jwt]
     checks: >-
-      A space host refuses an otherwise valid delegation token whose kid isn't #atproto.
+      A space host that grants a credential for a well-formed delegation token refuses each of
+      these: no kid; kid "atproto"; kid "#atproto_label"; kid "<did>#atproto"; and kid
+      "#atproto" on a token signed by another key the DID document lists (#atproto_kem).
+      A 429 or 5xx answer, or a well-formed token refused before or after the negatives,
+      makes the row pending.
+    variants:
+      "2026-11-12":
+        basis: [keyword, lexicon]
+        lexicon: com.atproto.space.authorizeSpaceSync
+        error: InvalidDelegationToken
+        checks: >-
+          A space host that grants a credential for a well-formed delegation token refuses each of
+          these with error InvalidDelegationToken: no kid; kid "atproto"; kid "#atproto_label";
+          kid "<did>#atproto"; and kid "#atproto" on a token signed by another key the DID
+          document lists (#atproto_kem). A 429 or 5xx answer, or a well-formed token refused
+          before or after the negatives, makes the row pending.
 
   - id: cred.credential-shape
     suite: credentials
