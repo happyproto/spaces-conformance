@@ -1,112 +1,112 @@
 {
   "schema": 1,
   "run": {
-    "id": "2026-11-13T18-09-22Z-zds-992c",
+    "id": "2026-11-13T18-33-54Z-zds-9ef4",
     "kind": "local",
-    "started_at": "2026-11-13T18:09:22.111Z",
-    "finished_at": "2026-11-13T18:09:34.628Z",
+    "started_at": "2026-11-13T18:33:54.772Z",
+    "finished_at": "2026-11-13T18:34:08.368Z",
     "attempt": 1
   },
   "suite": {
-    "commit": "3205a7c158",
-    "assertions_digest": "sha256:bf633aed3981bed847ed69f10c4fb98b6ad69635735376e4e0b0ca0b5ff6e653",
+    "commit": "ced098ff0d",
+    "assertions_digest": "sha256:dbb1305112b3b0b97bc143f8af3e0fabdaf5e331e89023a39144611443d62849",
     "assertion_digests": {
-      "addressing.record-uri-shape": "sha256:dc9aab7798161fbff94f41f602ec34e899659c4064d9166046fef4d18d227e63",
-      "addressing.skey-limits": "sha256:67b05e2e753e66e04af3ff70dd26cc525db8145a698b76d3572b1a8e728a00af",
-      "cred.credential-lifetime-default": "sha256:75a0897cbbc177ab84e5d69564bc2eb8416512738e47f5823094cd98bf94d41f",
-      "cred.credential-shape": "sha256:b730478a6f7d90b8dbd6904dade1def055943441876c9bb38e893d45ac4a1e60",
-      "cred.delegation-token-kid-enforced": "sha256:85485c936d523bca18bcd49427e987eba1f7bc050736a9399a7281ecc5ef8f26",
-      "cred.delegation-token-lifetime": "sha256:65fb1296ece8ab6167cdda9542a69bf486091facfa4a80616fcf3f586df6a7d7",
-      "cred.delegation-token-shape": "sha256:7950cbd28a909ee07ca5c9d4b538e9fe8c535ff6a56cacbc679854362f28e90e",
-      "cred.delegation-token-single-use": "sha256:9a96936e72f424a5dbca6bf281c1b77ba8c88eabe211f33749473cc495be85db",
-      "cred.delegation-token-verifiable": "sha256:617bd1908a6b69e732c0231ba4003d6c27c0d2a994f6cf5f9ba08ae9a1f704e0",
-      "cred.extra-assertion-not-rejected": "sha256:41d8ea1b6739c13de8ae69e85a6406092df173c4373c37b73fe284572b060314",
-      "cred.foreign-authority-accepted": "sha256:796e532ad0cf70044ccdc6de5b4f466c587024616ede8235c88f7217abd2472d",
-      "cred.httpsig-expired": "sha256:d5a863911c9af9770f11e5fc862e9cb4e9473560f034d6613bc26214239db24a",
-      "cred.httpsig-high-s-accepted": "sha256:176ceb1fe91b5e595bb21b45f807bca3fdef9b5bac7b5d9165f63764ac685d79",
-      "cred.httpsig-no-signature": "sha256:713597e63bb85edd0fe4ecdb798b13c484bd78db5dbabf6fd3c758935e066806",
-      "cred.httpsig-non-p256-key": "sha256:7f0cfee93e46a8ff06fc278d36705cb5369f39203f74ce2d642b7c0b9315adea",
-      "cred.httpsig-wrong-audience": "sha256:d0b7e78a1e065da5f9556a1651554111bb887f4e89421441ad17e8c43a35c220",
-      "cred.httpsig-wrong-components": "sha256:ab5503c1d94a3f7d53e0ce674788185b2fde5dc467c8e168eecb5867ebdf7fd1",
-      "cred.httpsig-wrong-tag": "sha256:af5321e583c9e5f22e1554e597c57712b0a14e8fccc7ecf3fd31a111e008a286",
-      "cred.reuse-allowed": "sha256:92e0aeb19912334856cddfa6f71e8f3debc2389b9878d205954eb263618606ca",
-      "cred.revoked-jti-rejected": "sha256:9f58eec1189e29acdafcd47f17a5403ab90377a44385b9faaff90183e47066f5",
-      "cred.scheme-case-insensitive": "sha256:7c7457a325d04614e892601720101e8cc8e5e4d0342361f6e3a605d3fbbff1a0",
-      "deletion.member-records-survive": "sha256:753c6220a90309a926d3cf3d595b824a549b2a71437aa4ac0b8d0bac04f779f7",
-      "digest.cid-drisl-plain": "sha256:660f786b050d2e80ff4b0da2705934f661401549fa93e3395cc7778698811bda",
-      "digest.cid-drisl-typed": "sha256:22579702b7ddaf1a9757f08e923df01dd71a0d3bef60e911990e08238daa8fbe",
-      "digest.covers-overwrite-and-delete": "sha256:518e9c873e5e71296038be49990a39eaa6b0b7f44a8e0b33063ad060e7072cd7",
-      "digest.empty-repo": "sha256:6738b6093f9e36d840097d25a1e8e0ef8e309cfae0135493a4bb3fd03a60ea29",
-      "digest.matches-record-set": "sha256:fcb980988adb1e3099784f661582d17fab8337fd7829e5b961e2c54a6ba07ac1",
-      "digest.multi-batch": "sha256:3157a8d76c5f53de2f801d84e68159d94c962e555eb800b1fa4bfd94dc9d7d14",
-      "digest.order-independent": "sha256:29394298e6c55633a365f83781fd07cd3bb0d0e8b7694bdcd6e5c75423a01f1d",
-      "export.blob-roundtrip": "sha256:55cf3bd0bf2d5815ebccf18f70fe1b2b95815871f629c0dc20a79eb3cface83b",
-      "export.star-digest": "sha256:924bb24b748f324c55997945ca438816356092ae5864a56d971894731d3285d7",
-      "export.star-magic-and-metadata": "sha256:0bce289c7281f1b5f0b29abdfdd6397dd7d9c37556ab8d7eb601cd329f6a6e0a",
-      "export.star-sorted-unique": "sha256:08aa057488d001c03c11674283f5d43d4552cb82437ba390c60a4223c6b93bd7",
-      "info.read-auth-status": "sha256:f5075730faaca3ddd0194812104c1edf0a1f6aff12cce72817b396234b379f88",
-      "info.unknown-method-status": "sha256:c99bf1994f41e1bd36e43af8c0e585a1c28d9b9da16fb2ac1e4f2bf2ea40c672",
-      "lifecycle.clear-records-empty-digest": "sha256:3ff80052e5b7c0814c6f10302e6834963bde55e682412ed59cf62c36c98333df",
-      "lifecycle.create-caller-is-authority": "sha256:7e38f47ddf145d95cc25c70b4ad463f2c15cf4af2fe60ef0386080d31de183e8",
-      "lifecycle.empty-equals-missing": "sha256:2927173e699396f1d3ab9116c754488602169aebda86824981a33cff99599a53",
-      "lifecycle.implicit-create": "sha256:8b247230b2dd9882d6b67f5134531e490a9bd476c351392c7bd719e22242dbe3",
-      "lifecycle.list-spaces": "sha256:14b2998baebd4e36882c3e91303dc6baca45848fc22a9f940db819c574348935",
-      "lifecycle.self-authority-needs-space": "sha256:7e1e9ad70574f81b6fc0cd01f595735afa66e56ed9f5a3c71949a108bebf7645",
-      "mac.kem-key-published": "sha256:16afe2e74f892058091ea3be5b3a0feae72dc2022c0a66f14a64952d9b425d98",
-      "migration.export-meta": "sha256:bb6314d5bbddc1a09b2a0785ec8ac0e032c076ce6384ad6036a4ee685677465a",
-      "migration.get-import-repo": "sha256:a6086baeb920d2e178e58fcebec482ba5d6298d5b46cf29faa0767ad6749dff8",
-      "migration.import-meta": "sha256:64c9d6f3c6698c29e2492050afb7d511617de1ac62c648a339a70f55b4e7d37a",
-      "oplog.commit-every-page": "sha256:211b18d1a98c8852f958000bc44c272d7506433c9870c0e4098d2679bf63e016",
-      "oplog.entry-shape": "sha256:fe4cc76b1d358a6c935ae53e1d527b52c394fe4b5c9ab5f866f9ef8567089820",
-      "oplog.exclude-values": "sha256:cc9574dc9e29e7540fb49bad22e677da4d8115ea099a2b12edae7a74388fe95c",
-      "oplog.fold-matches-commit": "sha256:f17b602c78c1d4ef08141300d897c320c00fb5a78e80d5eeb1816af2be2a13e2",
-      "oplog.pagination-batch-boundary": "sha256:201dcdb591d77c13bd54eac49d21f543e2010b302c8530a6ac5c1c9509a7c295",
-      "oplog.pagination-complete": "sha256:6f799d2097d6e39f7b015c2d12cceb3f2a2a756096708d274da00edb0702576f",
-      "oplog.since-exclusive": "sha256:99ea2dbd7f8d912946c8419eac1515d061598550e465a3a0f05135a01c84851b",
-      "oplog.stale-values-omitted": "sha256:fc5596b46361b5a53162262c86f49246e7208f9db80ee61970e0d4fcc858e6b7",
-      "policy.allowed-apps": "sha256:99c36d5674ff666006efb60fd0e2458317fd1ab92f932ec50f2e623286db0bd7",
-      "policy.authority-always-authorized": "sha256:851b0183b7ed9697db2f1b3ce6c3cd51ccb78c716958692765d056c7f1cb754f",
-      "policy.baseline-supported": "sha256:22b5c4c31966841a3c2d51a97111741fd7de332d995e9e0009ed9f69f5c3280b",
-      "policy.create-get-roundtrip": "sha256:39a6ea0fc66d8e438edfe4c52e63c627c660ccd16330bc9e4df885e0e5fd87e4",
-      "policy.managed-check-user-access": "sha256:9df9c804b1fab5b91e625590e32bb3f13f744acfde78a98fb51c7be78ce4198a",
-      "policy.member-methods": "sha256:1ccea85cd51fbf5ce49531c5d1a0d8c2fc441cfc68723c169a252ffc0954d94a",
-      "policy.member-read-gate": "sha256:bd3ac75081a243857cb2c5b9b3503d9928655907332065a8fa9a30a50dc56304",
-      "policy.personalspace-owner-only": "sha256:06e4eeed222f3607451dfb745f34c35eef7a92a01a16156b4b84efe838ce4366",
-      "policy.public-read": "sha256:b949d3f3beef73287144976a5e67b9a1070e32c4fb96eb15d2aeda800304ceb3",
-      "policy.publish-records": "sha256:b40da54cb5fa739d97766ce6a14370a3efae5f323f93fb0e0e7b0e3f23ec3d8a",
-      "policy.publish-records-protected": "sha256:c6ba0295ee406a8bd2df4c9afa48514f3ce4507d2f9cae1605202f762f372a07",
-      "policy.put-member-upsert": "sha256:f5f6f0e800a61c76b9585d25eaad3007f629d15f87bd96da0cc74a8c7f072191",
-      "policy.remove-member-drops-writer": "sha256:770156b549381dbdce41646025ea96eb34ccc29b64d81842ed43f03519e53d43",
-      "policy.type-change-discards-state": "sha256:3816c2e1f83e8064cf4c27ff3fc29c1ff453f2ee987fc9508b01f13f4829803c",
-      "policy.unsupported-policy-error": "sha256:dcfc945100e28e1a89912b562cb65bb9108577b56f7db140e824b2ebd6ee8576",
-      "records.apply-writes-atomic": "sha256:fe14e48f58a95e97c2e924fc77c79d5a41a120eb2589c90360fe3afe5d720014",
-      "records.commit-bytes-encoding": "sha256:c47fd9e2266612287f1849fd51f43ae8461010c0bd99215fdd501b1f88783785",
-      "records.commit-fields": "sha256:9f0c7e3c0152d08098e8ed8d6fa40d2b930822bcd5545e0740b892365b01929a",
-      "records.commit-repo-space-match": "sha256:85b09ee39c23a2f7001b5c71aae5ae752563d44ae87889f092446f96b887172e",
-      "records.crud-roundtrip": "sha256:c121429fbf3f03c7e484313ce3352b306b9a86a07d87bf58887bb7424df5148a",
-      "records.list-exclude-values": "sha256:62d4919220e0dbc434e1244d3f7b8f7216af2f7e9a87c22a08efe96bf4aad888",
-      "records.list-inlines-values": "sha256:4ecd2d89d50b2c63ae06455b1d7b9d2b010f924ac72337a4d526f66832626fa7",
-      "records.params-repo": "sha256:9281aeac1a30b1e7abbaf97901208761bdc3e62a2192c84d520a7bc42c9f61ee",
-      "records.read-requires-auth": "sha256:433e4d3b55e47153ad3d9e4b741b07e8d3815ec1ab0112214a1dbca7ee7fe3ab",
-      "records.write-refuses-credential": "sha256:ee24d288a8182dbce66bccb08b9e6a09a85cbc93a0c0aeefa8182a0a8e330d14",
-      "scope.authority-self": "sha256:1a4d358be998519d8967a72dd71a45f6142d275a7fc0edb12b64cb0d88e9e5e0",
-      "scope.bare-grant-declared-collections": "sha256:299574f977b3878de17956c00b166ae9e113d513de166604f7360536a5452a59",
-      "scope.collection-star-widens": "sha256:1fa83bcc35aafe0192da71b75375850cab396463ae961627c0d91601516eea96",
-      "scope.manage-create-required": "sha256:cf74192067244acd4dd3b58b8b8632534fffab241083ab1d609bd81cb1aa99aa",
-      "scope.manage-delete-required": "sha256:1400d7d017b683091ed81371d045592ed50195bc386378179507311af055e2b3",
-      "scope.manage-update-required": "sha256:314de702d5aaa11068ccf89206b75885308eb744958ab0f8b5da304def039c7f",
-      "scope.omitted-action-all": "sha256:d51cf6726b6cf6f6f48da9a4c8f00146a77de06c310dc75362e7923dc5b08591",
-      "scope.read-self-own-repo-only": "sha256:b4e6e8293967b0469c9117bd8275a56ea54c456749b9142ed0bce920f72222cd",
-      "scope.wildcard-type-no-writes": "sha256:b54e1350579696d92309581b49b9d498ffad47627ae79c31c5d0f8509104c531",
-      "writers.future-rev-rejected": "sha256:003f6173e839148e178f0e9d633e809a1b34082bc8afed3975ed189e0953e721",
-      "writers.repos-resolve-to-host": "sha256:8156941e9440b2b8cd871efaa295d23e067c9fb0404f5c140bd755e99dd68c07",
-      "writers.stale-rev-ignored": "sha256:101ff21d621f4b8751b868dee6f8449895dc2e147b73c431213a4a1ad761b794",
-      "writers.unauthorized-write-rejected": "sha256:324be020f70615586d68fceead4ff4811181e5f4219daa3d36407fddc7df6cdc",
-      "xrpc.error.PolicyMismatch": "sha256:59fc466702e5e2ce268575978ff7c56e85b59bc03296b175bf2dad9d86b67c60",
-      "xrpc.error.RecordNotFound": "sha256:41ac92dc606ddbad18232ed74d1dd5e9df1ac04e2ad3ee4c400dfe2479046c93",
-      "xrpc.error.RepoNotFound": "sha256:7a7411898e3ed9b45219ae1ba7347e55b8793e5dac5ef7b2a9bcad4d575f0a4a",
-      "xrpc.error.SpaceNotFound": "sha256:e350449bdd4e9159d228c23aaad93a2648fb9a0f9f7d56a8eea129fde3a76448",
-      "xrpc.error.UnsupportedPolicy": "sha256:0f13631d80b5f9886c6aad3f5044ee4fb72f86101f9a138ca86c485f69407b99"
+      "addressing.record-uri-shape": "sha256:1b070e190996c114106183bc98c46543c94360c7102a84f86b18b78c5135ae0e",
+      "addressing.skey-limits": "sha256:f475fb135f2a19d7e3142bb99bfe53d54ca267d5a533dd9237ad1edfc38d2e0d",
+      "cred.credential-lifetime-default": "sha256:df5c0068e84a90efca1e8ede62b3eae38e425ee537a4750f106e379cef6e4f21",
+      "cred.credential-shape": "sha256:ade7f41b8dfc5ea26d5e26703e0ffbdca27dd5be1ca934d0de9ecbc5831a6fa1",
+      "cred.delegation-token-kid-enforced": "sha256:dc99f7545b77e127a3fa17756db18d9f4c45a1da52cdae9a12f0fd1c02ad74f5",
+      "cred.delegation-token-lifetime": "sha256:e16f6ba83a87c6157dd43cf4073c2e6d4d49ebe97d4e305c6a2f44a2c6c9e527",
+      "cred.delegation-token-shape": "sha256:766cf6d4b016a7b0d48491e9a0bf99077ee701fc23d08231b5adc4bbc53523c4",
+      "cred.delegation-token-single-use": "sha256:e021e5d232770ba6595521b99aab5b5ffeeb44d43becb43858b784b2322962f1",
+      "cred.delegation-token-verifiable": "sha256:fc2f5665e3ad51aa9bec819da8372dda144d802d628c50cf541f822318e09634",
+      "cred.extra-assertion-not-rejected": "sha256:c224a6d8128c416c1627dde1ea22c0ede8d4bfc136966252a5980e5dd20d3592",
+      "cred.foreign-authority-accepted": "sha256:2970d774000d15edcc9a11cf1ae9dbc2dd2698be3f8f1cb493efc3177e78f194",
+      "cred.httpsig-expired": "sha256:22fdda53b89b5329872fa101268708c5f82ad76f47e79583d01322fe38291d58",
+      "cred.httpsig-high-s-accepted": "sha256:524c7ef5917ebda230fbf920327da935351723ba9000de122fab5a4e300e370f",
+      "cred.httpsig-no-signature": "sha256:eb54014065d9007672a9332f7591c4fa1f3b72e77ac3faba6d04a337856615db",
+      "cred.httpsig-non-p256-key": "sha256:063f7e3ef88dfff34aed8a6e9b4126d2ba30159ec8af9ce948f0bd8b78c81eb8",
+      "cred.httpsig-wrong-audience": "sha256:86ce31bbee03583fcbb708dc33f1eaa0f67aa8c324457866866eb234ccbfcfc9",
+      "cred.httpsig-wrong-components": "sha256:0b7be50d2933645832ff4bc2fd7eb8fcb8dd15a82371ba81ff904ffadac7d305",
+      "cred.httpsig-wrong-tag": "sha256:24a65722995b893bced58a889f6f087bf3a59bdea484fa73da5fbe9d5c96b13a",
+      "cred.reuse-allowed": "sha256:1cd2d6e360b4f86ca6e1a7a8132dd1e3c962c8f08bc761e92725583195d4cd94",
+      "cred.revoked-jti-rejected": "sha256:fa31d1d0d462adde8ed1e0faf13ebce058b93f5d3e535af01621067478fa91dd",
+      "cred.scheme-case-insensitive": "sha256:9862bcae2bf3ff4b6f76810d59b862a08ff085f5ab4c11bb859ab3649ff05dda",
+      "deletion.member-records-survive": "sha256:51465951dee6fbdd882dc8069f3a633544c7cfa7b4ead93d700d051f84a11f3a",
+      "digest.cid-drisl-plain": "sha256:810c58365a1bf70007e6fa792d0ae280aba3cd2607ae75444971a80af69d0001",
+      "digest.cid-drisl-typed": "sha256:c7cf555fc85355a8825e1b6cfd062737a017e97af2d3b948f8fa834ed8846324",
+      "digest.covers-overwrite-and-delete": "sha256:c44f1358bc8ff9247883614c0ccc8b088ea737701a7eb1b0db96b937c7180efc",
+      "digest.empty-repo": "sha256:f917ca3340ccc05c273e2d3d531d82039b0c0bc59ed74a185646a56e1024460c",
+      "digest.matches-record-set": "sha256:866870db963a35403fb811c21d66dcb151e2eb8ecf05f7b355af119b523f917d",
+      "digest.multi-batch": "sha256:54daf063d4ae0cd1d1167ad865f098c791300eb59c67a5b80463515403c722f8",
+      "digest.order-independent": "sha256:b65841a14eb7b400ed71edfa804c84b64276e882d8d9fa20d103e0bb22239ca4",
+      "export.blob-roundtrip": "sha256:e311051ed1f779ad9f7efdce8204ca6aef435d755fc6986e57c9748b35e62f2b",
+      "export.star-digest": "sha256:0c8809e4b48fe486921352dc57b58261d6f82072220b6d552692b175a5d2cf29",
+      "export.star-magic-and-metadata": "sha256:a8f367a30ec276d957d02afea42f96b067abf191335db8c091a00b1cdb10951a",
+      "export.star-sorted-unique": "sha256:b15f41dbc7a5bc6f2c3c2faf8f29eace67e75088a8435b90ac0babd621f0c9df",
+      "info.read-auth-status": "sha256:efc91fb24b3fe7ff4db72238c1c6a7ac201375925c492865d0a3b890c6b85988",
+      "info.unknown-method-status": "sha256:5b3e0e86e09690f78b04935716dfe3d6ca2354c8111fc1146bfc3c9728dd4a7c",
+      "lifecycle.clear-records-empty-digest": "sha256:27b3dd464b5d7638ebc777db776303583ca5fcbfe6891016102b5cac36c23874",
+      "lifecycle.create-caller-is-authority": "sha256:df97cd4e8c4d785c8d9ef4ba6c589cdd6a03337dfa12fa14e4fb8dde45596650",
+      "lifecycle.empty-equals-missing": "sha256:85c04d68521949cb18ce8c059e2decad40ee01c6dfee56c9281d9706a12bdc30",
+      "lifecycle.implicit-create": "sha256:2ffa3f17b34e2403d13061e395c04634c702c76285049fcb316782377281d7a9",
+      "lifecycle.list-spaces": "sha256:d50e8e06613888f3774d692afbd5a1caa74f3b941a8d5f84db6047fe039dccbb",
+      "lifecycle.self-authority-needs-space": "sha256:e5bd0522d820b7be21bb63b5987a12e2e57ee0301a008f817929baede5061304",
+      "mac.kem-key-published": "sha256:d91bb7535055b1c9d750990749eb4c18f49b73fc4a505df2eb578fde619bf512",
+      "migration.export-meta": "sha256:f120cf58fd4f71600327c57456be5d99a58ef0ba368d739f10c8f65a22487354",
+      "migration.get-import-repo": "sha256:ed293b61b05d8e75294549166e53667f5ca3df24a5eba3495e4297f726768dab",
+      "migration.import-meta": "sha256:24b5e7fa675bb1670d2352e5e67be79b04557d95171f59b078bfb31f55ce24a5",
+      "oplog.commit-every-page": "sha256:061a0894e45ab00ad307b0b42f0c881fa55dcceaff7f7bd2f014dcc8be0457e7",
+      "oplog.entry-shape": "sha256:0a74569eba29821cdb3b372bdf53cfc331be1e53b9bbb64b8279f1ad8afdc768",
+      "oplog.exclude-values": "sha256:d3e5983490cb01901d2e3d9d73363e2a6f0c874d91500697cab8bd6747b8d739",
+      "oplog.fold-matches-commit": "sha256:1cfe29f4e01db6057592def70cfd0f3cb846bc2b9de80a11a3f8f4333f65fcb0",
+      "oplog.pagination-batch-boundary": "sha256:cfb921340629e79cb250615cd899604b41e26926891e91fabc3532e895533cac",
+      "oplog.pagination-complete": "sha256:269e86f14ef837edb1decb622f7ac2362dc0e3c6736a419c58e38600fa00f166",
+      "oplog.since-exclusive": "sha256:23b3e6d79749f4c443ca57001c4f05ba4030de1a39292c34eed732da2f924f0c",
+      "oplog.stale-values-omitted": "sha256:eec053bb21cea8d849bf5709a8f775cc14b480d151d1f344e9f8ee5c3d0de942",
+      "policy.allowed-apps": "sha256:9605b77f315f68762d72996483c8d1c8b786b5efd1751c3bf38f6004bebcee54",
+      "policy.authority-always-authorized": "sha256:309ea9d7cb8f7818c50bb952a97728f6f6045c3736d8f4a8277700967a7515ef",
+      "policy.baseline-supported": "sha256:8abd10e4a210c480642a4224794df76e072528a3ef144d084a4d53fdec163289",
+      "policy.create-get-roundtrip": "sha256:e15bda72ab3378c70e26d4c543a18c4918b0d3fc7e374bf48491a792c130834b",
+      "policy.managed-check-user-access": "sha256:e5bc6f9eb877f2c3d7d89383034394cc13faa884adc12e6a757b8ec1ab177147",
+      "policy.member-methods": "sha256:c561d2b4da72b79b4b8ba93d5dcd41d89e731dfbb0380c90eec28d1b732e4a4f",
+      "policy.member-read-gate": "sha256:ad91f6181dca3139cbe0e05ba6c8f595b42f22613a6c9cdbb9d1754946ab83b6",
+      "policy.personalspace-owner-only": "sha256:67a3ff05086a73b156be28fa6ac84b4ce9270e8ec17ab8ad97f5b437953136c2",
+      "policy.public-read": "sha256:e3bc2a680065688557eef87c7d40532cee3741447f250f35203909ec7cb3af1d",
+      "policy.publish-records": "sha256:97faba6cbdae1d662080826c91db1459acff704f40ca6c2c1fcf9f9fdc261f84",
+      "policy.publish-records-protected": "sha256:bc1ee6ed1c32fc81714f9cd99bd62b47d53845bc2c94f381131f2d7b4c082f28",
+      "policy.put-member-upsert": "sha256:368075671811a2d6bb17e98043545ce73d5e7ae4c966fb8b77908d9bedb12dc7",
+      "policy.remove-member-drops-writer": "sha256:da737bbb69038308654212cd8d24af6f3b0252cf76da6375e201d748898b6d43",
+      "policy.type-change-discards-state": "sha256:b057942ab556201de4235815d69f2975d65e0fd01fe380c33bef5aa6c48474f2",
+      "policy.unsupported-policy-error": "sha256:3f6777b7ae9b0f185081d304b817573e138a4a01ee70b419cfa668346d028c80",
+      "records.apply-writes-atomic": "sha256:b4fd7e719f8c0951109612414b5fe21ca3df78872b96d7df0f5f61b11c4eae78",
+      "records.commit-bytes-encoding": "sha256:07a4d2af7c68086f88d8074c6b24d6cbc0836789d51c6b93a20e4f9afc551f28",
+      "records.commit-fields": "sha256:ec61347a8a0fdef73d3c5f0e99245310cc678aae4ef1dd87ce8a8c236a6cae3b",
+      "records.commit-repo-space-match": "sha256:060d1fa7402ea59d6d68e1f2437cb9ca8104be602c4ffe5983c7b561fef948f0",
+      "records.crud-roundtrip": "sha256:6c4052552fe5d913aedeabf796b76e4808cbd1cd903cdd8d7edb9737cec32a70",
+      "records.list-exclude-values": "sha256:0bec9ab60fc85d8bc3c19f7f5a9436e7a363c0432e83fef6d827918439be05ca",
+      "records.list-inlines-values": "sha256:13b58960fd19edfb0aab63da9a10380bb21732e717eba2792066c000c3aa452f",
+      "records.params-repo": "sha256:2085077dd3d2a59bd8772e18531e027d7cabfc5ffe5d99edee2ae436e605d23c",
+      "records.read-requires-auth": "sha256:e3e87059844bc1e3333ed49def5e8c73cf4a373ce07c8d2f9476dc86d4c5c221",
+      "records.write-refuses-credential": "sha256:ac35420fa885929e75b4fa29433f4636531e5cdc96557f74b9ec59da9c32f277",
+      "scope.authority-self": "sha256:a6d1bcd33840d00b3284c04a09865fcac7e59dde87c5a1b5e611e16903c34228",
+      "scope.bare-grant-declared-collections": "sha256:16dc72d00e32139d1f6d48f7c18c7fae0c8ddccab5adad1d61f0f506ca3364e8",
+      "scope.collection-star-widens": "sha256:703b90dbe7da49dd4e45d833ed28f1e1fcd725e1aff80d5a626b25e0d902b97d",
+      "scope.manage-create-required": "sha256:1224203afbb25d8b4a651db7a52566d53ca8b67f94cc7931cdd62b8f13737f6c",
+      "scope.manage-delete-required": "sha256:e1d77ae6af0732e0285da4c286dac55fef3e2b32bcc7fb1e89bad7a85aee7d37",
+      "scope.manage-update-required": "sha256:d98173c2df34fced7c4bda75d863a6cccd4f846dad1d73087ea9f327ba888c30",
+      "scope.omitted-action-all": "sha256:8c8a5b9fe94a0e4723496ac891f30581c16afd07fb0e41cb5e46fd5e9247195d",
+      "scope.read-self-own-repo-only": "sha256:7ada684f3f2fd04d8b23647b4cfb27979adfac60c6152e595e913312b385fd2f",
+      "scope.wildcard-type-no-writes": "sha256:dd1120f096335ab0bb32f0e804610481552344b326ca839d2a0b42b125943c21",
+      "writers.future-rev-rejected": "sha256:763ea08700e9c714c04e9c5dff7e9ed3ca1a92707f9007a86756f158bb33a445",
+      "writers.repos-resolve-to-host": "sha256:62e3c643c76e2da99295ab15e566b82cb8b8c0041a4df1944175d9161019dd57",
+      "writers.stale-rev-ignored": "sha256:cea35da98a9f37116e2a641b9b18b283b1dbf8a5e864287a7e70f7e1183b33a0",
+      "writers.unauthorized-write-rejected": "sha256:334b6f77de49cdea1982365ed96efdfb62c0b72f05a615ab00905715d83348cf",
+      "xrpc.error.PolicyMismatch": "sha256:7715a5f8b3491f3d04623bd571194f36fe11608368e7a47f3e14958da6010722",
+      "xrpc.error.RecordNotFound": "sha256:576c5561e5307bc4ed9bd2371fe863f36091294886cb4dc0d478c9c990180bb4",
+      "xrpc.error.RepoNotFound": "sha256:f1fd533065112223c8e1b054f37eaee0f0ed3ae48f8a8b8fd2429974f81146be",
+      "xrpc.error.SpaceNotFound": "sha256:d5bf79582bbb7a957cd10f8450d553ca99788789017e7331c0f1c700283e2451",
+      "xrpc.error.UnsupportedPolicy": "sha256:c8a43391ab029137a2cc043ee6f226971ea42a5749eaabf67675d17b16c04c4e"
     }
   },
   "spec": {
@@ -148,31 +148,31 @@
       "id": "digest.cid-drisl-plain",
       "suite": "digest",
       "status": "pass",
-      "ms": 179
+      "ms": 184
     },
     {
       "id": "digest.cid-drisl-typed",
       "suite": "digest",
       "status": "pass",
-      "ms": 23
+      "ms": 22
     },
     {
       "id": "digest.covers-overwrite-and-delete",
       "suite": "digest",
       "status": "pass",
-      "ms": 17
+      "ms": 34
     },
     {
       "id": "digest.matches-record-set",
       "suite": "digest",
       "status": "pass",
-      "ms": 146
+      "ms": 229
     },
     {
       "id": "digest.multi-batch",
       "suite": "digest",
       "status": "pass",
-      "ms": 31
+      "ms": 49
     },
     {
       "id": "info.read-auth-status",
@@ -185,14 +185,14 @@
       "id": "info.unknown-method-status",
       "suite": "records",
       "status": "pass",
-      "ms": 2,
+      "ms": 3,
       "message": "an unknown method answered 404"
     },
     {
       "id": "lifecycle.implicit-create",
       "suite": "lifecycle",
       "status": "pass",
-      "ms": 237
+      "ms": 303
     },
     {
       "id": "mac.commit-bound-to-repo",
@@ -216,85 +216,85 @@
       "id": "mac.kem-key-published",
       "suite": "mac",
       "status": "pass",
-      "ms": 134
+      "ms": 203
     },
     {
       "id": "oplog.commit-every-page",
       "suite": "oplog",
       "status": "pass",
-      "ms": 90
+      "ms": 47
     },
     {
       "id": "oplog.entry-shape",
       "suite": "oplog",
       "status": "pass",
-      "ms": 249
+      "ms": 287
     },
     {
       "id": "oplog.fold-matches-commit",
       "suite": "oplog",
       "status": "pass",
-      "ms": 60
+      "ms": 47
     },
     {
       "id": "oplog.pagination-batch-boundary",
       "suite": "oplog",
       "status": "pass",
-      "ms": 28
+      "ms": 23
     },
     {
       "id": "oplog.pagination-complete",
       "suite": "oplog",
       "status": "pass",
-      "ms": 119
+      "ms": 68
     },
     {
       "id": "oplog.since-exclusive",
       "suite": "oplog",
       "status": "pass",
-      "ms": 36
+      "ms": 44
     },
     {
       "id": "oplog.stale-values-omitted",
       "suite": "oplog",
       "status": "pass",
-      "ms": 49
+      "ms": 38
     },
     {
       "id": "policy.create-get-roundtrip",
       "suite": "policy",
       "status": "pass",
-      "ms": 141
+      "ms": 215
     },
     {
       "id": "policy.member-methods",
       "suite": "policy",
       "status": "pass",
-      "ms": 103
+      "ms": 196
     },
     {
       "id": "policy.put-member-upsert",
       "suite": "policy",
       "status": "pass",
-      "ms": 7
+      "ms": 10
     },
     {
       "id": "records.apply-writes-atomic",
       "suite": "records",
       "status": "pass",
-      "ms": 40
+      "ms": 54
     },
     {
       "id": "records.commit-bytes-encoding",
       "suite": "records",
       "status": "pass",
-      "ms": 6
+      "ms": 8
     },
     {
       "id": "records.commit-fields",
       "suite": "records",
       "status": "pass",
-      "ms": 129
+      "ms": 158
     },
     {
       "id": "records.commit-repo-space-match",
@@ -306,13 +306,13 @@
       "id": "records.crud-roundtrip",
       "suite": "records",
       "status": "pass",
-      "ms": 148
+      "ms": 243
     },
     {
       "id": "records.read-requires-auth",
       "suite": "records",
       "status": "pass",
-      "ms": 167
+      "ms": 193
     }
   ],
   "summary": {
