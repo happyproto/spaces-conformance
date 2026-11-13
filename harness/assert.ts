@@ -180,6 +180,22 @@ export function runAssertion<C>(id: string, suite: string, ctx: C, fn: (ctx: C) 
   });
 }
 
+/** Why a needs_slow row pends in a run without --slow (suites/fixtures.ts SLOW_PENDING says the same). */
+export const SLOW_REASON = 'needs --slow: waits out a host-issued credential';
+
+/**
+ * A needs_slow row run without --slow skipped part of its check, so it never
+ * records a pass: what would have passed pends instead, and the run's score
+ * doesn't credit the part that didn't run. Fails and pendings stand.
+ */
+export function slowGate<C>(a: { needs_slow?: boolean }, fn: (ctx: C) => Promise<void | string>, slow = process.env.CONFORMANCE_SLOW === '1'): (ctx: C) => Promise<void | string> {
+  if (!a.needs_slow || slow) return fn;
+  return async (c) => {
+    await fn(c);
+    return pending(SLOW_REASON);
+  };
+}
+
 export interface AssertionOptions {
   /**
    * Vitest's timeout for this one test, for rows that must wait on the host
@@ -209,8 +225,9 @@ export function assertion(id: string, fn: (ctx: RunContext) => Promise<void | st
       t.skip(reason);
       return;
     }
+    const graded = slowGate(a, fn);
     try {
-      await runAssertion(id, a.suite, ctx, fn, deadlineMs);
+      await runAssertion(id, a.suite, ctx, graded, deadlineMs);
     } catch (e) {
       if (e instanceof Pending) return t.skip(e.message);
       throw e;

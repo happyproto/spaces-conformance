@@ -259,6 +259,28 @@ assertions:
     checks: >-
       createSpace returns a uri whose authority is the calling account's DID.
 
+  - id: lifecycle.authority-names-space-host
+    suite: lifecycle
+    section: "#space-authority"
+    quote: >-
+      A space authority is resolved like any other atproto account. Its `#atproto_pds` service
+      endpoint is the space host, and its `#atproto` key signs the space's credentials and any
+      service auth it sends as the authority.
+    level: must
+    basis: [definition]
+    roles: [space-host]
+    areas: []
+    checks: >-
+      For a space the host creates, the authority DID in the space's URI resolves to a DID document
+      whose #atproto_pds endpoint serves the space: getSpaceCredential there, for a space anyone may
+      read, issues a credential.
+    variants:
+      "2026-11-12":
+        checks: >-
+          For a space the host creates, the authority DID in the space's URI resolves to a DID
+          document whose #atproto_pds endpoint serves the space: authorizeSpaceSync there, for a space
+          anyone may read, issues a credential.
+
   - id: lifecycle.list-spaces
     suite: lifecycle
     section: "#xrpc-api"
