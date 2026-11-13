@@ -122,3 +122,22 @@ assertion('oplog.fold-matches-commit', async (ctx) => {
   const evidence = { folded: hex(folded), expected: hex(expected), data: hex(commit.data), ops: brief(log.ops) };
   if (hex(folded) !== hex(commit.data)) fail('folding every op does not give the commit data', evidence);
 });
+
+// 2026-11-12 on: a commit on every page, not only the last (the Oct 29 text
+// put it on the final page; mac.list-repo-ops-final-page grades that).
+assertion('oplog.commit-every-page', async (ctx) => {
+  const repo = await freshRepo(ctx);
+  await fiveWrites(repo);
+  const log = await readLog(repo, { limit: 2 });
+  const { owner, space } = repo;
+  const r = await owner.auth.request('GET', xrpcUrl(owner.repoHost, 'com.atproto.space.getLatestCommit', { space, repo: owner.did }));
+  if (r.status !== 200) fail(`getLatestCommit answered ${r.status}`, { body: JSON.stringify(r.body).slice(0, 1000) });
+  const current = commitOrFail(r.body.commit);
+  const evidence = { pages: JSON.stringify(log.pages.map(({ ops, commit, commitRev }) => ({ ops, commit, commitRev }))), current: current.rev };
+  if (log.pages.length < 2) fail(`limit=2 over five writes gave ${log.pages.length} page(s), so there is no earlier page to check`, evidence);
+  log.pages.forEach((p, i) => {
+    if (!p.commit) fail(`page ${i + 1} of ${log.pages.length} carries no commit`, evidence);
+    if (!p.commitRev) fail(`page ${i + 1} of ${log.pages.length} carries a commit that isn't a 0016 commit`, evidence);
+    if (p.commitRev !== current.rev) fail(`page ${i + 1} of ${log.pages.length} carries commit rev ${p.commitRev}, not the current ${current.rev}`, evidence);
+  });
+});

@@ -104,7 +104,8 @@ export class Syncer {
   /** Every op after `since`, following cursor. Each page gets its own key share. */
   async oplog(t: Target, opts: { since?: string; limit?: number; maxPages?: number } = {}) {
     const ops: { rev: string; collection: string; rkey: string; cid: string | null; prev: string | null; value?: unknown }[] = [];
-    const pages: { status: number; ops: number; commit: boolean; mac: MacCheck }[] = [];
+    // commitRev: the rev of the page's 0016 commit, when it carries one.
+    const pages: { status: number; ops: number; commit: boolean; commitRev?: string; mac: MacCheck }[] = [];
     let cursor: string | undefined;
     let final: { commit: Commit | null; mac: MacCheck } | undefined;
     for (let i = 0; i < (opts.maxPages ?? 1000); i++) {
@@ -122,7 +123,7 @@ export class Syncer {
       ops.push(...pageOps);
       const commit = r.body?.commit ? parseCommit(r.body.commit) : null;
       const mac = checkCommitMac(r, commit, ks.secret);
-      pages.push({ status: 200, ops: pageOps.length, commit: !!r.body?.commit, mac });
+      pages.push({ status: 200, ops: pageOps.length, commit: !!r.body?.commit, ...(commit ? { commitRev: commit.rev } : {}), mac });
       if (r.body?.commit) final = { commit, mac };
       const next = typeof r.body?.cursor === 'string' ? r.body.cursor : undefined;
       if (!next || next === cursor || pageOps.length === 0) break;

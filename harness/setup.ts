@@ -1,6 +1,7 @@
 // Shared setup for adapters (ungraded, design ch. 3.1). Account creation,
 // password sessions and space creation in either lifecycle: the Oct 29
-// com.atproto.space.createSpace or the Oct 22
+// com.atproto.space.createSpace (the `oct29` mode, which also serves
+// 2026-11-12: same method, `space` in place of `uri`) or the Oct 22
 // com.atproto.simplespace.createSpace. (On Nov 11 every pinned PDS image
 // served only the Oct 22 method.)
 //
@@ -113,7 +114,12 @@ export function methodMissing(r: HttpResponse): boolean {
   return r.status === 400 && (/UnknownMethod|MethodNotImplemented/.test(err) || /No service configured/i.test(msg));
 }
 
-const ok = (r: HttpResponse) => r.status === 200 && typeof r.body?.uri === 'string';
+/**
+ * The created space's at:// URI: `uri` in the Oct 22 and Oct 29 responses,
+ * `space` from 2026-11-12 on. Setup takes either, whatever revision is graded.
+ */
+const createdSpace = (r: HttpResponse): string | undefined =>
+  r.status === 200 ? [r.body?.space, r.body?.uri].find((v): v is string => typeof v === 'string') : undefined;
 
 async function oct29(baseUrl: string, owner: Account, spaceType: string, skey: string, policy: Policy) {
   return owner.auth.request('POST', `${baseUrl}/xrpc/com.atproto.space.createSpace`, { spaceType, skey, policy });
@@ -148,8 +154,9 @@ export function createSpace(manifest: Manifest, baseUrl: string, owner: Account,
       used = mode;
       r = await (mode === 'oct29' ? oct29 : simplespace)(baseUrl, owner, spaceType, skey, policy);
     }
-    if (!ok(r)) throw new Error(`${used === 'oct29' ? 'space' : 'simplespace'}.createSpace answered ${r.status}: ${JSON.stringify(r.body).slice(0, 500)}`);
+    const created = createdSpace(r);
+    if (!created) throw new Error(`${used === 'oct29' ? 'space' : 'simplespace'}.createSpace answered ${r.status}: ${JSON.stringify(r.body).slice(0, 500)}`);
     if (mode === 'auto') rememberResolved(used);
-    return r.body.uri as string;
+    return created;
   });
 }

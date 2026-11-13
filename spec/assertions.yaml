@@ -64,8 +64,6 @@ assertions:
       The commit's data is lexicon bytes in JSON, {"$bytes": <standard base64>}, decoding to 32 bytes.
 
   - id: records.commit-repo-space-match
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: records
     section: "#commit-mac"
     quote: >-
@@ -77,6 +75,11 @@ assertions:
     areas: []
     checks: >-
       The commit's repo and space equal the request's repo and space.
+    variants:
+      "2026-11-12":
+        quote: >-
+          The syncer checks that the header matches the commit in the response body, and that `repo`
+          and `space` match the requested repo.
 
   - id: records.params-repo
     suite: records
@@ -210,8 +213,6 @@ assertions:
       A write to a nonexistent space whose authority is the writer is refused.
 
   - id: lifecycle.clear-records-empty-digest
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: lifecycle
     section: "#repo-lifecycle"
     quote: >-
@@ -223,6 +224,15 @@ assertions:
     checks: >-
       After clearRecords, getLatestCommit's data is
       e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad and rev has advanced.
+    variants:
+      "2026-11-12":
+        quote: >-
+          The host deletes every record, other than any [published](#publishing-to-readers)
+          configuration records in the authority's repo, and advances the repo to a new `rev`.
+        checks: >-
+          After clearRecords on a repo with no published configuration records, getLatestCommit's
+          data is e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad and rev has
+          advanced.
 
   - id: lifecycle.empty-equals-missing
     suite: lifecycle
@@ -250,8 +260,6 @@ assertions:
       createSpace returns a uri whose authority is the calling account's DID.
 
   - id: lifecycle.list-spaces
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: lifecycle
     section: "#xrpc-api"
     quote: >-
@@ -265,6 +273,12 @@ assertions:
     checks: >-
       listSpaces returns the spaces the caller holds a repo in or is the authority of, and
       nothing else. The did parameter filters by authority, and spaceType by type.
+    variants:
+      "2026-11-12":
+        params: [spaceDid, spaceType]
+        checks: >-
+          listSpaces returns the spaces the caller holds a repo in or is the authority of, and
+          nothing else. The spaceDid parameter filters by authority, and spaceType by type.
 
   # --- digest ------------------------------------------------------------------
 
@@ -535,6 +549,20 @@ assertions:
     checks: >-
       Following listRepoOps's cursor (which the lexicon says takes precedence over since) across
       a page boundary inside one applyWrites batch loses no ops.
+
+  - id: oplog.commit-every-page
+    since: "2026-11-12"
+    suite: oplog
+    section: "#incremental-sync"
+    quote: >-
+      Every oplog response must include the member's current [commit](#space-repos).
+    level: must
+    basis: [keyword]
+    roles: [repo-host]
+    areas: []
+    checks: >-
+      Paging listRepoOps with limit=2 over five writes, every page carries a 0016 commit, and
+      its rev is the one getLatestCommit reports.
 
   - id: oplog.stale-values-omitted
     suite: oplog
@@ -917,8 +945,6 @@ assertions:
       createSpace is refused for a session whose grant lacks manage=create.
 
   - id: scope.manage-update-required
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: scopes
     section: "#matching"
     quote: >-
@@ -931,6 +957,12 @@ assertions:
     areas: [jwt]
     checks: >-
       updateSpace, putMember, removeMember and removeWriter are refused without manage=update.
+    variants:
+      "2026-11-12":
+        quote: >-
+          For example, on a `memberspace` space, `manage=update` authorizes `updateSpace` as well as
+          `com.atproto.memberspace.putMembers` and `removeMembers`.
+        checks: updateSpace, putMembers, removeMembers and removeWriter are refused without manage=update.
 
   - id: scope.manage-delete-required
     suite: scopes
@@ -1064,8 +1096,6 @@ assertions:
       createSpace with an unknown policy $type answers {error: "UnsupportedPolicy", message}.
 
   - id: xrpc.error.PolicyMismatch
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: policy
     level: must
     basis: [lexicon]
@@ -1076,6 +1106,11 @@ assertions:
     areas: []
     checks: >-
       putMember on a managedspace space answers {error: "PolicyMismatch", message}.
+    variants:
+      "2026-11-12":
+        lexicon: com.atproto.memberspace.putMembers
+        checks: >-
+          putMembers on a managedspace space answers {error: "PolicyMismatch", message}.
 
   - id: xrpc.error.SpaceDeleted
     # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
@@ -1333,8 +1368,6 @@ assertions:
       createSpace accepts personalspace, memberspace and managedspace policies.
 
   - id: policy.personalspace-owner-only
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: policy
     section: "#personalspace"
     quote: >-
@@ -1346,10 +1379,16 @@ assertions:
     areas: [jwt]
     checks: >-
       getSpaceCredential with another user's delegation token is refused, and another user's notifyWrite isn't tracked.
+    variants:
+      "2026-11-12":
+        quote: >-
+          Only the space authority's own account (through the apps it authorizes) is authorized to
+          read, and the authority tracks no other writers.
+        checks: >-
+          authorizeSpaceSync with another user's delegation token is refused, and another user's
+          notifyRepoUpdate isn't tracked in the writer set.
 
   - id: policy.member-methods
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: policy
     section: "#memberspace"
     quote: >-
@@ -1363,10 +1402,15 @@ assertions:
     areas: []
     checks: >-
       com.atproto.memberspace.putMember, removeMember and listMembers exist and work.
+    variants:
+      "2026-11-12":
+        lexicon: [com.atproto.memberspace.putMembers, com.atproto.memberspace.removeMembers]
+        params: [space]
+        checks: >-
+          putMembers adds a member with the given read and write, listMembers shows it, and
+          removeMembers removes it.
 
   - id: policy.put-member-upsert
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: policy
     section: "#memberspace"
     quote: >-
@@ -1380,6 +1424,14 @@ assertions:
     areas: []
     checks: >-
       A second putMember replaces read and write and doesn't add a second entry.
+    variants:
+      "2026-11-12":
+        quote: >-
+          Each member-list entry carries required `read` and `write` booleans, and `putMembers`
+          replaces both together.
+        lexicon: com.atproto.memberspace.putMembers
+        params: [members]
+        checks: A second putMembers for the same DID replaces read and write and doesn't add a second entry.
 
   - id: policy.member-read-gate
     suite: policy
@@ -1423,8 +1475,6 @@ assertions:
       With allowedApps, only a request with a verified attestation from a listed client gets a credential.
 
   - id: policy.remove-member-drops-writer
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: policy
     section: "#memberspace"
     quote: >-
@@ -1437,6 +1487,12 @@ assertions:
     areas: [httpsig, jwt]
     checks: >-
       After removeMember, or putMember with write false, the account is gone from listRepos.
+    variants:
+      "2026-11-12":
+        quote: >-
+          When `removeMembers` removes a member, or `putMembers` revokes a member's write access, the
+          authority SHOULD also remove that account from the writer set.
+        checks: After removeMembers, or putMembers with write false, the account is gone from listWriters.
 
   - id: policy.publish-records
     suite: policy
@@ -1468,8 +1524,6 @@ assertions:
       Direct createRecord or putRecord of those records in the authority's repo is refused.
 
   - id: policy.managed-check-user-access
-    # Changed in 2026-11-12 (wording, method or parameters). Not graded there until a variant gives its G2 reading.
-    until: "2026-10-29"
     suite: policy
     section: "#managedspace"
     quote: >-
@@ -1485,6 +1539,16 @@ assertions:
     checks: >-
       The harness managing app receives com.atproto.managedspace.checkUserAccess with space,
       user, access and, for an attested read, clientId, and its answer decides issuance.
+    variants:
+      "2026-11-12":
+        quote: >-
+          The authority passes the space, the account being checked (`repo`), and the attested
+          `client_id` if one was presented.
+        lexicon: com.atproto.managedspace.checkAccess
+        params: [space, repo, clientId]
+        checks: >-
+          The harness managing app receives com.atproto.managedspace.checkAccess with space, repo
+          and, for an attested read, clientId, and its read and write answer decides access.
 
   # --- deletion ----------------------------------------------------------------
 
