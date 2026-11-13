@@ -70,3 +70,11 @@ export function provisionalReason(a: Assertion, status: Map<Area, AreaStatus>, i
   if (pending.length) return `harness ${pending.join(', ')} not yet cross-checked`;
   return independence ? independenceReason(a, independence) : null;
 }
+
+/** For each area, the vector files (names, sorted) that hold a cross_check in it. */
+export function vectorFilesByArea(dir = join(ROOT, 'vectors')): Map<Area, string[]> {
+  const out = new Map<Area, string[]>();
+  for (const f of readdirSync(dir).filter((f) => f.endsWith('.json')).sort())
+    for (const area of new Set(crossChecks(JSON.parse(readFileSync(join(dir, f), 'utf8'))).map(({ cc }) => cc.area))) out.set(area, [...(out.get(area) ?? []), f]);
+  return out;
+}

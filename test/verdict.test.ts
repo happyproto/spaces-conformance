@@ -340,6 +340,7 @@ describe('per-assertion digests (HAP-432)', () => {
     const d = assertionDigest(base, 'src');
     expect(assertionDigest({ ...base, checks: `${base.checks} more` }, 'src')).not.toBe(d);
     expect(assertionDigest(base, 'src2')).not.toBe(d);
+    expect(assertionDigest(base, 'src', 'pin other')).not.toBe(d);
     const reordered = Object.fromEntries(Object.entries(base).reverse()) as typeof base;
     expect(assertionDigest(reordered, 'src')).toBe(d);
   });

@@ -165,6 +165,11 @@
           "description": "Last revision the assertion applies to, inclusive.",
           "type": "string"
         },
+        "ended": {
+          "description": "Why the row stops at its until, when its citation still reads the same in a later revision (the validator refuses such an until without it).",
+          "type": "string",
+          "minLength": 1
+        },
         "provisional": {
           "description": "Marks a row provisional by hand. The lineage rule (harness/independence.ts) applies regardless.",
           "type": "boolean"
