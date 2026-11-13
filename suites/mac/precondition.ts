@@ -2,7 +2,8 @@
 // unit tested. Missing either is `skip` ("pending: ..."), never a fail:
 //   - the author's #atproto_kem key, without which no MAC can be requested.
 //     Its absence is graded once, by mac.kem-key-published;
-//   - an Atproto-Space-Mac on the response. 0016 requires it only on
+//   - a MAC on the response (Atproto-Space-Mac, or from 2026-11-12 any of
+//     the covered header, Signature-Input or Signature). 0016 requires it only on
 //     space-credential reads, and the harness has no credential path yet.
 
 import type { MacCheck, Target } from '../../harness/actors/syncer.ts';
@@ -18,4 +19,9 @@ export function requireAuthorKem(target: Target): PublicKey {
 
 export function requireMacHeader(mac: MacCheck): string {
   return mac.header ?? pending(CREDENTIAL_PENDING);
+}
+
+/** From 2026-11-12 a MAC is three headers; any of them answered counts as a MAC, so its gaps are graded. */
+export function requireMac(mac: MacCheck): void {
+  if (!mac.present) pending(CREDENTIAL_PENDING);
 }

@@ -1,15 +1,15 @@
 {
   "schema": 1,
   "run": {
-    "id": "2026-11-13T18-33-54Z-zds-9ef4",
+    "id": "2026-11-13T18-59-15Z-zds-76dc",
     "kind": "local",
-    "started_at": "2026-11-13T18:33:54.772Z",
-    "finished_at": "2026-11-13T18:34:08.368Z",
+    "started_at": "2026-11-13T18:59:15.925Z",
+    "finished_at": "2026-11-13T18:59:30.506Z",
     "attempt": 1
   },
   "suite": {
-    "commit": "ced098ff0d",
-    "assertions_digest": "sha256:dbb1305112b3b0b97bc143f8af3e0fabdaf5e331e89023a39144611443d62849",
+    "commit": "47993a172f",
+    "assertions_digest": "sha256:c0993f6b4c1d5966a8def57e290819520456dbbf20ac50b73c5e9f390f97e63e",
     "assertion_digests": {
       "addressing.record-uri-shape": "sha256:1b070e190996c114106183bc98c46543c94360c7102a84f86b18b78c5135ae0e",
       "addressing.skey-limits": "sha256:f475fb135f2a19d7e3142bb99bfe53d54ca267d5a533dd9237ad1edfc38d2e0d",
@@ -41,7 +41,7 @@
       "digest.multi-batch": "sha256:54daf063d4ae0cd1d1167ad865f098c791300eb59c67a5b80463515403c722f8",
       "digest.order-independent": "sha256:b65841a14eb7b400ed71edfa804c84b64276e882d8d9fa20d103e0bb22239ca4",
       "export.blob-roundtrip": "sha256:e311051ed1f779ad9f7efdce8204ca6aef435d755fc6986e57c9748b35e62f2b",
-      "export.star-digest": "sha256:0c8809e4b48fe486921352dc57b58261d6f82072220b6d552692b175a5d2cf29",
+      "export.star-digest": "sha256:3eea404e9456dd7444ef4432621fde348dfbf3b9dbd0bf995206bae1bdea7df4",
       "export.star-magic-and-metadata": "sha256:a8f367a30ec276d957d02afea42f96b067abf191335db8c091a00b1cdb10951a",
       "export.star-sorted-unique": "sha256:b15f41dbc7a5bc6f2c3c2faf8f29eace67e75088a8435b90ac0babd621f0c9df",
       "info.read-auth-status": "sha256:efc91fb24b3fe7ff4db72238c1c6a7ac201375925c492865d0a3b890c6b85988",
@@ -52,7 +52,14 @@
       "lifecycle.implicit-create": "sha256:2ffa3f17b34e2403d13061e395c04634c702c76285049fcb316782377281d7a9",
       "lifecycle.list-spaces": "sha256:d50e8e06613888f3774d692afbd5a1caa74f3b941a8d5f84db6047fe039dccbb",
       "lifecycle.self-authority-needs-space": "sha256:e5bd0522d820b7be21bb63b5987a12e2e57ee0301a008f817929baede5061304",
-      "mac.kem-key-published": "sha256:d91bb7535055b1c9d750990749eb4c18f49b73fc4a505df2eb578fde619bf512",
+      "mac.commit-bound-to-repo": "sha256:25c0ffb53a48cda36dfb1963b3a6991a67964be6799d15c27e1ba81764cb6e93",
+      "mac.commit-header-present": "sha256:31d94d82ecea0b2e73a5c97063b7813ca7fc13ff8dbb1f40ba0a07825e159694",
+      "mac.commit-valid": "sha256:3b4c058ff44038dba9e13b431c33cab43cb53fcc22d25af71a5074351176936c",
+      "mac.kem-key-published": "sha256:5947153c14489bab297a9d56f69a306851b5d657abdb9f1735e5515cd435ba4c",
+      "mac.list-repo-ops-every-page": "sha256:2c1b2e516a45d7bcbd31736d352620008cb7734aaddbf6094470e918daf443a6",
+      "mac.malformed-request-rejected": "sha256:faa5ca3f3cc9fc23c6294e79f7cd7a9437bba18b7fe7091fb9a123b1ee9631ff",
+      "mac.record-valid": "sha256:decd86a0bb83b5545f8807dc497fe199b081c8879f25a101d7fcd4b958842df3",
+      "mac.vary-header": "sha256:b2f5b6da4ab15036af7c3c9e47bb8c67bbc5734ff4becbc0c4c386b94a929e3b",
       "migration.export-meta": "sha256:f120cf58fd4f71600327c57456be5d99a58ef0ba368d739f10c8f65a22487354",
       "migration.get-import-repo": "sha256:ed293b61b05d8e75294549166e53667f5ca3df24a5eba3495e4297f726768dab",
       "migration.import-meta": "sha256:24b5e7fa675bb1670d2352e5e67be79b04557d95171f59b078bfb31f55ce24a5",
@@ -148,171 +155,195 @@
       "id": "digest.cid-drisl-plain",
       "suite": "digest",
       "status": "pass",
-      "ms": 184
+      "ms": 138
     },
     {
       "id": "digest.cid-drisl-typed",
       "suite": "digest",
       "status": "pass",
-      "ms": 22
+      "ms": 15
     },
     {
       "id": "digest.covers-overwrite-and-delete",
       "suite": "digest",
       "status": "pass",
-      "ms": 34
+      "ms": 15
     },
     {
       "id": "digest.matches-record-set",
       "suite": "digest",
       "status": "pass",
-      "ms": 229
+      "ms": 136
     },
     {
       "id": "digest.multi-batch",
       "suite": "digest",
       "status": "pass",
-      "ms": 49
+      "ms": 27
     },
     {
       "id": "info.read-auth-status",
       "suite": "records",
       "status": "pass",
-      "ms": 3,
+      "ms": 2,
       "message": "listRecords with no auth answered 401"
     },
     {
       "id": "info.unknown-method-status",
       "suite": "records",
       "status": "pass",
-      "ms": 3,
+      "ms": 1,
       "message": "an unknown method answered 404"
     },
     {
       "id": "lifecycle.implicit-create",
       "suite": "lifecycle",
       "status": "pass",
-      "ms": 303
+      "ms": 203
     },
     {
       "id": "mac.commit-bound-to-repo",
       "suite": "mac",
       "status": "skip",
-      "skip_reason": "not in revision 2026-11-12"
+      "skip_reason": "capability harness.credential_reads not claimed"
     },
     {
       "id": "mac.commit-header-present",
       "suite": "mac",
-      "status": "skip",
-      "skip_reason": "not in revision 2026-11-12"
+      "status": "pass",
+      "ms": 44
     },
     {
       "id": "mac.commit-valid",
       "suite": "mac",
-      "status": "skip",
-      "skip_reason": "not in revision 2026-11-12"
+      "status": "pass",
+      "ms": 14
     },
     {
       "id": "mac.kem-key-published",
       "suite": "mac",
       "status": "pass",
-      "ms": 203
+      "ms": 185
+    },
+    {
+      "id": "mac.list-repo-ops-every-page",
+      "suite": "mac",
+      "status": "pass",
+      "ms": 35
+    },
+    {
+      "id": "mac.malformed-request-rejected",
+      "suite": "mac",
+      "status": "pass",
+      "ms": 45
+    },
+    {
+      "id": "mac.record-valid",
+      "suite": "mac",
+      "status": "pass",
+      "ms": 14
+    },
+    {
+      "id": "mac.vary-header",
+      "suite": "mac",
+      "status": "pass",
+      "ms": 14
     },
     {
       "id": "oplog.commit-every-page",
       "suite": "oplog",
       "status": "pass",
-      "ms": 47
+      "ms": 32
     },
     {
       "id": "oplog.entry-shape",
       "suite": "oplog",
       "status": "pass",
-      "ms": 287
+      "ms": 177
     },
     {
       "id": "oplog.fold-matches-commit",
       "suite": "oplog",
       "status": "pass",
-      "ms": 47
+      "ms": 40
     },
     {
       "id": "oplog.pagination-batch-boundary",
       "suite": "oplog",
       "status": "pass",
-      "ms": 23
+      "ms": 18
     },
     {
       "id": "oplog.pagination-complete",
       "suite": "oplog",
       "status": "pass",
-      "ms": 68
+      "ms": 51
     },
     {
       "id": "oplog.since-exclusive",
       "suite": "oplog",
       "status": "pass",
-      "ms": 44
+      "ms": 26
     },
     {
       "id": "oplog.stale-values-omitted",
       "suite": "oplog",
       "status": "pass",
-      "ms": 38
+      "ms": 31
     },
     {
       "id": "policy.create-get-roundtrip",
       "suite": "policy",
       "status": "pass",
-      "ms": 215
+      "ms": 122
     },
     {
       "id": "policy.member-methods",
       "suite": "policy",
       "status": "pass",
-      "ms": 196
+      "ms": 94
     },
     {
       "id": "policy.put-member-upsert",
       "suite": "policy",
       "status": "pass",
-      "ms": 10
+      "ms": 7
     },
     {
       "id": "records.apply-writes-atomic",
       "suite": "records",
       "status": "pass",
-      "ms": 54
+      "ms": 39
     },
     {
       "id": "records.commit-bytes-encoding",
       "suite": "records",
       "status": "pass",
-      "ms": 8
+      "ms": 6
     },
     {
       "id": "records.commit-fields",
       "suite": "records",
       "status": "pass",
-      "ms": 158
+      "ms": 121
     },
     {
       "id": "records.commit-repo-space-match",
       "suite": "records",
       "status": "pass",
-      "ms": 6
+      "ms": 4
     },
     {
       "id": "records.crud-roundtrip",
       "suite": "records",
       "status": "pass",
-      "ms": 243
+      "ms": 135
     },
     {
       "id": "records.read-requires-auth",
       "suite": "records",
       "status": "pass",
-      "ms": 193
+      "ms": 125
     }
   ],
   "summary": {

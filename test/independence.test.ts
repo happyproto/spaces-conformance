@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Assertion } from '../harness/catalogue.ts';
-import { loadCatalogue } from '../harness/catalogue.ts';
+import { loadCatalogue, resolveCatalogue } from '../harness/catalogue.ts';
 import { buildPassIndex, independenceReason, independent, type Independence, loadIndependence, PASS_INDEX, pinnedImages, staleSources, validatePassIndex } from '../harness/independence.ts';
 import { provisionalReason, vectorStatus } from '../harness/provisional.ts';
 import { loadManifest } from '../harness/manifest.ts';
@@ -104,9 +104,12 @@ describe('the pass index per revision and per assertion digest (HAP-432)', () =>
     const g2 = loadIndependence('2026-11-12').passes;
     expect(g1.size).toBeGreaterThan(0);
     expect(g2.size).toBeGreaterThan(0);
-    // A row that isn't in 2026-11-12 can't have passed there.
-    expect(g1.has('mac.commit-valid')).toBe(true);
-    expect(g2.has('mac.commit-valid')).toBe(false);
+    // A row can only have passed at a revision it applies at.
+    const cat = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
+    for (const [rev, passes] of [['2026-10-29', g1], ['2026-11-12', g2]] as const) {
+      const applies = new Set(resolveCatalogue(cat, rev).map((a) => a.id));
+      expect([...passes.keys()].filter((id) => !applies.has(id)), rev).toEqual([]);
+    }
   });
 });
 

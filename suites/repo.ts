@@ -11,7 +11,7 @@ import { fromB64, hex } from '../harness/crypto/bytes.ts';
 import { recordCid } from '../harness/crypto/drisl.ts';
 import { LtHash } from '../harness/crypto/lthash.ts';
 import type { HttpResponse } from '../harness/http.ts';
-import { COLLECTION, ownerSpace, SPACE_TYPE, xrpcUrl } from './fixtures.ts';
+import { COLLECTION, ownerSpace, settled, SPACE_TYPE, xrpcUrl } from './fixtures.ts';
 
 export interface Repo {
   ctx: RunContext;
@@ -108,7 +108,7 @@ export async function listAll(repo: Repo, collections: string[] = [COLLECTION]) 
 export async function syncerFor(repo: Repo): Promise<{ syncer: Syncer; target: Target }> {
   const { ctx, owner, space } = repo;
   const doc = await setup('resolve the author DID document', () => ctx.plc.resolve(owner.did));
-  const syncer = new Syncer((url, headers) => owner.auth.request('GET', url, undefined, headers));
+  const syncer = new Syncer((url, headers) => owner.auth.request('GET', url, undefined, headers), { macsig: settled(ctx) });
   return { syncer, target: { repoHost: owner.repoHost, space, repo: owner.did, authorKem: verificationKey(doc, 'atproto_kem') ?? undefined } };
 }
 
