@@ -57,7 +57,11 @@ A deviation file is a list of entries, each with `assertion`, `cause`, `reason`,
 - an assertion listed twice;
 - a `spec` value that isn't a heading anchor;
 - a `since` date in the future;
-- an entry without `expect`, or with a pattern that doesn't compile.
+- an entry without `expect`;
+- a pattern that doesn't compile on its own (so an unbalanced paren can't escape the anchors);
+- a pattern that matches the empty string or the sentinel `zz-sentinel-not-a-failure`, such as `.*` or `.+`, because it would cover any failure.
+
+`run` and `verdict` apply the same checks to a list before they use it.
 
 `tracking` must name a real issue: `HAP-123`, `HAP-388 (PR 6)`, `owner/repo#12` or an https URL. `pending` is refused.
 
