@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
-import { type Catalogue, loadCatalogue } from './catalogue.ts';
+import { appliesAt, type Catalogue, loadCatalogue } from './catalogue.ts';
 import type { Problem } from './problems.ts';
 import { checkSchema, ROOT } from './schema.ts';
 import { anchors, loadRevisions, loadSpecText } from './spec.ts';
@@ -24,6 +24,8 @@ export interface Deviation {
   since: string;
   /** Required in a list. Only result files from before it existed embed entries without it. */
   expect?: Expect;
+  /** The revisions the entry covers. Without it, every revision the assertion applies at. */
+  revisions?: string[];
 }
 
 /**
@@ -60,33 +62,55 @@ export function loadDeviations(path: string): Deviation[] {
   return parse(readFileSync(path, 'utf8')) ?? [];
 }
 
+/** The entries of a list in force at revision `rev`: those without `revisions`, and those that name it. */
+export function deviationsAt(list: Deviation[], rev: string): Deviation[] {
+  return list.filter((d) => !d.revisions || d.revisions.includes(rev));
+}
+
 /**
  * Validate a deviation list against the catalogue at this commit: every
  * assertion must exist (an entry for a retired id is an error, so lists get
- * pruned), may appear once, its `spec` anchor must be a real heading, and its
- * `expect` patterns must compile on their own and must not match anything
- * (the empty string or a sentinel).
+ * pruned), may appear once per revision, its `spec` anchor must be a real
+ * heading, and its `expect` patterns must compile on their own and must not
+ * match anything (the empty string or a sentinel).
+ *
+ * `anchors` is either one revision's heading anchors, or every revision's by
+ * key. Given every revision's, an entry is checked at each revision it covers
+ * (its `revisions`, or every revision the assertion applies at): the assertion
+ * must apply there, and the anchor must exist there.
  * `today` bounds `since` so an entry can't be dated in the future.
  */
 export function validateDeviations(
   data: unknown,
   file: string,
   cat: Catalogue,
-  specAnchors: Set<string>,
+  anchors: Set<string> | Map<string, Set<string>>,
   today = new Date().toISOString().slice(0, 10),
 ): Problem[] {
   const problems = checkSchema('deviations', data, file);
   if (problems.length) return problems;
-  const ids = new Set(cat.assertions.map((a) => a.id));
+  const byId = new Map(cat.assertions.map((a) => [a.id, a]));
+  const byRev = anchors instanceof Map ? anchors : new Map([[cat.revision, anchors]]);
   const seen = new Set<string>();
   (data as Deviation[]).forEach((d, i) => {
     const at = (message: string) => problems.push({ file, where: `${i}:${d.assertion}`, message });
-    if (!ids.has(d.assertion)) at('assertion is not in the catalogue');
-    if (seen.has(d.assertion)) at('assertion listed twice');
-    seen.add(d.assertion);
-    if (!specAnchors.has(d.spec)) at(`spec ${d.spec} is not a heading anchor in the pinned revision`);
+    const a = byId.get(d.assertion);
+    if (!a) at('assertion is not in the catalogue');
+    for (const r of d.revisions ?? []) if (!byRev.has(r)) at(`revision ${r} is not in spec/revisions.json`);
+    const covers = (d.revisions ?? [...byRev.keys()]).filter((r) => byRev.has(r) && (!a || appliesAt(a, r, cat.revision)));
+    if (a && d.revisions) for (const r of d.revisions) if (byRev.has(r) && !appliesAt(a, r, cat.revision)) at(`assertion does not apply at revision ${r}`);
+    if (a && !covers.length) at('assertion applies at none of the revisions this entry covers');
+    for (const r of covers) {
+      if (seen.has(`${d.assertion}@${r}`)) at(byRev.size > 1 ? `assertion listed twice for revision ${r}` : 'assertion listed twice');
+      seen.add(`${d.assertion}@${r}`);
+      if (!byRev.get(r)!.has(d.spec)) at(`spec ${d.spec} is not a heading anchor in revision ${r}`);
+    }
     if (d.since > today) at(`since ${d.since} is in the future`);
-    for (const [where, pattern] of [['message', d.expect?.message], ...Object.entries(d.expect?.evidence ?? {}).map(([k, v]) => [`evidence.${k}`, v])]) {
+    const patterns: [string, string | undefined][] = [
+      ['message', d.expect?.message],
+      ...Object.entries(d.expect?.evidence ?? {}).map(([k, v]): [string, string] => [`evidence.${k}`, v]),
+    ];
+    for (const [where, pattern] of patterns) {
       if (pattern === undefined) continue;
       let re: RegExp;
       try {
@@ -104,14 +128,14 @@ export function validateDeviations(
 
 /**
  * Load a deviation list and run the full validation on it, against the
- * shipped catalogue and its pinned revision. The CLIs call this before they
- * use a list, so a bad pattern stops a run before the stack starts.
+ * shipped catalogue at every pinned revision, as `bun run validate` does.
+ * The CLIs call this before they use a list, so a bad pattern stops a run
+ * before the stack starts.
  */
 export async function loadCheckedDeviations(path: string, file = path): Promise<{ deviations: Deviation[]; problems: Problem[] }> {
   const deviations = loadDeviations(path);
   const cat = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
-  const revisions = loadRevisions();
-  const rev = revisions.revisions[cat.revision] ?? revisions.revisions[revisions.default];
-  const specAnchors = anchors(await loadSpecText(rev));
-  return { deviations, problems: validateDeviations(deviations, file, cat, specAnchors) };
+  const anchorsByRev = new Map<string, Set<string>>();
+  for (const [key, rev] of Object.entries(loadRevisions().revisions)) anchorsByRev.set(key, anchors(await loadSpecText(rev)));
+  return { deviations, problems: validateDeviations(deviations, file, cat, anchorsByRev) };
 }

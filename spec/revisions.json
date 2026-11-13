@@ -13,6 +13,19 @@
         "commit": "98ef3a6b9d1364f0543f137dd024de9651b21c4c",
         "sha256": "e173ff8dd8c974b1ef9df1c9500baa87ebf54f682ab7e2f73494067e8aea64be"
       }
+    },
+    "2026-11-12": {
+      "proposal": "0016",
+      "repo": "bluesky-social/proposals",
+      "commit": "2755e73a31511c54729921b50340944ba8b02c93",
+      "path": "0016-permissioned-data/README.md",
+      "sha256": "ee2c7a9340bb5c5b6bed866ac8eb86bc8416eb2e1c85e7aac94c3fa6071976e1",
+      "lexicons": {
+        "repo": "bluesky-social/atproto",
+        "ref": "pull/5187",
+        "commit": "d4def6e9f521896ed8222f576d54923d00b5fbeb",
+        "sha256": "1c24342601734f37cda137372e3c4488ef52b2bfd1b37c54c83fd71da4c6bf23"
+      }
     }
   }
 }

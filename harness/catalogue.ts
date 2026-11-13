@@ -42,13 +42,21 @@ export interface Assertion {
   checks: string;
   since?: string;
   until?: string;
+  /** Why the row stops at `until` although its citation still reads the same later. */
+  ended?: string;
   provisional?: boolean;
   areas: ('cbor' | 'lthash' | 'mac' | 'httpsig' | 'jwt' | 'star')[];
   /** Why a row in a crypto suite uses no harness crypto (areas: []). */
   no_crypto?: string;
+  /** Per revision key, the fields that read differently from that revision on. */
+  variants?: Record<string, Variant>;
 }
 
+/** What a later revision may change about a row: its spec citation, what it checks, and the crypto that check uses. */
+export type Variant = Partial<Pick<Assertion, 'section' | 'quote' | 'level' | 'basis' | 'lexicon' | 'params' | 'error' | 'checks' | 'areas' | 'no_crypto'>>;
+
 export interface Catalogue {
+  /** The base revision: every row's fields read as of this one, unless the row's since is later. */
   revision: string;
   assertions: Assertion[];
 }
@@ -103,49 +111,133 @@ export function levelProblems(a: Assertion): string[] {
   return out;
 }
 
+/** The pinned text (and lexicons, when checked) of one revision. */
+export interface RevisionText {
+  text: string;
+  lex?: Lexicons;
+}
+
 /**
- * Validate a parsed catalogue. `specText` is the pinned revision's Markdown;
- * `revisions` the known revision keys (for since/until).
+ * Validate a parsed catalogue against every revision it's given. `specText`
+ * is either the base revision's Markdown (and `lex` its lexicons), or a map
+ * from revision key to that revision's text and lexicons. `revisions` are the
+ * known revision keys, for since, until and variant keys.
+ *
+ * Each row is resolved at each revision it applies to (resolveAt), and its
+ * quote, section and lexicons are checked against that revision. So a quote
+ * the spec reworded fails at the new revision until a variant gives the new
+ * wording, or until ends the row before it.
  */
-export function validateCatalogue(cat: unknown, file: string, specText: string, revisions: string[], lex?: Lexicons): Problem[] {
+export function validateCatalogue(
+  cat: unknown,
+  file: string,
+  specText: string | Map<string, RevisionText>,
+  revisions: string[],
+  lex?: Lexicons,
+): Problem[] {
   const problems = checkSchema('assertions', cat, file);
   if (problems.length) return problems;
   const c = cat as Catalogue;
   if (!revisions.includes(c.revision)) problems.push({ file, message: `revision ${c.revision} is not in spec/revisions.json` });
+  const texts = typeof specText === 'string' ? new Map([[c.revision, { text: specText, lex }]]) : specText;
 
-  const specPlain = plainText(specText);
-  const specAnchors = anchors(specText);
   const seen = new Set<string>();
-
   for (const a of c.assertions) {
     const at = (message: string) => problems.push({ file, where: a.id, message });
     if (seen.has(a.id)) at('duplicate id');
     seen.add(a.id);
-    for (const m of levelProblems(a)) at(m);
-    if (a.section && !specAnchors.has(a.section)) at(`section ${a.section} is not a heading anchor in revision ${c.revision}`);
-    if (a.quote && !specPlain.includes(plainText(a.quote))) at(`quote not found verbatim in revision ${c.revision}`);
-    else if (a.quote && a.section && specAnchors.has(a.section)) {
-      const section = sectionText(specText, a.section) ?? '';
-      if (!plainText(section).includes(plainText(a.quote))) at(`quote is in revision ${c.revision} but not under ${a.section}`);
-    }
     for (const r of [a.since, a.until]) if (r && !revisions.includes(r)) at(`revision ${r} is not in spec/revisions.json`);
-    if (a.id.startsWith('info.') && a.level !== 'info') at('info.* ids must be level info');
-    if (CRYPTO_SUITES.has(a.suite) && !a.areas?.length && !a.no_crypto)
-      at(`suite ${a.suite} relies on harness crypto, so areas can't be empty without a no_crypto reason`);
-    if (a.no_crypto && a.areas?.length) at('no_crypto is only for a row with areas: []');
-    if (lex && a.lexicon) {
-      for (const nsid of lexiconsOf(a)) {
-        if (!lex.has(nsid)) {
-          at(`lexicon ${nsid} is not in the pinned lexicons`);
-          continue;
-        }
-        const fields = lex.fields(nsid);
-        for (const p of a.params ?? []) if (!fields.has(p)) at(`lexicon ${nsid} defines no parameter or input field ${p}`);
-        if (a.error && !lex.errors(nsid).has(a.error)) at(`lexicon ${nsid} declares no error ${a.error}`);
-      }
+    const since = a.since ?? c.revision;
+    if (a.until && a.until < since) at(`until ${a.until} is before since ${since}`);
+    for (const k of Object.keys(a.variants ?? {})) {
+      if (!revisions.includes(k)) at(`variant ${k} is not in spec/revisions.json`);
+      else if (k <= since) at(`variant ${k} is not after the row's first revision ${since}: put those fields on the row`);
+      else if (a.until && k > a.until) at(`variant ${k} is after until ${a.until}`);
     }
   }
+
+  for (const [rev, { text, lex: revLex }] of texts) {
+    const specPlain = plainText(text);
+    const specAnchors = anchors(text);
+    for (const a of resolveCatalogue(c, rev)) {
+      const at = (message: string) => problems.push({ file, where: texts.size > 1 ? `${a.id}@${rev}` : a.id, message });
+      for (const m of levelProblems(a)) at(m);
+      for (const m of citationProblems(a, rev, text, specPlain, specAnchors)) at(m);
+      if (a.id.startsWith('info.') && a.level !== 'info') at('info.* ids must be level info');
+      if (CRYPTO_SUITES.has(a.suite) && !a.areas?.length && !a.no_crypto)
+        at(`suite ${a.suite} relies on harness crypto, so areas can't be empty without a no_crypto reason`);
+      if (a.no_crypto && a.areas?.length) at('no_crypto is only for a row with areas: []');
+      for (const m of lexiconProblems(a, rev, revLex)) at(m);
+    }
+  }
+
+  // An until must not quietly drop a row that still applies: if the row, as
+  // it reads at its until, passes every citation check at each later pinned
+  // revision, the spec didn't change it, so the until needs an ended reason.
+  for (const a of c.assertions) {
+    if (!a.until) continue;
+    const later = [...texts.keys()].filter((r) => r > a.until!).sort();
+    if (!later.length) continue;
+    const last = resolveAt(a, a.until, c.revision);
+    if (!last) continue;
+    const stillReads = later.every((rev) => {
+      const { text, lex: revLex } = texts.get(rev)!;
+      return !citationProblems(last, rev, text, plainText(text), anchors(text)).length && !lexiconProblems(last, rev, revLex).length;
+    });
+    if (stillReads && !a.ended)
+      problems.push({ file, where: a.id, message: `until ${a.until}, but its quote, section and lexicons still hold at ${later.join(', ')}: give it a variant, or an ended reason` });
+    if (!stillReads && a.ended) problems.push({ file, where: a.id, message: 'ended is only for an until whose citation still holds at a later revision' });
+  }
   return problems;
+}
+
+function citationProblems(a: Assertion, rev: string, text: string, specPlain: string, specAnchors: Set<string>): string[] {
+  const out: string[] = [];
+  if (a.section && !specAnchors.has(a.section)) out.push(`section ${a.section} is not a heading anchor in revision ${rev}`);
+  if (a.quote && !specPlain.includes(plainText(a.quote))) out.push(`quote not found verbatim in revision ${rev}`);
+  else if (a.quote && a.section && specAnchors.has(a.section)) {
+    const section = sectionText(text, a.section) ?? '';
+    if (!plainText(section).includes(plainText(a.quote))) out.push(`quote is in revision ${rev} but not under ${a.section}`);
+  }
+  return out;
+}
+
+function lexiconProblems(a: Assertion, rev: string, revLex: Lexicons | undefined): string[] {
+  const out: string[] = [];
+  if (!revLex || !a.lexicon) return out;
+  for (const nsid of lexiconsOf(a)) {
+    if (!revLex.has(nsid)) {
+      out.push(`lexicon ${nsid} is not in the lexicons pinned for ${rev}`);
+      continue;
+    }
+    const fields = revLex.fields(nsid);
+    for (const p of a.params ?? []) if (!fields.has(p)) out.push(`lexicon ${nsid} defines no parameter or input field ${p}`);
+    if (a.error && !revLex.errors(nsid).has(a.error)) out.push(`lexicon ${nsid} declares no error ${a.error}`);
+  }
+  return out;
+}
+
+/** Whether a row applies at revision `rev`: since (default the catalogue's base revision) to until, both inclusive. */
+export function appliesAt(a: Assertion, rev: string, base: string): boolean {
+  return (a.since ?? base) <= rev && (!a.until || rev <= a.until);
+}
+
+/**
+ * A row as it reads at revision `rev`, or null when it doesn't apply there.
+ * Variants apply from their revision on, each over the ones before it.
+ * Revision keys are ISO dates, so they order as strings.
+ */
+export function resolveAt(a: Assertion, rev: string, base: string): Assertion | null {
+  if (!appliesAt(a, rev, base)) return null;
+  const { variants, ...row } = a;
+  let out: Assertion = row;
+  for (const k of Object.keys(variants ?? {}).filter((k) => k <= rev).sort()) out = { ...out, ...variants![k] };
+  return out;
+}
+
+/** Every row that applies at `rev`, resolved there. */
+export function resolveCatalogue(c: Catalogue, rev: string): Assertion[] {
+  return c.assertions.map((a) => resolveAt(a, rev, c.revision)).filter((a): a is Assertion => a !== null);
 }
 
 export function lexiconsOf(a: Assertion): string[] {

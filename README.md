@@ -1,6 +1,6 @@
 # spaces-conformance
 
-An over-the-wire conformance suite for atproto spaces ([Proposal 0016](https://github.com/bluesky-social/proposals/tree/701ef9c6be5a99c2d3e87e107fe2531459d1c984/0016-permissioned-data), October 29 revision). It grades space hosts and repo hosts against the spec text, talking to each implementation only over HTTP.
+An over-the-wire conformance suite for atproto spaces ([Proposal 0016](https://github.com/bluesky-social/proposals/tree/main/0016-permissioned-data)). It grades each revision separately: the [October 29](https://github.com/bluesky-social/proposals/tree/701ef9c6be5a99c2d3e87e107fe2531459d1c984/0016-permissioned-data) text and the [November 12](https://github.com/bluesky-social/proposals/tree/2755e73a31511c54729921b50340944ba8b02c93/0016-permissioned-data) "Release 11/12". It grades space hosts and repo hosts against the spec text, talking to each implementation only over HTTP.
 
 **Status: phase 2.** The catalogue, the harness's crypto, the OAuth client, the stack runner, the reporter and `verdict` exist. A few suites run end to end against the reference PDS. Most assertions don't have a test yet.
 
@@ -8,7 +8,7 @@ An over-the-wire conformance suite for atproto spaces ([Proposal 0016](https://g
 
 | Path | What |
 |---|---|
-| `spec/revisions.json` | Pinned proposal and lexicon commits. The proposal text is fetched by commit and checked by SHA-256. |
+| `spec/revisions.json` | Pinned proposal and lexicon commits, one entry per graded revision (Oct 29 and Nov 12). The proposal text is fetched by commit and checked by SHA-256. |
 | `spec/assertions.yaml` | The assertion catalogue. Each row cites a sentence of the pinned text, or the pinned lexicons. |
 | `spec/lexicons/` | The lexicons pinned with each revision, copied unmodified from `bluesky-social/atproto`. |
 | `schemas/` | JSON Schemas for assertions, manifests, deviations and results. |
@@ -36,7 +36,8 @@ bun run check      # typecheck, unit tests, validate
 Run the suites against one implementation. This brings up its stack, runs the suites in the harness container, writes `results-local/<run-id>.json`, prints the verdict, and tears the stack down:
 
 ```sh
-node cli/run.ts reference              # --keep leaves the stack up, --suites digest,records narrows it
+node cli/run.ts reference              # --keep leaves the stack up, --suites digest,records narrows it,
+                                       # --revision 2026-11-12 grades another revision (one per run)
 node cli/verdict.ts results-local/<run-id>.json [--deviations file]
 ```
 

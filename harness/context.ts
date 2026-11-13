@@ -4,12 +4,15 @@
 import { join } from 'node:path';
 import { Plc } from './actors/plc.ts';
 import type { Adapter, StackCtx } from './adapter.ts';
-import { type Assertion, type Catalogue, loadCatalogue } from './catalogue.ts';
+import { type Assertion, type Catalogue, loadCatalogue, resolveCatalogue } from './catalogue.ts';
 import { loadManifest, type Manifest } from './manifest.ts';
 import { ROOT } from './schema.ts';
 
 export interface RunContext extends StackCtx {
   catalogue: Catalogue;
+  /** The revision this run grades (CONFORMANCE_REVISION, else the manifest's first). */
+  revision: string;
+  /** Every row that applies at `revision`, as it reads there. */
   byId: Map<string, Assertion>;
   adapter: Adapter;
 }
@@ -26,12 +29,14 @@ export function runContext(): Promise<RunContext> {
     const adapter: Adapter = mod.adapter;
     if (!adapter) throw new Error(`implementations/${id}/${manifest.setup} exports no adapter`);
     const catalogue = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
+    const revision = process.env.CONFORMANCE_REVISION ?? manifest.spec_revisions[0];
     return {
       manifest,
       baseUrl: String(manifest.base_url).replace(/\/$/, ''),
       plc: new Plc(process.env.PLC_URL ?? 'http://plc:2582'),
       catalogue,
-      byId: new Map(catalogue.assertions.map((a) => [a.id, a])),
+      revision,
+      byId: new Map(resolveCatalogue(catalogue, revision).map((a) => [a.id, a])),
       adapter,
     };
   })();

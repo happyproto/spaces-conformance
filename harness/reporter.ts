@@ -5,7 +5,8 @@
 // Run metadata comes from the environment cli/run.ts sets: CONFORMANCE_IMPL,
 // CONFORMANCE_RUN_ID, CONFORMANCE_RUN_KIND, CONFORMANCE_STARTED_AT,
 // CONFORMANCE_ATTEMPT, SUITE_COMMIT, CONFORMANCE_IMAGES (JSON: id -> image),
-// CONFORMANCE_PEERS (JSON list), CONFORMANCE_DEVIATIONS (a file path).
+// CONFORMANCE_PEERS (JSON list), CONFORMANCE_DEVIATIONS (a file path),
+// CONFORMANCE_REVISION (the revision graded; default the manifest's first).
 
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -14,8 +15,9 @@ import type { Reporter, TestModule } from 'vitest/node';
 import type { SetupMode } from './adapter.ts';
 import type { RawResult } from './assert.ts';
 import { rawDir } from './assert.ts';
-import { loadCatalogue } from './catalogue.ts';
-import { type Deviation, loadDeviations } from './deviations.ts';
+import { loadCatalogue, resolveCatalogue } from './catalogue.ts';
+import { assertionDigests } from './digests.ts';
+import { type Deviation, deviationsAt, loadDeviations } from './deviations.ts';
 import { loadManifest, notApplicable } from './manifest.ts';
 import { declaredAssertions } from './coverage.ts';
 import { formatProblem } from './problems.ts';
@@ -120,21 +122,22 @@ export function assemble(env: NodeJS.ProcessEnv, setupMode: SetupMode, raw: RawR
   const implId = env.CONFORMANCE_IMPL!;
   const manifest = loadManifest(join(ROOT, 'implementations', implId, 'manifest.yaml'));
   const catalogue = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
-  const revs = loadRevisions();
-  const rev = revs.revisions[catalogue.revision];
+  const revision = env.CONFORMANCE_REVISION ?? manifest.spec_revisions[0];
+  const rev = loadRevisions().revisions[revision];
+  if (!rev) throw new Error(`revision ${revision} is not in spec/revisions.json`);
   const images: Record<string, string> = JSON.parse(env.CONFORMANCE_IMAGES ?? '{}');
-  const deviations: Deviation[] = env.CONFORMANCE_DEVIATIONS ? loadDeviations(env.CONFORMANCE_DEVIATIONS) : [];
+  const deviations: Deviation[] = env.CONFORMANCE_DEVIATIONS ? deviationsAt(loadDeviations(env.CONFORMANCE_DEVIATIONS), revision) : [];
   // Only entries for assertions that have a result this run: results.ts
   // refuses a deviation with no result. The full list stays in its own file.
   const ran = new Set(raw.map((r) => r.id));
   const applied = deviations.filter((d) => ran.has(d.assertion));
   const { summary } = judgeAll(
     raw,
-    new Map(catalogue.assertions.map((a) => [a.id, a])),
+    new Map(resolveCatalogue(catalogue, revision).map((a) => [a.id, a])),
     new Map(applied.map((d) => [d.assertion, d])),
     vectorStatus(),
     manifest.roles,
-    loadIndependence(),
+    loadIndependence(revision),
   );
   return {
     schema: 1,
@@ -149,8 +152,9 @@ export function assemble(env: NodeJS.ProcessEnv, setupMode: SetupMode, raw: RawR
     suite: {
       commit: env.SUITE_COMMIT ?? '0000000',
       assertions_digest: `sha256:${createHash('sha256').update(readFileSync(join(ROOT, 'spec', 'assertions.yaml'))).digest('hex')}`,
+      assertion_digests: assertionDigests(catalogue, revision),
     },
-    spec: { proposal: rev.proposal, revision: catalogue.revision, commit: rev.commit.slice(0, 10), lexicons: `atproto@${rev.lexicons.commit.slice(0, 8)}` },
+    spec: { proposal: rev.proposal, revision, commit: rev.commit.slice(0, 10), lexicons: `atproto@${rev.lexicons.commit.slice(0, 8)}` },
     implementation: {
       id: implId,
       image: images[implId],
@@ -172,7 +176,9 @@ export default class ConformanceReporter implements Reporter {
     if (!env.CONFORMANCE_IMPL || !env.CONFORMANCE_RUN_ID) return;
     const manifest = loadManifest(join(ROOT, 'implementations', env.CONFORMANCE_IMPL, 'manifest.yaml'));
     const catalogue = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
-    const byId = new Map(catalogue.assertions.map((a) => [a.id, a]));
+    const revision = env.CONFORMANCE_REVISION ?? manifest.spec_revisions[0];
+    const rows = new Map(catalogue.assertions.map((a) => [a.id, a]));
+    const byId = new Map(resolveCatalogue(catalogue, revision).map((a) => [a.id, a]));
     const { adapter } = await import(join(ROOT, 'implementations', env.CONFORMANCE_IMPL, manifest.setup!));
 
     const cases = new Map<string, CaseOutcome>();
@@ -193,9 +199,10 @@ export default class ConformanceReporter implements Reporter {
       moduleErrors,
       (id) => {
         const a = byId.get(id);
-        return a ? notApplicable(a, manifest) : null;
+        if (!a) return rows.has(id) ? `not in revision ${revision}` : null;
+        return notApplicable(a, manifest);
       },
-      (id) => byId.get(id)?.suite ?? 'records',
+      (id) => rows.get(id)?.suite ?? 'records',
       openSetupSteps(),
     );
     const file = assemble(env, adapter.setupMode(manifest), results);

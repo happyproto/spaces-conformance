@@ -4,6 +4,7 @@
 //   node cli/run.ts happyview --keep          leave the stack up afterwards
 //   node cli/run.ts pdsjs --suites digest,records --deviations path.yaml
 //   node cli/run.ts zds --setup-mode oct29    space creation through Oct 29 createSpace
+//   node cli/run.ts happyview --revision 2026-11-12   grade another revision it claims
 //
 // It brings up base + the implementation's fragment (+ its partner's), runs
 // the implementation's bootstrap.sh if it has one, runs the suites inside the
@@ -11,8 +12,10 @@
 // `error` result, or whose stack or bootstrap failed, is rerun once on a fresh
 // stack. --setup-mode picks how spaces are created (oct29, simplespace or
 // auto; default: the manifest's spaces.create), and the run records it as
-// setup_mode. The second attempt stands, but it keeps the first attempt's failing
-// ids, and a fail-to-pass flip is marked flaky (it warns, never gates). Two
+// setup_mode. --revision picks the spec revision to grade (default: the first
+// of the manifest's spec_revisions); a run grades exactly one. The second
+// attempt stands, but it keeps the first attempt's failing ids, and a
+// fail-to-pass flip is marked flaky (it warns, never gates). Two
 // infrastructure failures in a row exit 3 with the step that failed.
 
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -25,6 +28,7 @@ import { loadCheckedDeviations } from '../harness/deviations.ts';
 import { loadManifest } from '../harness/manifest.ts';
 import { formatProblem } from '../harness/problems.ts';
 import { validateResults } from '../harness/results.ts';
+import { loadRevisions } from '../harness/spec.ts';
 import { ROOT } from '../harness/schema.ts';
 
 const { values, positionals } = parseArgs({
@@ -36,11 +40,12 @@ const { values, positionals } = parseArgs({
     kind: { type: 'string', default: 'local' },
     'no-retry': { type: 'boolean', default: false },
     'setup-mode': { type: 'string' },
+    revision: { type: 'string' },
   },
 });
 const impl = positionals[0];
 if (!impl) {
-  console.error('usage: node cli/run.ts <implementation> [--keep] [--suites a,b] [--deviations file] [--setup-mode oct29|simplespace|auto] [--kind local]');
+  console.error('usage: node cli/run.ts <implementation> [--keep] [--suites a,b] [--deviations file] [--setup-mode oct29|simplespace|auto] [--revision key] [--kind local]');
   process.exit(2);
 }
 const manifest = loadManifest(join(ROOT, 'implementations', impl, 'manifest.yaml'));
@@ -52,6 +57,13 @@ if (setupMode) {
     process.exit(2);
   }
 }
+const revision = values.revision ?? manifest.spec_revisions[0];
+if (!loadRevisions().revisions[revision]) {
+  console.error(`revision ${revision} is not in spec/revisions.json`);
+  process.exit(2);
+}
+// Grading a revision the implementation doesn't claim is allowed (it shows how far it is), but say so.
+if (!manifest.spec_revisions.includes(revision)) console.warn(`note: ${impl} claims ${manifest.spec_revisions.join(', ')}, not ${revision}`);
 const pins = Object.fromEntries(
   readFileSync(join(ROOT, 'pins', 'images.env'), 'utf8')
     .split('\n')
@@ -127,6 +139,7 @@ function attempt(n: number): Outcome {
       CONFORMANCE_IMAGES: JSON.stringify(images),
       CONFORMANCE_PEERS: JSON.stringify(peers),
       SUITE_COMMIT: suiteCommit,
+      CONFORMANCE_REVISION: revision,
       ...(values.suites ? { CONFORMANCE_SUITES: values.suites } : {}),
       ...(setupMode ? { CONFORMANCE_SPACES_MODE: setupMode } : {}),
       ...(deviations ? { CONFORMANCE_DEVIATIONS: `/suite/${deviations}` } : {}),

@@ -13,7 +13,8 @@ export interface Manifest {
   name: string;
   roles: Role[];
   profile: Profile;
-  spec_revision: string;
+  /** The revisions it claims; the first is the default for a run. */
+  spec_revisions: string[];
   capabilities: Record<string, unknown>;
   lineage?: Record<string, string>;
   compose: string;
@@ -66,7 +67,7 @@ export function validateManifest(data: unknown, file: string, opts: { revisions:
   const at = (message: string) => problems.push({ file, where: m.id, message });
   const dir = dirname(file);
   if (!file.endsWith(join(m.id, 'manifest.yaml'))) at(`id ${m.id} doesn't match its folder`);
-  if (!opts.revisions.includes(m.spec_revision)) at(`spec_revision ${m.spec_revision} is not in spec/revisions.json`);
+  for (const r of m.spec_revisions) if (!opts.revisions.includes(r)) at(`spec_revisions has ${r}, which is not in spec/revisions.json`);
   if (!opts.pins.has(m.image.pin)) at(`image.pin ${m.image.pin} has no line in pins/images.env`);
   if (!existsSync(join(dir, m.compose))) at(`compose file ${m.compose} doesn't exist`);
   if (m.accounts.partner && !opts.ids.has(m.accounts.partner)) at(`accounts.partner ${m.accounts.partner} is not an implementation`);

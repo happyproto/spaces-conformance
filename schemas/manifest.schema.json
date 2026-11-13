@@ -5,7 +5,7 @@
   "description": "implementations/<id>/manifest.yaml (design ch. 4.1).",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "name", "source", "image", "spec_revision", "roles", "profile", "capabilities", "compose", "base_url", "accounts", "spaces"],
+  "required": ["id", "name", "source", "image", "spec_revisions", "roles", "profile", "capabilities", "compose", "base_url", "accounts", "spaces"],
   "properties": {
     "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
     "name": { "type": "string" },
@@ -22,7 +22,13 @@
         "platforms": { "type": "array", "items": { "enum": ["linux/amd64", "linux/arm64"] }, "uniqueItems": true }
       }
     },
-    "spec_revision": { "type": "string" },
+    "spec_revisions": {
+      "description": "The revisions it claims to serve (keys in spec/revisions.json). A run grades one revision; the first is the default (cli/run.ts --revision).",
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "uniqueItems": true
+    },
     "roles": { "type": "array", "items": { "enum": ["repo-host", "space-host", "pds"] }, "minItems": 1, "uniqueItems": true },
     "profile": { "enum": ["pds", "bespoke-space-host"] },
     "capabilities": {

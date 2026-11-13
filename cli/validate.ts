@@ -1,7 +1,7 @@
 // `bun run validate`: check every data file the suite ships against its
 // schema and cross-references. Exits 1 on any problem. Nothing is scored.
 //
-//   spec/assertions.yaml               schema, level rule, quotes, anchors, lexicons
+//   spec/assertions.yaml               schema, level rule, quotes, anchors, lexicons, at every revision
 //   implementations/*/manifest.yaml    schema, pins, compose, partners
 //   implementations/*/deviations.yaml  schema, ids exist, anchors
 //   test/fixtures/results/*.json       results schema (examples of the format)
@@ -13,7 +13,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { parseArgs } from 'node:util';
-import { loadCatalogue, validateCatalogue } from '../harness/catalogue.ts';
+import { loadCatalogue, resolveCatalogue, type RevisionText, validateCatalogue } from '../harness/catalogue.ts';
 import { loadDeviations, validateDeviations } from '../harness/deviations.ts';
 import { loadLexicons } from '../harness/lexicons.ts';
 import { loadManifest, loadPins, validateManifest } from '../harness/manifest.ts';
@@ -36,6 +36,9 @@ const counts: string[] = [];
 
 const revisions = loadRevisions();
 const revisionKeys = Object.keys(revisions.revisions);
+// Revision keys are ISO dates: since, until and variants order them as strings.
+for (const k of [...revisionKeys, revisions.default])
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(k)) problems.push({ file: 'spec/revisions.json', where: k, message: 'revision keys must be YYYY-MM-DD dates, so they order as strings' });
 
 const catPath = join(ROOT, 'spec', 'assertions.yaml');
 let cat: ReturnType<typeof loadCatalogue>;
@@ -45,14 +48,19 @@ try {
   console.error(`${rel(catPath)}: ${(e as Error).message}`);
   process.exit(1);
 }
-const rev = revisions.revisions[cat.revision] ?? revisions.revisions[revisions.default];
-const specText = await loadSpecText(rev);
-const specAnchors = anchors(specText);
-problems.push(...validateCatalogue(cat, rel(catPath), specText, revisionKeys, loadLexicons(rev)));
+// Every pinned revision: each row is checked at each revision it applies to.
+const texts = new Map<string, RevisionText>();
+for (const key of revisionKeys) {
+  const r = revisions.revisions[key];
+  texts.set(key, { text: await loadSpecText(r), lex: loadLexicons(r) });
+}
+const anchorsByRev = new Map([...texts].map(([k, t]) => [k, anchors(t.text)]));
+problems.push(...validateCatalogue(cat, rel(catPath), texts, revisionKeys));
 counts.push(`${cat.assertions?.length ?? 0} assertions`);
 const byLevel = new Map<string, number>();
 for (const a of cat.assertions ?? []) byLevel.set(a.level, (byLevel.get(a.level) ?? 0) + 1);
 console.log(`catalogue: ${[...byLevel].map(([l, n]) => `${n} ${l}`).join(', ')}`);
+for (const key of revisionKeys) console.log(`  at ${key}: ${resolveCatalogue(cat, key).length} rows apply`);
 
 const implDir = join(ROOT, 'implementations');
 const ids = new Set(readdirSync(implDir).filter((d) => existsSync(join(implDir, d, 'manifest.yaml'))));
@@ -66,7 +74,7 @@ for (const id of ids) {
 }
 counts.push(`${ids.size} manifests`);
 
-for (const file of deviationFiles) problems.push(...validateDeviations(loadDeviations(file), rel(file), cat, specAnchors));
+for (const file of deviationFiles) problems.push(...validateDeviations(loadDeviations(file), rel(file), cat, anchorsByRev));
 counts.push(`${deviationFiles.length} deviation lists`);
 
 const resultsDir = join(ROOT, 'test', 'fixtures', 'results');

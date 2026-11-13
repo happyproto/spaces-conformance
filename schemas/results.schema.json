@@ -113,6 +113,14 @@
         "assertions_digest": {
           "type": "string",
           "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "assertion_digests": {
+          "description": "Per assertion that applies at the graded revision: a digest of the row as it reads there plus its declaring suite file (harness/digests.ts). Files from before HAP-432 don't have it.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          }
         }
       }
     },

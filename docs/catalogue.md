@@ -4,7 +4,7 @@ Every file below has a JSON Schema in `schemas/`, and `bun run validate` checks 
 
 ## Assertions (`spec/assertions.yaml`)
 
-Each row ties one check to one sentence of Proposal 0016 at the revision `spec/revisions.json` pins, or to the lexicons pinned with it. The validator fetches the proposal by commit, checks its SHA-256, and caches it in `.cache/spec/`. The lexicons are vendored in `spec/lexicons/<commit>/` and checked against a digest in `revisions.json`.
+Each row ties one check to one sentence of Proposal 0016 at a revision `spec/revisions.json` pins, or to the lexicons pinned with it. The validator fetches each revision's proposal by commit, checks its SHA-256, and caches it in `.cache/spec/`. The lexicons are vendored in `spec/lexicons/<commit>/` and checked against a digest in `revisions.json`.
 
 | Field | Rule |
 |---|---|
@@ -19,7 +19,8 @@ Each row ties one check to one sentence of Proposal 0016 at the revision `spec/r
 | `lexicon` | One NSID or a list, required when `basis` has `lexicon`. Each must exist in the revision's pinned lexicons (`spec/lexicons/<commit>/`). |
 | `params` | Parameter or input-field names the row relies on. Every listed lexicon must define each one. |
 | `error` | For `xrpc.error.<Name>` rows, the error name. It must equal `<Name>` and be declared by the listed lexicon. |
-| `since`, `until` | Revision keys from `spec/revisions.json`. |
+| `since`, `until` | Revision keys from `spec/revisions.json`: the first and last revision the row applies to, both inclusive. `since` defaults to the catalogue's base `revision`. |
+| `variants` | Per revision key, the fields that read differently from that revision on: `section`, `quote`, `level`, `basis`, `lexicon`, `params`, `error`, `checks`, `areas`, `no_crypto`. See "Revisions" below. |
 | `provisional` | Marks a row provisional by hand, whatever the evidence. The lineage rule below applies to every row regardless. |
 | `areas` | Required on every row. It lists the harness crypto areas the check runs through (`cbor`, `lthash`, `mac`, `httpsig`, `jwt`, `star`), or is `[]` to acknowledge it uses none, so no row can be left unfenced by omission. It can't be empty in the `digest`, `mac` and `export` suites, unless the row's `no_crypto` says why it uses none. While any listed area has a pending vector cross-check (`vectors/README.md`), the assertion is provisional. After that, it stays provisional until the lineage rule below clears it. |
 
@@ -36,9 +37,27 @@ Each basis must also hold on its own:
 - `default` needs the word "default" and is valid only on `should`;
 - `definition`, `lexicon` and `host-honours-may` make a row `must`.
 
+## Revisions
+
+`spec/revisions.json` pins each revision the suite grades: the proposal text by commit and SHA-256, and the lexicons by commit and digest.
+
+| Key | Proposal 0016 | Lexicons | Names |
+|---|---|---|---|
+| `2026-10-29` | `701ef9c6be` | atproto `98ef3a6b` | The Oct 29 names (`getSpaceCredential`, `putMember`, `notifyWrite`, `Atproto-Space-Want-Mac`) |
+| `2026-11-12` | `2755e73a31` ("Release 11/12", #143) | atproto `d4def6e9` | The settled names (`authorizeSpaceSync`, `putMembers`, `notifyRepoUpdate`, RFC 9421 MACs) |
+
+How rows span revisions:
+- **One id across revisions.** A row keeps its id while it checks the same thing. Its own fields read as of its first revision: `since`, or the catalogue's base `revision`.
+- **`variants` hold what a later revision reworded or renamed.** A variant applies from its revision on, over the row and any earlier variant. Its key must come after the row's first revision, and no later than `until`.
+- **`until` ends a row.** Use it when a later revision drops what the row checks. A row whose G2 reading isn't written yet also carries `until` until its variant lands, so it's never graded against text it doesn't quote.
+- **An `until` can't drop a row by accident.** If the row, as it reads at its `until`, still passes the quote, section and lexicon checks at every later pinned revision, the validator refuses the `until` unless the row has an `ended:` reason. `ended` is refused on a row whose citation changed.
+- **The validator checks every row at every revision it applies to.** Each row is resolved there, and its quote, section, lexicon, params and error are checked against that revision's text and lexicons. So a reworded quote fails at the new revision until a variant or `until` handles it.
+
+**A run grades one revision.** `cli/run.ts --revision <key>` picks it. The default is the first of the manifest's `spec_revisions`. A row that doesn't apply there is recorded as `skip` ("not in revision ..."). The results file's `spec.revision` names the revision, and `verdict` judges each row as it reads there.
+
 ## Manifests (`implementations/<id>/manifest.yaml`)
 
-The schema follows design ch. 4.1. The validator also checks these:
+The schema follows design ch. 4.1, except that `spec_revisions` lists every revision the implementation claims, with the default first. The validator also checks these:
 - `id` matches the folder;
 - `image.pin` has a line in `pins/images.env`;
 - the `compose` fragment exists;
@@ -54,8 +73,9 @@ The schema follows design ch. 4.1. The validator also checks these:
 
 A deviation file is a list of entries, each with `assertion`, `cause`, `reason`, `spec`, `tracking`, `since` and `expect`. The validator rejects:
 - an assertion id that isn't in the catalogue at this commit, so retired ids get pruned;
-- an assertion listed twice;
-- a `spec` value that isn't a heading anchor;
+- an assertion listed twice for the same revision;
+- a `spec` value that isn't a heading anchor at each revision the entry covers;
+- a `revisions` entry naming a revision the assertion doesn't apply at;
 - a `since` date in the future;
 - an entry without `expect`;
 - a pattern that doesn't compile on its own (so an unbalanced paren can't escape the anchors);
@@ -64,6 +84,8 @@ A deviation file is a list of entries, each with `assertion`, `cause`, `reason`,
 `run` and `verdict` apply the same checks to a list before they use it.
 
 `tracking` must name a real issue: `HAP-123`, `HAP-388 (PR 6)`, `owner/repo#12` or an https URL. `pending` is refused.
+
+**`revisions`** is optional. Without it, an entry covers every revision its assertion applies at. With it, it covers only those. An assertion may be listed once per revision, so one generation's failure and another's can each have their own `expect`. A run applies only the entries for the revision it grades.
 
 **`expect`** states the failure the entry covers, so a known deviation can't hide a new failure on the same assertion:
 
@@ -100,12 +122,15 @@ A row with harness crypto (`areas` not empty) is provisional until all of these 
 
 Equal lineage strings count as one, so two hosts built on the same `@atproto/*` package don't clear a row, and an unknown lineage never does. The harness's own vectors don't count as a pass. A row with `areas: []` uses no harness crypto, so this rule doesn't apply to it. A provisional fail shows as "fail (provisional)", isn't scored, and only warns in gated CI. A provisional pass isn't scored either.
 
-The passes come from `evidence/passes.json`, which maps each assertion to the implementations it passed on, plus the results files it was built from:
+The passes come from `evidence/passes.json`. Per revision, it maps each assertion to the implementations it passed on, and it lists the results files it was built from. A pass at one revision says nothing about another, so each revision's rows clear on that revision's passes only.
 - Rebuild it with `node cli/passes.ts <results.json>...`. With no arguments, it rebuilds from the index's current sources.
 - Every source must be a committed results file of a real run, and must validate. Today the sources are `test/fixtures/results/parity-*`.
 - `bun run validate` rebuilds the index from its sources and refuses any difference, so a pass can't be added by hand.
 - Every file in `test/fixtures/results/` must be either a source or listed under `excluded`, with a reason. `cli/passes.ts` keeps the exclusions.
-- Each source records the `assertions_digest` its run used. When that differs from the current catalogue, `bun run validate` names the source. It still counts, because most catalogue edits don't change what a row checks. Rerun the source after changing a row's check.
+- **Per-assertion digests (HAP-432).** A run records, for each row that applies at its revision, a digest of the row as it reads there, the suite file that declares its test, the revision's text and lexicon commits, and the vector files of each area the row lists (`suite.assertion_digests`, `harness/digests.ts`).
+  - A pass counts only while that digest equals the current one. When a row, its test file, its pins or its vectors change, the index refuses its old passes, and lists them under the source's `stale_passes`. Rerun to count them again.
+  - Shared helpers (`suites/repo.ts`, `suites/fixtures.ts`, `harness/`) aren't in the digest. Rerun by hand after changing what one of them checks.
+- **Sources from before per-assertion digests** record only the whole-catalogue `assertions_digest`. When it differs from the current catalogue, `bun run validate` names the source. It still counts, because most catalogue edits don't change what a row checks. Rerun the source after changing a row's check.
 
 `harness/independence.ts` implements the rule, and both the reporter and `verdict` apply it.
 
