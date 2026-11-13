@@ -36,6 +36,8 @@ const counts: string[] = [];
 
 const revisions = loadRevisions();
 const revisionKeys = Object.keys(revisions.revisions);
+// Each key's YYYY-MM-DD form is checked by validateCatalogue.
+if (!revisionKeys.includes(revisions.default)) problems.push({ file: 'spec/revisions.json', where: revisions.default, message: 'default is not one of the revision keys' });
 
 const catPath = join(ROOT, 'spec', 'assertions.yaml');
 let cat: ReturnType<typeof loadCatalogue>;
