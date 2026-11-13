@@ -252,9 +252,16 @@
               },
               "no_crypto": {
                 "$ref": "#/$defs/assertion/properties/no_crypto"
+              },
+              "needs_slow": {
+                "$ref": "#/$defs/assertion/properties/needs_slow"
               }
             }
           }
+        },
+        "needs_slow": {
+          "description": "Part of the row waits out a host-issued credential, so it runs only with --slow. The pass index refuses this row's passes from a run without --slow.",
+          "type": "boolean"
         }
       }
     }
