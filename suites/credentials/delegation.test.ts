@@ -54,11 +54,28 @@ assertion('cred.delegation-token-kid-enforced', async (ctx) => {
     [`kid "#atproto", signed by the ${other.id} key`, delegationToken(owner, space, other.key)],
   ];
   const granted: string[] = [];
+  const unanswered: string[] = [];
+  const wrongError: string[] = [];
   const answers: Record<string, string> = {};
   for (const [name, token] of negatives) {
     const r = await requestCredential(ctx, owner, space, token);
     answers[name] = `${r.status} ${JSON.stringify(r.body).slice(0, 200)}`;
     if (r.status < 300) granted.push(name);
+    // A rate limit or a server error isn't a refusal of the token.
+    else if (r.status === 429 || r.status >= 500) unanswered.push(name);
+    // From Nov 12 the lexicon names the error for a bad token.
+    else if (settled(ctx) && r.body?.error !== 'InvalidDelegationToken') wrongError.push(name);
   }
   if (granted.length) fail(`a credential was granted for a delegation token with ${granted.join('; ')}`, { answers: JSON.stringify(answers) });
+  if (unanswered.length)
+    pending(`the host answered 429 or 5xx for ${unanswered.join('; ')}, so those tokens weren't judged (${JSON.stringify(answers).slice(0, 400)})`);
+  // Control again: if a well-formed token is now refused too, the refusals
+  // above may be the host's state (a limit, a revocation), not kid.
+  const after = await setup('a credential for a well-formed delegation token, after the negatives', () =>
+    requestCredential(ctx, owner, space, delegationToken(owner, space, signing)),
+  );
+  if (after.status !== 200 || typeof after.body?.credential !== 'string')
+    pending(`after the negatives the host refused a well-formed delegation token too (${after.status} ${JSON.stringify(after.body).slice(0, 200)}), so its refusals can't be told apart from kid enforcement`);
+  if (wrongError.length)
+    fail(`a delegation token with ${wrongError.join('; ')} was refused without error InvalidDelegationToken`, { answers: JSON.stringify(answers) });
 });

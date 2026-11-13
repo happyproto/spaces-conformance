@@ -36,6 +36,10 @@ export interface PdsjsAccount {
  * The account's keys, derived from the run id and handle, so every worker
  * gets the same ones whichever of them created the account. Nothing outside
  * this run's stack ever sees them.
+ *
+ * Without CONFORMANCE_RUN_ID the seed is the fixed string 'local', so anyone
+ * can derive these keys. That's harmless: they sign only for throwaway
+ * accounts on this run's internal stack, whose PLC is the harness's own.
  */
 export function accountKeys(handle: string, seed = process.env.CONFORMANCE_RUN_ID ?? 'local'): { signing: KeyPair; kem: KeyPair } {
   const key = (label: string) => fromSecret('p256', new Uint8Array(createHash('sha256').update(`spaces-conformance ${seed} ${handle} ${label}`).digest()));
