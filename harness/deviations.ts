@@ -2,10 +2,12 @@
 // change raw results, only display and CI gating, and nothing is scored yet.
 
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { parse } from 'yaml';
-import { appliesAt, type Catalogue } from './catalogue.ts';
+import { appliesAt, type Catalogue, loadCatalogue } from './catalogue.ts';
 import type { Problem } from './problems.ts';
-import { checkSchema } from './schema.ts';
+import { checkSchema, ROOT } from './schema.ts';
+import { anchors, loadRevisions, loadSpecText } from './spec.ts';
 
 /** The failure a deviation covers (Trezy, Nov 13). Each pattern must match the whole value. */
 export interface Expect {
@@ -26,10 +28,18 @@ export interface Deviation {
   revisions?: string[];
 }
 
-/** A pattern from `expect`, anchored on both ends, so it has to match the whole value. */
+/**
+ * A pattern from `expect`, anchored on both ends, so it has to match the whole value.
+ * The raw pattern is compiled on its own first: one with an unbalanced paren,
+ * like `x)|(.*`, would otherwise close the wrapper and escape the anchors.
+ */
 export function wholeMatch(pattern: string): RegExp {
+  new RegExp(pattern, 'su');
   return new RegExp(`^(?:${pattern})$`, 'su');
 }
+
+/** Values no real failure produces. A pattern that whole-matches one would cover any failure. */
+export const MATCH_ANYTHING_PROBES = ['', 'zz-sentinel-not-a-failure'];
 
 /**
  * Why a fail doesn't match its deviation's `expect`, or null when it does.
@@ -61,7 +71,8 @@ export function deviationsAt(list: Deviation[], rev: string): Deviation[] {
  * Validate a deviation list against the catalogue at this commit: every
  * assertion must exist (an entry for a retired id is an error, so lists get
  * pruned), may appear once per revision, its `spec` anchor must be a real
- * heading, and its `expect` patterns must compile.
+ * heading, and its `expect` patterns must compile on their own and must not
+ * match anything (the empty string or a sentinel).
  *
  * `anchors` is either one revision's heading anchors, or every revision's by
  * key. Given every revision's, an entry is checked at each revision it covers
@@ -101,12 +112,30 @@ export function validateDeviations(
     ];
     for (const [where, pattern] of patterns) {
       if (pattern === undefined) continue;
+      let re: RegExp;
       try {
-        wholeMatch(pattern);
+        re = wholeMatch(pattern);
       } catch (e) {
         at(`expect ${where} is not a valid regular expression: ${(e as Error).message}`);
+        continue;
       }
+      const probe = MATCH_ANYTHING_PROBES.find((v) => re.test(v));
+      if (probe !== undefined) at(`expect ${where} matches ${JSON.stringify(probe)}, so it would cover any failure`);
     }
   });
   return problems;
+}
+
+/**
+ * Load a deviation list and run the full validation on it, against the
+ * shipped catalogue at every pinned revision, as `bun run validate` does.
+ * The CLIs call this before they use a list, so a bad pattern stops a run
+ * before the stack starts.
+ */
+export async function loadCheckedDeviations(path: string, file = path): Promise<{ deviations: Deviation[]; problems: Problem[] }> {
+  const deviations = loadDeviations(path);
+  const cat = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
+  const anchorsByRev = new Map<string, Set<string>>();
+  for (const [key, rev] of Object.entries(loadRevisions().revisions)) anchorsByRev.set(key, anchors(await loadSpecText(rev)));
+  return { deviations, problems: validateDeviations(deviations, file, cat, anchorsByRev) };
 }

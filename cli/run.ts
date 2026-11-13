@@ -24,12 +24,12 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { loadCatalogue } from '../harness/catalogue.ts';
-import { loadDeviations } from '../harness/deviations.ts';
+import { loadCheckedDeviations } from '../harness/deviations.ts';
 import { loadManifest } from '../harness/manifest.ts';
 import { formatProblem } from '../harness/problems.ts';
 import { validateResults } from '../harness/results.ts';
 import { loadRevisions, USER_AGENT } from '../harness/spec.ts';
-import { checkSchema, ROOT } from '../harness/schema.ts';
+import { ROOT } from '../harness/schema.ts';
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -135,9 +135,10 @@ async function remoteDeviations(where: { repo: string; path: string }, image: st
   console.log(`deviations: ${where.repo}/${where.path} at ${label.slice(0, 10)}`);
   return out;
 }
-// Refuse a list without `expect` before the stack starts: an entry without it would cover any failure.
+// Validate the list before the stack starts: an entry without `expect`, or
+// with a pattern that matches anything, would cover any failure.
 if (deviations) {
-  const problems = checkSchema('deviations', loadDeviations(join(ROOT, deviations)), deviations);
+  const { problems } = await loadCheckedDeviations(join(ROOT, deviations), deviations);
   if (problems.length) {
     for (const p of problems) console.error(formatProblem(p));
     process.exit(2);
