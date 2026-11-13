@@ -1,0 +1,125 @@
+{
+  "description": "MACs from 2026-11-12 on (0016 #shared-secret, #requesting-a-mac, #commit-mac, #record-mac): the HPKE export secret, and RFC 9421 hmac-sha256 signatures over Atproto-Space-Commit and Atproto-Space-Record.",
+  "area": "mac",
+  "export": [
+    {
+      "name": "HPKE export, info \"atproto-mac\"",
+      "enc": "04d804370b7e24b94749eb1dc8df6d4d4a5d75f9effad01739ebcad5c54a40d57aaa8b4190fc124dbde2e4f1e1d1b012a3bc4038157dc29b55533a932306d8d38d",
+      "skRm": "62c3868357a464f8461d03aa0182c7cebcde841036aea7230ddc7339f1088346",
+      "shared_secret": "2060e0558d1b34c10086bc137f849bb79ba59fcdc30544418e35c9cd301f0d0d",
+      "sources": [
+        "atproto#5187 d4def6e9 packages/space/tests/kem.test.ts (computed there with Go crypto/hpke)",
+        "atproto#5187 d4def6e9 packages/space (run)"
+      ],
+      "cross_check": {
+        "area": "mac",
+        "status": "cross-checked",
+        "against": [
+          "atproto#5187 d4def6e9 packages/space/tests/kem.test.ts",
+          "atproto#5187 d4def6e9 packages/space (run)"
+        ]
+      }
+    }
+  ],
+  "shared_secret": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "key_share": "did:key:zDnaeWA1DFehB4iXcQeiDJzcZK3x2cYW1DdJX97edtzfPCt75",
+  "commit": [
+    {
+      "name": "commit",
+      "ver": 1,
+      "repo": "did:example:alice",
+      "space": "at://did:example:space/space/app.bsky.group/test",
+      "rev": "3kbcq3p7ad400",
+      "data": "0101010101010101010101010101010101010101010101010101010101010101",
+      "accept_signature": "mac=(\"atproto-space-commit\";sf);keyid=\"did:key:zDnaeWA1DFehB4iXcQeiDJzcZK3x2cYW1DdJX97edtzfPCt75\";tag=\"atproto-space-commit\"",
+      "covered": "ver=1, repo=\"did:example:alice\", space=\"at://did:example:space/space/app.bsky.group/test\", rev=\"3kbcq3p7ad400\", data=:AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=:",
+      "signature_base": "\"atproto-space-commit\";sf: ver=1, repo=\"did:example:alice\", space=\"at://did:example:space/space/app.bsky.group/test\", rev=\"3kbcq3p7ad400\", data=:AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=:\n\"@signature-params\": (\"atproto-space-commit\";sf);keyid=\"did:key:zDnaeWA1DFehB4iXcQeiDJzcZK3x2cYW1DdJX97edtzfPCt75\";tag=\"atproto-space-commit\"",
+      "signature_input": "mac=(\"atproto-space-commit\";sf);keyid=\"did:key:zDnaeWA1DFehB4iXcQeiDJzcZK3x2cYW1DdJX97edtzfPCt75\";tag=\"atproto-space-commit\"",
+      "signature": "mac=:pR1AwRQQ6B3pxhYD/boPseaXCx1WoMkHqyd6G1Sq7ys=:",
+      "sources": [
+        "harness",
+        "atproto#5187 d4def6e9 packages/space (run)"
+      ],
+      "cross_check": {
+        "area": "mac",
+        "status": "cross-checked",
+        "against": [
+          "atproto#5187 d4def6e9 packages/space (run)"
+        ]
+      }
+    }
+  ],
+  "record": [
+    {
+      "name": "record",
+      "uri": "at://did:example:space/space/app.bsky.group/test/did:example:alice/app.bsky.feed.post/1",
+      "cid": "bafyreidefdycgbfy3oglcb6ism3eqhyp5llsrpzxjsuac2gsy4mtrtx244",
+      "accept_signature": "mac=(\"atproto-space-record\";sf);keyid=\"did:key:zDnaeWA1DFehB4iXcQeiDJzcZK3x2cYW1DdJX97edtzfPCt75\";tag=\"atproto-space-record\"",
+      "covered": "uri=\"at://did:example:space/space/app.bsky.group/test/did:example:alice/app.bsky.feed.post/1\", cid=\"bafyreidefdycgbfy3oglcb6ism3eqhyp5llsrpzxjsuac2gsy4mtrtx244\"",
+      "signature_base": "\"atproto-space-record\";sf: uri=\"at://did:example:space/space/app.bsky.group/test/did:example:alice/app.bsky.feed.post/1\", cid=\"bafyreidefdycgbfy3oglcb6ism3eqhyp5llsrpzxjsuac2gsy4mtrtx244\"\n\"@signature-params\": (\"atproto-space-record\";sf);keyid=\"did:key:zDnaeWA1DFehB4iXcQeiDJzcZK3x2cYW1DdJX97edtzfPCt75\";tag=\"atproto-space-record\"",
+      "signature_input": "mac=(\"atproto-space-record\";sf);keyid=\"did:key:zDnaeWA1DFehB4iXcQeiDJzcZK3x2cYW1DdJX97edtzfPCt75\";tag=\"atproto-space-record\"",
+      "signature": "mac=:iDg3Z6asK7UHBCtAoWHfdyBkudtm4T+etjBYC0LBMpY=:",
+      "sources": [
+        "harness",
+        "atproto#5187 d4def6e9 packages/space (run)"
+      ],
+      "cross_check": {
+        "area": "mac",
+        "status": "cross-checked",
+        "against": [
+          "atproto#5187 d4def6e9 packages/space (run)"
+        ]
+      }
+    }
+  ],
+  "negative": [
+    {
+      "name": "a commit header changed after signing",
+      "profile": "atproto-space-commit",
+      "covered": "ver=1, repo=\"did:example:alice\", space=\"at://did:example:space/space/app.bsky.group/test\", rev=\"3kbcq3p7ad401\", data=:AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=:",
+      "signature_input": "mac=(\"atproto-space-commit\";sf);keyid=\"did:key:zDnaeWA1DFehB4iXcQeiDJzcZK3x2cYW1DdJX97edtzfPCt75\";tag=\"atproto-space-commit\"",
+      "signature": "mac=:pR1AwRQQ6B3pxhYD/boPseaXCx1WoMkHqyd6G1Sq7ys=:",
+      "expect": "the MAC does not match"
+    },
+    {
+      "name": "a record MAC presented as a commit MAC",
+      "profile": "atproto-space-commit",
+      "covered": "uri=\"at://did:example:space/space/app.bsky.group/test/did:example:alice/app.bsky.feed.post/1\", cid=\"bafyreidefdycgbfy3oglcb6ism3eqhyp5llsrpzxjsuac2gsy4mtrtx244\"",
+      "signature_input": "mac=(\"atproto-space-record\";sf);keyid=\"did:key:zDnaeWA1DFehB4iXcQeiDJzcZK3x2cYW1DdJX97edtzfPCt75\";tag=\"atproto-space-record\"",
+      "signature": "mac=:iDg3Z6asK7UHBCtAoWHfdyBkudtm4T+etjBYC0LBMpY=:",
+      "expect": "0 signatures with tag \"atproto-space-commit\", not exactly one"
+    },
+    {
+      "name": "a second signature with the same tag",
+      "profile": "atproto-space-commit",
+      "covered": "ver=1, repo=\"did:example:alice\", space=\"at://did:example:space/space/app.bsky.group/test\", rev=\"3kbcq3p7ad400\", data=:AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=:",
+      "signature_input": "mac=(\"atproto-space-commit\";sf);keyid=\"did:key:zDnaeWA1DFehB4iXcQeiDJzcZK3x2cYW1DdJX97edtzfPCt75\";tag=\"atproto-space-commit\", mac2=(\"atproto-space-commit\";sf);keyid=\"did:key:zDnaeWA1DFehB4iXcQeiDJzcZK3x2cYW1DdJX97edtzfPCt75\";tag=\"atproto-space-commit\"",
+      "signature": "mac=:pR1AwRQQ6B3pxhYD/boPseaXCx1WoMkHqyd6G1Sq7ys=:, mac2=:pR1AwRQQ6B3pxhYD/boPseaXCx1WoMkHqyd6G1Sq7ys=:",
+      "expect": "2 signatures with tag \"atproto-space-commit\", not exactly one"
+    },
+    {
+      "name": "the header covered without sf",
+      "profile": "atproto-space-commit",
+      "covered": "ver=1, repo=\"did:example:alice\", space=\"at://did:example:space/space/app.bsky.group/test\", rev=\"3kbcq3p7ad400\", data=:AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=:",
+      "signature_input": "mac=(\"atproto-space-commit\");keyid=\"did:key:zDnaeWA1DFehB4iXcQeiDJzcZK3x2cYW1DdJX97edtzfPCt75\";tag=\"atproto-space-commit\"",
+      "signature": "mac=:pR1AwRQQ6B3pxhYD/boPseaXCx1WoMkHqyd6G1Sq7ys=:",
+      "expect": "the signature covers (\"atproto-space-commit\"), not (\"atproto-space-commit\";sf)"
+    },
+    {
+      "name": "another alg",
+      "profile": "atproto-space-commit",
+      "covered": "ver=1, repo=\"did:example:alice\", space=\"at://did:example:space/space/app.bsky.group/test\", rev=\"3kbcq3p7ad400\", data=:AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=:",
+      "signature_input": "mac=(\"atproto-space-commit\";sf);keyid=\"did:key:zDnaeWA1DFehB4iXcQeiDJzcZK3x2cYW1DdJX97edtzfPCt75\";tag=\"atproto-space-commit\";alg=\"hmac-sha512\"",
+      "signature": "mac=:pR1AwRQQ6B3pxhYD/boPseaXCx1WoMkHqyd6G1Sq7ys=:",
+      "expect": "alg is hmac-sha512, not hmac-sha256"
+    },
+    {
+      "name": "another keyid",
+      "profile": "atproto-space-commit",
+      "covered": "ver=1, repo=\"did:example:alice\", space=\"at://did:example:space/space/app.bsky.group/test\", rev=\"3kbcq3p7ad400\", data=:AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=:",
+      "signature_input": "mac=(\"atproto-space-commit\";sf);keyid=\"did:key:zDnaeWRnxcDzEYRYfNJiFvmoavvHjubE8M6vSfrn8TUsgmcCe\";tag=\"atproto-space-commit\"",
+      "signature": "mac=:pR1AwRQQ6B3pxhYD/boPseaXCx1WoMkHqyd6G1Sq7ys=:",
+      "expect": "keyid is not the requested key"
+    }
+  ]
+}
