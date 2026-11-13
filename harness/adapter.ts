@@ -2,6 +2,7 @@
 // adapter does is setup, which isn't graded: a failure here records `error`.
 
 import type { Plc } from './actors/plc.ts';
+import type { KeyPair } from './crypto/keys.ts';
 import type { HttpResponse } from './http.ts';
 import type { Manifest } from './manifest.ts';
 
@@ -18,6 +19,12 @@ export interface Account {
   /** The host that holds this account's space repos. */
   repoHost: string;
   auth: WriteAuth;
+  /**
+   * The account's own keys, when the harness made its identity (pds.js). The
+   * credential suites sign delegation tokens with `signing`; `others` are
+   * other keys its DID document lists, such as #atproto_kem.
+   */
+  keys?: { signing: KeyPair; others: { id: string; key: KeyPair }[] };
 }
 
 export interface SetupMode {

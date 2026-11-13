@@ -67,7 +67,13 @@ export async function signIn(baseUrl: string, plc: Parameters<typeof provisionAc
     const r = await http(`${baseUrl}/oauth/sessions`, { ...json(sessionRegistration(prov.provision_id, tokens)), headers: client });
     if (r.status !== 201) throw new Error(`answered ${r.status}: ${JSON.stringify(r.body).slice(0, 300)}`);
   });
-  return { did: acct.did, handle: acct.handle, repoHost: baseUrl, auth: happyviewSession(key, tokens.accessToken) };
+  return {
+    did: acct.did,
+    handle: acct.handle,
+    repoHost: baseUrl,
+    auth: happyviewSession(key, tokens.accessToken),
+    keys: { signing: acct.signing, others: [{ id: '#atproto_kem', key: acct.kem }] },
+  };
 }
 
 export const adapter: Adapter = {

@@ -10,10 +10,11 @@
 // The pinned image serves only the Oct 22 com.atproto.simplespace.createSpace;
 // --setup-mode picks.
 
+import { createHash } from 'node:crypto';
 import type { Adapter } from '../../harness/adapter.ts';
 import { setup } from '../../harness/assert.ts';
 import { hex } from '../../harness/crypto/bytes.ts';
-import { generate } from '../../harness/crypto/keys.ts';
+import { fromSecret, type KeyPair } from '../../harness/crypto/keys.ts';
 import { http, json } from '../../harness/http.ts';
 import type { Plc } from '../../harness/actors/plc.ts';
 import { pdsjsConsent } from '../../harness/oauth/consent/pdsjs.ts';
@@ -27,24 +28,35 @@ export interface PdsjsAccount {
   pdsUrl: string;
   password: string;
   created: boolean;
+  signing: KeyPair;
+  kem: KeyPair;
+}
+
+/**
+ * The account's keys, derived from the run id and handle, so every worker
+ * gets the same ones whichever of them created the account. Nothing outside
+ * this run's stack ever sees them.
+ */
+export function accountKeys(handle: string, seed = process.env.CONFORMANCE_RUN_ID ?? 'local'): { signing: KeyPair; kem: KeyPair } {
+  const key = (label: string) => fromSecret('p256', new Uint8Array(createHash('sha256').update(`spaces-conformance ${seed} ${handle} ${label}`).digest()));
+  return { signing: key('signing'), kem: key('kem') };
 }
 
 /** The container's account, created on first use. */
 export async function provisionAccount(plc: Plc, pdsUrl: string, handle: string, password = PASSWORD): Promise<PdsjsAccount> {
+  // The signing key doubles as the rotation key: nothing outside this stack sees it.
+  const { signing, kem } = accountKeys(handle);
   const existing = await http(`${pdsUrl}/.well-known/atproto-did`);
   if (existing.status === 200 && typeof existing.body === 'string') {
-    return { did: existing.body.trim(), handle, pdsUrl, password, created: false };
+    return { did: existing.body.trim(), handle, pdsUrl, password, created: false, signing, kem };
   }
-  // The signing key doubles as the rotation key: nothing outside this stack sees it.
-  const signing = generate('p256');
-  const kem = generate('p256');
   const did = await plc.register({ rotation: signing, signing, kem, handle, pdsUrl });
   const r = await http(
     `${pdsUrl}/init`,
     json({ did, privateKey: hex(signing.secret), kemKey: hex(kem.secret), handle, curve: 'p256', password }),
   );
   if (r.status >= 300) throw new Error(`pds.js /init refused (${r.status}): ${JSON.stringify(r.body)}`);
-  return { did, handle, pdsUrl, password, created: true };
+  return { did, handle, pdsUrl, password, created: true, signing, kem };
 }
 
 export const consent = (account: PdsjsAccount) => pdsjsConsent(account.password);
@@ -61,7 +73,7 @@ export const adapter: Adapter = {
       const a = await provisionAccount(ctx.plc, pdsUrl, `${name}.test`);
       const r = await http(`${pdsUrl}/xrpc/com.atproto.server.createSession`, json({ identifier: a.did, password: a.password }));
       if (r.status !== 200 || typeof r.body?.accessJwt !== 'string') throw new Error(`createSession answered ${r.status}: ${JSON.stringify(r.body)}`);
-      return { did: a.did, handle: a.handle, repoHost: pdsUrl, auth: bearer(r.body.accessJwt) };
+      return { did: a.did, handle: a.handle, repoHost: pdsUrl, auth: bearer(r.body.accessJwt), keys: { signing: a.signing, others: [{ id: '#atproto_kem', key: a.kem }] } };
     }),
   createSpace: (ctx, owner, spaceType, policy) => createSpace(ctx.manifest, owner.repoHost, owner, spaceType, policy),
 };
