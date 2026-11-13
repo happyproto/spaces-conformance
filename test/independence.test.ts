@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Assertion } from '../harness/catalogue.ts';
 import { loadCatalogue } from '../harness/catalogue.ts';
-import { buildPassIndex, independenceReason, independent, type Independence, loadIndependence, PASS_INDEX, staleSources, validatePassIndex } from '../harness/independence.ts';
+import { buildPassIndex, independenceReason, independent, type Independence, loadIndependence, PASS_INDEX, pinnedImages, staleSources, validatePassIndex } from '../harness/independence.ts';
 import { provisionalReason, vectorStatus } from '../harness/provisional.ts';
 import { loadManifest } from '../harness/manifest.ts';
 import { ROOT } from '../harness/schema.ts';
@@ -124,6 +124,18 @@ describe('the committed pass index', () => {
     writeFileSync(path, JSON.stringify(index));
     const p = validatePassIndex(loadCatalogue(join(ROOT, 'spec', 'assertions.yaml')), path);
     expect(p.map((x) => x.message).join()).toMatch(/does not match its sources/);
+  });
+
+  it('refuses a source that ran another image than its implementation pins now', () => {
+    const cat = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
+    const src = JSON.parse(readFileSync(PASS_INDEX, 'utf8')).sources[0];
+    const pinned = new Map(pinnedImages());
+    expect(pinned.get(src.implementation)).toBe(src.image);
+    pinned.set(src.implementation, 'ghcr.io/example/other@sha256:00');
+    const p = validatePassIndex(cat, PASS_INDEX, undefined, pinned);
+    expect(p.map((x) => `${x.where}: ${x.message}`)).toContain(
+      `${src.file}: ran ${src.image}, but ${src.implementation} now pins ghcr.io/example/other@sha256:00: rerun it, or exclude it with a reason`,
+    );
   });
 
   it('requires every committed results file to be a source or excluded with a reason', () => {
