@@ -39,3 +39,10 @@ export const records = (name: 'plain' | 'typed'): { name: string; record: Record
 
 export const xrpcUrl = (base: string, nsid: string, params?: Record<string, string>) =>
   `${base}/xrpc/${nsid}${params ? `?${new URLSearchParams(params)}` : ''}`;
+
+/**
+ * The 2026-11-12 revision ("Release 11/12"): the settled names. Suites that
+ * call a method or read a field it renamed branch on this.
+ */
+export const SETTLED = '2026-11-12';
+export const settled = (ctx: RunContext) => ctx.revision >= SETTLED;

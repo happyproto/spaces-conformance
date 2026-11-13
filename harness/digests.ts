@@ -11,7 +11,7 @@
 // them in would make every edit restart every row.
 
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { type Assertion, type Catalogue, resolveCatalogue } from './catalogue.ts';
 import { declaredAssertions } from './coverage.ts';
@@ -49,6 +49,8 @@ export function assertionDigests(cat: Catalogue, revision: string, declared = de
   const rev = loadRevisions().revisions[revision];
   const pin = rev ? `pin ${rev.commit} lexicons ${rev.lexicons.commit}` : `pin ${revision}`;
   const byArea = vectorFilesByArea();
+  // STAR's own interop fixtures carry no cross_check, but they test the STAR harness, so they count for star rows.
+  byArea.set('star', [...(byArea.get('star') ?? []), ...readdirSync(join(ROOT, 'vectors', 'star-interop')).filter((f) => f.endsWith('.json')).sort().map((f) => `star-interop/${f}`)]);
   const vectors = new Map<string, string>();
   const vectorHash = (f: string) => {
     if (!vectors.has(f)) vectors.set(f, sha(readFileSync(join(ROOT, 'vectors', f), 'utf8')));
