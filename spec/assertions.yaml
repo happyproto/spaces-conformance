@@ -455,7 +455,8 @@ assertions:
           A host that answers a well-formed request with a MAC refuses each of these: a malformed
           Accept-Signature; two requests tagged atproto-space-commit; a request with an extra parameter;
           a keyid that isn't a P-256 did:key. A missing header isn't sent: on a read without a space
-          credential the host may answer without a MAC. A 429 or 5xx answer makes the row pending.
+          credential the host may answer without a MAC. A 429 or 5xx answer, or a well-formed request
+          that gets no MAC before or after the negatives, makes the row pending.
 
   - id: mac.commit-valid
     suite: mac
@@ -555,7 +556,8 @@ assertions:
           and checks that it matches the header's CID.
         checks: >-
           getRecord's atproto-space-record MAC verifies with the HPKE export secret, its uri is the
-          requested record URI, and its cid is the CID of the returned record value.
+          requested record URI, and its cid is the CID of the returned record value. When the body
+          gives uri and cid, they equal the MAC's.
 
   # --- oplog -------------------------------------------------------------------
 
