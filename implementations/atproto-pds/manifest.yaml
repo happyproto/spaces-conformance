@@ -10,21 +10,21 @@ roles: [pds, repo-host, space-host]
 profile: pds
 capabilities:
   # The spec's baseline: every PDS must serve these (#baseline-policies).
-  # At the Nov 2026 pin it serves none of the Oct 29 memberspace methods.
+  # At the Nov 13 pin (HAP-427) it serves the Oct 29 memberspace methods.
   policies: [personalspace, memberspace, managedspace]
   repo_host:
     foreign_authorities: true
   oauth:
     # Advertises an https issuer; no headless consent script yet.
     scripted: false
-# Per area, at the pinned image's revision e81213fe (ngerakines.me/atproto-crates):
+# Per area, at the pinned image's revision dc4adf25 (ngerakines.me/atproto-crates):
 #   cbor    atproto-dasl: crates/atproto-pds/src/space/writer.rs encode_value
 #   lthash  atproto-space: crates/atproto-space/src/set_hash.rs
-#   mac     atproto-space: crates/atproto-space/src/commit.rs
+#   mac     atproto-space: crates/atproto-space/src/mac.rs (used by commit.rs)
 #   httpsig atproto-space: crates/atproto-space/src/http_signature.rs
 #   jwt     atproto-space: crates/atproto-space/src/credential.rs
-#   star    none: getRepo serves a CAR (atproto-space sync/provider.rs), so unknown
-lineage: { cbor: atproto-dasl, lthash: atproto-space, mac: atproto-space, httpsig: atproto-space, jwt: atproto-space }
+#   star    atproto-dasl: getRepo serves STAR (atproto-space sync/provider.rs, over atproto_dasl::star)
+lineage: { cbor: atproto-dasl, lthash: atproto-space, mac: atproto-space, httpsig: atproto-space, jwt: atproto-space, star: atproto-dasl }
 compose: compose.yml
 base_url: https://atproto-pds.test
 health: /xrpc/_health
@@ -33,8 +33,9 @@ accounts:
   write_auth: password-session
 spaces:
   authority: account
-  # Setup only (ungraded). The pinned image serves only the Oct 22
-  # simplespace.createSpace; cli/run.ts --setup-mode picks another mode.
+  # Setup only (ungraded). Since the HAP-427 pin the image serves the Oct 29
+  # createSpace and no longer simplespace.createSpace; cli/run.ts
+  # --setup-mode picks another mode.
   create: oct29
   modes: [oct29, simplespace, auto]
 setup: adapter.ts
