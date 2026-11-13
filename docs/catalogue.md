@@ -50,6 +50,7 @@ How rows span revisions:
 - **One id across revisions.** A row keeps its id while it checks the same thing. Its own fields read as of its first revision: `since`, or the catalogue's base `revision`.
 - **`variants` hold what a later revision reworded or renamed.** A variant applies from its revision on, over the row and any earlier variant. Its key must come after the row's first revision, and no later than `until`.
 - **`until` ends a row.** Use it when a later revision drops what the row checks. A row whose G2 reading isn't written yet also carries `until` until its variant lands, so it's never graded against text it doesn't quote.
+- **An `until` can't drop a row by accident.** If the row, as it reads at its `until`, still passes the quote, section and lexicon checks at every later pinned revision, the validator refuses the `until` unless the row has an `ended:` reason. `ended` is refused on a row whose citation changed.
 - **The validator checks every row at every revision it applies to.** Each row is resolved there, and its quote, section, lexicon, params and error are checked against that revision's text and lexicons. So a reworded quote fails at the new revision until a variant or `until` handles it.
 
 **A run grades one revision.** `cli/run.ts --revision <key>` picks it. The default is the first of the manifest's `spec_revisions`. A row that doesn't apply there is recorded as `skip` ("not in revision ..."). The results file's `spec.revision` names the revision, and `verdict` judges each row as it reads there.
@@ -126,8 +127,8 @@ The passes come from `evidence/passes.json`. Per revision, it maps each assertio
 - Every source must be a committed results file of a real run, and must validate. Today the sources are `test/fixtures/results/parity-*`.
 - `bun run validate` rebuilds the index from its sources and refuses any difference, so a pass can't be added by hand.
 - Every file in `test/fixtures/results/` must be either a source or listed under `excluded`, with a reason. `cli/passes.ts` keeps the exclusions.
-- **Per-assertion digests (HAP-432).** A run records, for each row that applies at its revision, a digest of the row as it reads there plus the suite file that declares its test (`suite.assertion_digests`, `harness/digests.ts`).
-  - A pass counts only while that digest equals the current one. When a row or its test file changes, the index refuses its old passes, and lists them under the source's `stale_passes`. Rerun to count them again.
+- **Per-assertion digests (HAP-432).** A run records, for each row that applies at its revision, a digest of the row as it reads there, the suite file that declares its test, the revision's text and lexicon commits, and the vector files of each area the row lists (`suite.assertion_digests`, `harness/digests.ts`).
+  - A pass counts only while that digest equals the current one. When a row, its test file, its pins or its vectors change, the index refuses its old passes, and lists them under the source's `stale_passes`. Rerun to count them again.
   - Shared helpers (`suites/repo.ts`, `suites/fixtures.ts`, `harness/`) aren't in the digest. Rerun by hand after changing what one of them checks.
 - **Sources from before per-assertion digests** record only the whole-catalogue `assertions_digest`. When it differs from the current catalogue, `bun run validate` names the source. It still counts, because most catalogue edits don't change what a row checks. Rerun the source after changing a row's check.
 
