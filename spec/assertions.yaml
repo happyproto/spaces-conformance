@@ -489,9 +489,7 @@ assertions:
     level: must
     basis: [definition]
     roles: [repo-host]
-    # Reading as a non-author needs the space-credential path; no manifest
-    # claims this until the harness has it (phase 7), so the row skips.
-    requires: [harness.credential_reads]
+    # The harness reads as a syncer with a space credential, not as the author.
     areas: [mac, httpsig, jwt]
     checks: >-
       Read by a caller who isn't the author, the commit MAC verifies against the author's

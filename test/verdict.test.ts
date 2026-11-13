@@ -198,12 +198,13 @@ describe('setup hangs', () => {
     }
   });
 
-  it('a row that requires harness.credential_reads is not applicable to every manifest', () => {
+  it('mac.commit-bound-to-repo applies to every repo host, now that the harness reads with a credential', () => {
     const cat = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
     const row = cat.assertions.find((a) => a.id === 'mac.commit-bound-to-repo')!;
+    expect(row.requires ?? []).toEqual([]);
     for (const impl of ['zds', 'pdsjs', 'reference', 'atproto-pds', 'happyview']) {
       const m = loadManifest(join(ROOT, 'implementations', impl, 'manifest.yaml'));
-      expect(notApplicable(row, m)).toMatch(/harness\.credential_reads not claimed/);
+      expect(notApplicable(row, m)).toBeNull();
     }
   });
 
