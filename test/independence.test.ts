@@ -4,8 +4,9 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Assertion } from '../harness/catalogue.ts';
 import { loadCatalogue } from '../harness/catalogue.ts';
-import { buildPassIndex, independenceReason, independent, type Independence, loadIndependence, PASS_INDEX, staleSources, validatePassIndex } from '../harness/independence.ts';
+import { buildPassIndex, independenceReason, independent, type Independence, loadIndependence, PASS_INDEX, pinnedImages, staleSources, validatePassIndex } from '../harness/independence.ts';
 import { provisionalReason, vectorStatus } from '../harness/provisional.ts';
+import { loadManifest } from '../harness/manifest.ts';
 import { ROOT } from '../harness/schema.ts';
 import { judgeAll } from '../harness/verdict.ts';
 
@@ -99,8 +100,13 @@ describe('the pass index per revision and per assertion digest (HAP-432)', () =>
   });
 
   it('loads one revision\'s passes', () => {
-    expect(loadIndependence('2026-11-12').passes.size).toBe(0);
-    expect(loadIndependence('2026-10-29').passes.size).toBeGreaterThan(0);
+    const g1 = loadIndependence('2026-10-29').passes;
+    const g2 = loadIndependence('2026-11-12').passes;
+    expect(g1.size).toBeGreaterThan(0);
+    expect(g2.size).toBeGreaterThan(0);
+    // A row that isn't in 2026-11-12 can't have passed there.
+    expect(g1.has('mac.commit-valid')).toBe(true);
+    expect(g2.has('mac.commit-valid')).toBe(false);
   });
 });
 
@@ -120,6 +126,18 @@ describe('the committed pass index', () => {
     expect(p.map((x) => x.message).join()).toMatch(/does not match its sources/);
   });
 
+  it('refuses a source that ran another image than its implementation pins now', () => {
+    const cat = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
+    const src = JSON.parse(readFileSync(PASS_INDEX, 'utf8')).sources[0];
+    const pinned = new Map(pinnedImages());
+    expect(pinned.get(src.implementation)).toBe(src.image);
+    pinned.set(src.implementation, 'ghcr.io/example/other@sha256:00');
+    const p = validatePassIndex(cat, PASS_INDEX, undefined, pinned);
+    expect(p.map((x) => `${x.where}: ${x.message}`)).toContain(
+      `${src.file}: ran ${src.image}, but ${src.implementation} now pins ghcr.io/example/other@sha256:00: rerun it, or exclude it with a reason`,
+    );
+  });
+
   it('requires every committed results file to be a source or excluded with a reason', () => {
     const dir = mkdtempSync(join(tmpdir(), 'passes-'));
     const path = join(dir, 'passes.json');
@@ -134,14 +152,16 @@ describe('the committed pass index', () => {
     const dir = mkdtempSync(join(tmpdir(), 'passes-'));
     const path = join(dir, 'passes.json');
     const index = JSON.parse(readFileSync(PASS_INDEX, 'utf8'));
-    index.sources[0].assertions_digest = 'sha256:0';
+    // Only a source without per-assertion digests is judged by the whole-file digest.
+    index.sources[0] = { ...index.sources[0], file: 'test/fixtures/results/reference-2026-11-10.json', assertions_digest: 'sha256:0' };
     writeFileSync(path, JSON.stringify(index));
     expect(staleSources(path).map((s) => s.implementation)).toContain(index.sources[0].implementation);
   });
 
   it('loads every passing implementation with its manifest lineage', () => {
     const real = loadIndependence();
-    expect(real.passes.get('digest.cid-drisl-plain')).toContain('reference');
-    expect(real.lineage.get('reference')?.cbor).toBe('@atproto/lex-cbor');
+    const passers = new Set([...real.passes.values()].flat());
+    expect(passers.size).toBeGreaterThan(0);
+    for (const id of passers) expect(real.lineage.get(id), id).toEqual(loadManifest(join(ROOT, 'implementations', id, 'manifest.yaml')).lineage ?? {});
   });
 });

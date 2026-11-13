@@ -1,21 +1,21 @@
 {
   "schema": 1,
   "run": {
-    "id": "2026-11-13T18-29-08Z-happyview-f35c",
+    "id": "2026-11-13T18-38-49Z-happyview-b34d",
     "kind": "local",
-    "started_at": "2026-11-13T18:29:08.717Z",
-    "finished_at": "2026-11-13T18:29:25.277Z",
+    "started_at": "2026-11-13T18:38:49.789Z",
+    "finished_at": "2026-11-13T18:39:07.284Z",
     "attempt": 1
   },
   "suite": {
-    "commit": "9d8cee60a9",
-    "assertions_digest": "sha256:ef34c2a891b609a1d7ea22ffe2026a828889c3c77d9dbc092cc5a3a19c26e078",
+    "commit": "ced098ff0d",
+    "assertions_digest": "sha256:dbb1305112b3b0b97bc143f8af3e0fabdaf5e331e89023a39144611443d62849",
     "assertion_digests": {
       "addressing.record-uri-shape": "sha256:2221a0422839dda216d3474cf0b02c77fffd942370e8d997d0e515ba1ae1ec0b",
       "addressing.skey-limits": "sha256:efe12199438eaf3b4566f814751865780f05612b9554458c81355c305aa07e48",
       "cred.credential-lifetime-default": "sha256:06b8642d76971d9c959e3cb713262b41b7b1f82330d2bb659947473b5f4ab481",
       "cred.credential-shape": "sha256:5f28fe62d6b6c3eeb6120ece262199a2e4686b664ff649fe65cd62bcae1f5c50",
-      "cred.delegation-token-kid-enforced": "sha256:c7d986a94a78bf32fa32549f7345e9d5ed0027d2403b5a14514689f6f3211d24",
+      "cred.delegation-token-kid-enforced": "sha256:1e8888ac3336455f33b4f331cd672638208f765f02279fc3fd2925abf3c2ae02",
       "cred.delegation-token-lifetime": "sha256:c6192a701c752d6ede248293516c1b400daf783e629539733bc4eaefafba7865",
       "cred.delegation-token-shape": "sha256:50c5a21fc99f59ee6fe897f0469f90fe3b807f3e08ca436696ee9a3af75977e3",
       "cred.delegation-token-single-use": "sha256:9d22d67901e7a184e544aaff4d2e39c21a20ebca0b997d8abd6696058b830448",
@@ -151,7 +151,7 @@
   "peers": [
     {
       "id": "pdsjs",
-      "image": "ghcr.io/happyproto/pds-test/pdsjs@sha256:1725c1f8d2cee4c4f5095c9309f6cf27e11336b74452f0ae12628afae5fe22be"
+      "image": "ghcr.io/happyproto/pds-test/pdsjs@sha256:37c16c3499b54b799399118a24154d64e5397ea93a2b4da74c182f133f9e1bca"
     },
     {
       "id": "plc",
@@ -417,7 +417,7 @@
     },
     {
       "assertion": "records.crud-roundtrip",
-      "cause": "apply-writes-shape",
+      "cause": "create-record-rkey",
       "reason": "createRecord ignores the caller's `rkey` and assigns a TID.",
       "spec": "#xrpc-api",
       "tracking": "HAP-414",
@@ -463,22 +463,28 @@
   ],
   "results": [
     {
+      "id": "cred.delegation-token-kid-enforced",
+      "suite": "credentials",
+      "status": "pass",
+      "ms": 245
+    },
+    {
       "id": "digest.cid-drisl-plain",
       "suite": "digest",
       "status": "pass",
-      "ms": 167
+      "ms": 191
     },
     {
       "id": "digest.cid-drisl-typed",
       "suite": "digest",
       "status": "pass",
-      "ms": 27
+      "ms": 45
     },
     {
       "id": "digest.covers-overwrite-and-delete",
       "suite": "digest",
       "status": "fail",
-      "ms": 45,
+      "ms": 57,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -488,7 +494,7 @@
       "id": "digest.matches-record-set",
       "suite": "digest",
       "status": "fail",
-      "ms": 171,
+      "ms": 260,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -498,7 +504,7 @@
       "id": "digest.multi-batch",
       "suite": "digest",
       "status": "fail",
-      "ms": 15,
+      "ms": 27,
       "message": "applyWrites (20 writes) answered 422",
       "evidence": {
         "body": "\"Failed to deserialize the JSON body into the target type: writes[0]: missing field `action` at line 1 column 414\""
@@ -508,14 +514,14 @@
       "id": "info.read-auth-status",
       "suite": "records",
       "status": "pass",
-      "ms": 1,
+      "ms": 2,
       "message": "listRecords with no auth answered 401"
     },
     {
       "id": "info.unknown-method-status",
       "suite": "records",
       "status": "pass",
-      "ms": 1,
+      "ms": 2,
       "message": "an unknown method answered 502"
     },
     {
@@ -534,7 +540,7 @@
       "id": "mac.commit-header-present",
       "suite": "mac",
       "status": "fail",
-      "ms": 29,
+      "ms": 79,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "read_auth": "oauth-dpop",
@@ -547,7 +553,7 @@
       "id": "mac.commit-valid",
       "suite": "mac",
       "status": "fail",
-      "ms": 33,
+      "ms": 66,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "status": 400
@@ -557,7 +563,7 @@
       "id": "mac.kem-key-published",
       "suite": "mac",
       "status": "pass",
-      "ms": 134
+      "ms": 734
     },
     {
       "id": "oplog.commit-every-page",
@@ -569,7 +575,7 @@
       "id": "oplog.entry-shape",
       "suite": "oplog",
       "status": "fail",
-      "ms": 800,
+      "ms": 372,
       "message": "listRepoOps answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -579,7 +585,7 @@
       "id": "oplog.fold-matches-commit",
       "suite": "oplog",
       "status": "fail",
-      "ms": 135,
+      "ms": 114,
       "message": "listRepoOps answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -589,7 +595,7 @@
       "id": "oplog.pagination-batch-boundary",
       "suite": "oplog",
       "status": "fail",
-      "ms": 73,
+      "ms": 26,
       "message": "applyWrites (3 writes) answered 422",
       "evidence": {
         "body": "\"Failed to deserialize the JSON body into the target type: writes[0]: missing field `action` at line 1 column 309\""
@@ -599,7 +605,7 @@
       "id": "oplog.pagination-complete",
       "suite": "oplog",
       "status": "fail",
-      "ms": 276,
+      "ms": 141,
       "message": "listRepoOps answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -609,7 +615,7 @@
       "id": "oplog.since-exclusive",
       "suite": "oplog",
       "status": "fail",
-      "ms": 118,
+      "ms": 50,
       "message": "listRepoOps answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -619,7 +625,7 @@
       "id": "oplog.stale-values-omitted",
       "suite": "oplog",
       "status": "fail",
-      "ms": 260,
+      "ms": 100,
       "message": "listRepoOps answered 400",
       "evidence": {
         "body": "\"Failed to deserialize query string: missing field `did`\""
@@ -629,13 +635,13 @@
       "id": "policy.create-get-roundtrip",
       "suite": "policy",
       "status": "pass",
-      "ms": 293
+      "ms": 497
     },
     {
       "id": "policy.member-methods",
       "suite": "policy",
       "status": "fail",
-      "ms": 149,
+      "ms": 226,
       "message": "memberspace.putMember answered 502",
       "evidence": {
         "body": "{\"error\":\"failed to resolve authority for com.atproto.memberspace.putMember: bad request: DNS TXT lookup failed for _lexicon.memberspace.atproto.com.: DNS error: error response: Server Failure\"}"
@@ -645,7 +651,7 @@
       "id": "policy.put-member-upsert",
       "suite": "policy",
       "status": "fail",
-      "ms": 3,
+      "ms": 6,
       "message": "memberspace.putMember (write: false) answered 502",
       "evidence": {
         "body": "{\"error\":\"failed to resolve authority for com.atproto.memberspace.putMember: bad request: DNS TXT lookup failed for _lexicon.memberspace.atproto.com.: DNS error: error response: Server Failure\"}"
@@ -655,7 +661,7 @@
       "id": "records.apply-writes-atomic",
       "suite": "records",
       "status": "fail",
-      "ms": 18,
+      "ms": 35,
       "message": "applyWrites answered 422",
       "evidence": {
         "body": "\"Failed to deserialize the JSON body into the target type: writes[0]: missing field `action` at line 1 column 309\""
@@ -665,7 +671,7 @@
       "id": "records.commit-bytes-encoding",
       "suite": "records",
       "status": "fail",
-      "ms": 8,
+      "ms": 11,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "status": 400,
@@ -676,7 +682,7 @@
       "id": "records.commit-fields",
       "suite": "records",
       "status": "fail",
-      "ms": 139,
+      "ms": 161,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "status": 400,
@@ -687,7 +693,7 @@
       "id": "records.commit-repo-space-match",
       "suite": "records",
       "status": "fail",
-      "ms": 6,
+      "ms": 10,
       "message": "getLatestCommit answered 400",
       "evidence": {
         "status": 400,
@@ -698,19 +704,19 @@
       "id": "records.crud-roundtrip",
       "suite": "records",
       "status": "fail",
-      "ms": 146,
-      "message": "createRecord's uri at://did:plc:c7c3ykws4onovifayqdccobe/space/com.example.conformance.space/d3bdf2584205/did:plc:giskike5ayienfwkdvozhjut/com.example.conformance.note/3n27mhrtu2oxy doesn't end in the chosen rkey",
+      "ms": 862,
+      "message": "createRecord's uri at://did:plc:cfow7vgtdednbnx25c72akox/space/com.example.conformance.space/24068d099089/did:plc:yhvdqlkdma65my3tbb5upqab/com.example.conformance.note/3n27mz4kzbp33 doesn't end in the chosen rkey",
       "evidence": {
         "step": "createRecord",
         "status": 201,
-        "body": "{\"cid\":\"bafyreia4jtc4ze6so42sixu6vigyofqmzloeypzibf6oe47y5x7oztqtbi\",\"uri\":\"at://did:plc:c7c3ykws4onovifayqdccobe/space/com.example.conformance.space/d3bdf2584205/did:plc:giskike5ayienfwkdvozhjut/com.example.conformance.note/3n27mhrtu2oxy\"}"
+        "body": "{\"cid\":\"bafyreia4jtc4ze6so42sixu6vigyofqmzloeypzibf6oe47y5x7oztqtbi\",\"uri\":\"at://did:plc:cfow7vgtdednbnx25c72akox/space/com.example.conformance.space/24068d099089/did:plc:yhvdqlkdma65my3tbb5upqab/com.example.conformance.note/3n27mz4kzbp33\"}"
       }
     },
     {
       "id": "records.read-requires-auth",
       "suite": "records",
       "status": "pass",
-      "ms": 122
+      "ms": 142
     }
   ],
   "summary": {
@@ -722,8 +728,8 @@
         "should_pass": 0
       },
       "repo-host": {
-        "must_applicable": 14,
-        "must_pass": 4,
+        "must_applicable": 11,
+        "must_pass": 2,
         "should_applicable": 0,
         "should_pass": 0
       }

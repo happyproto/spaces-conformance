@@ -1,28 +1,29 @@
 # Seeded from HappyView's interop pins (design ch. 4.6). Each entry is listed
-# only once a run confirms it isn't a harness bug. Confirmed against
-# PDSJS_IMAGE sha256:1725c1f8d2ce on 2026-11-12.
+# only once a run confirms it isn't a harness bug. Reconfirmed against
+# PDSJS_IMAGE sha256:37c16c3499b5 (pds.js 72a7c998) on 2026-11-13 (HAP-427).
 #
-# Each `expect` is the failure the 2026-11-12 parity run recorded
-# (test/fixtures/results/parity-pdsjs-2026-11-12.json). Patterns match the
-# whole value. Any other failure on the same assertion is "deviation changed",
+# Each `expect` is the failure the newest pds.js parity run recorded
+# (test/fixtures/results/parity-pdsjs-*.json). Patterns match the whole
+# value. Any other failure on the same assertion is "deviation changed",
 # which fails the run.
 
 # One cause: how space record values are encoded (pds.js#4).
 - assertion: digest.cid-drisl-typed
   cause: space-record-encoding
   reason: >-
-    createRecord and getRecord return CIDs that differ from DRISL for all four typed
-    fixture records: a $link, a $bytes, and integers past 32 bits. Plain-JSON records
-    match.
+    createRecord and getRecord return CIDs that differ from DRISL for the two typed
+    fixture records holding integers past 32 bits. The $link and $bytes fixtures,
+    and plain-JSON records, match at this pin. The follow-up comment on the issue
+    (Nov 13) describes the integer case.
   spec: "#commit-digest"
   tracking: https://tangled.org/chadtmiller.com/pds.js/issues/4
   since: "2026-11-12"
   expect:
-    message: 4 record CID\(s\) differ from DRISL
-    # All four typed fixtures, in fixture order, each wrong on both createRecord and getRecord.
+    message: 2 record CID\(s\) differ from DRISL
+    # The two integer fixtures, in fixture order, each wrong on both createRecord and getRecord.
     evidence:
       mismatches: >-
-        \[\{"record":"link",[^{}]*"getRecord":"bafy[^"]+"\},\{"record":"bytes",[^{}]*"getRecord":"bafy[^"]+"\},\{"record":"bigint",[^{}]*"getRecord":"bafy[^"]+"\},\{"record":"int32edge",[^{}]*"getRecord":"bafy[^"]+"\}\]
+        \[\{"record":"bigint",[^{}]*"getRecord":"bafy[^"]+"\},\{"record":"int32edge",[^{}]*"getRecord":"bafy[^"]+"\}\]
 
 # One cause: listRepoOps doesn't follow cursor (pds.js#5).
 - assertion: oplog.pagination-complete
@@ -49,3 +50,18 @@
     message: "a page boundary inside one applyWrites batch lost ops: got \\[m1, m1, m2, m2\\]"
     evidence:
       pages: \[2,2\]
+- assertion: oplog.fold-matches-commit
+  cause: oplog-cursor-ignored
+  reason: >-
+    The fold reads listRepoOps with limit=2 and follows cursor. The first page comes
+    back twice (a, b, a, b), so the fold never sees the later ops and its digest
+    differs from the commit's data. Unpaged reads of the same writes match.
+  spec: "#incremental-sync"
+  tracking: https://tangled.org/chadtmiller.com/pds.js/issues/5
+  since: "2026-11-13"
+  expect:
+    message: folding every op does not give the commit data
+    # The first page (a, b) twice, and nothing after it.
+    evidence:
+      ops: >-
+        \[\{[^{}]*"rkey":"a"[^{}]*\},\{[^{}]*"rkey":"b"[^{}]*\},\{[^{}]*"rkey":"a"[^{}]*\},\{[^{}]*"rkey":"b"[^{}]*\}\]

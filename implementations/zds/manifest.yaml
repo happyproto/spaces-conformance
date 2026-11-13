@@ -5,26 +5,27 @@ image:
   repository: ghcr.io/happyproto/pds-test/zds
   pin: ZDS_IMAGE
   dispatch_target: zds
-spec_revisions: ["2026-10-29"]
+spec_revisions: ["2026-11-12"]
 roles: [pds, repo-host, space-host]
 profile: pds
 capabilities:
   # The spec's baseline: every PDS must serve these (#baseline-policies).
-  # At the Nov 2026 pin it serves none of the Oct 29 memberspace methods.
+  # At the Nov 13 pin (HAP-427) it serves the memberspace methods at 2026-11-12.
   policies: [personalspace, memberspace, managedspace]
   repo_host:
     foreign_authorities: true
   oauth:
     scripted: false
-# Per area, at the pinned image's revision d660f467 (zat.dev/zds), with zat v0.4.4:
-#   cbor    zat: src/internal/permissioned_data.zig encodes and hashes records with zat.cbor
-#   lthash  zds: permissioned_data.zig defines LtHash itself (std Blake3)
-#   mac     zds: permissioned_data.zig commitMac (std HKDF and HMAC)
-#   httpsig zds: src/internal/space_signature.zig builds and checks the signature base
-#   jwt     zds: permissioned_data.zig parseAndVerifyJwt does the space-JWT checks, with
-#           only the ES256 signature check from zat.jwt (service auth is zat's)
-#   star    none: getRepo serves a CAR (zat.car), so unknown
-lineage: { cbor: zat, lthash: zds, mac: zds, httpsig: zds, jwt: zds }
+# Per area, at the pinned image's revision 8c97e950 (zat.dev/zds v0.12.2), with
+# zat v0.7.0-alpha.8. From this pin zds calls zat.space for all of them; zat's
+# space modules are its own Zig code, written to mirror @atproto/space's design.
+#   cbor    zat: zds's src/storage/store.zig encodes and hashes records with zat.cbor
+#   lthash  zat: zat.space.LtHash (zat's src/internal/space/lthash.zig, std Blake3)
+#   mac     zat: zat.space.mac (zat's src/internal/space/mac.zig with std HMAC; HKDF in kem.zig)
+#   httpsig zat: zat.space.verifyCredentialUse (zat's src/internal/space/http_signature.zig)
+#   jwt     zat: zat.space.token (zat's src/internal/space/token.zig, over its crypto/jwt.zig)
+#   star    zat: getRepo serves STAR via zat.space.archive (zat's src/internal/repo/star.zig)
+lineage: { cbor: zat, lthash: zat, mac: zat, httpsig: zat, jwt: zat, star: zat }
 compose: compose.yml
 base_url: https://zds.test
 health: /xrpc/_health
@@ -33,9 +34,10 @@ accounts:
   write_auth: password-session
 spaces:
   authority: account
-  # Setup only (ungraded). The pinned image serves only the Oct 22
-  # simplespace.createSpace; cli/run.ts --setup-mode picks another mode.
-  create: simplespace
+  # Setup only (ungraded). Since the HAP-427 pin the image serves the Oct 29
+  # createSpace and no longer simplespace.createSpace; cli/run.ts
+  # --setup-mode picks another mode.
+  create: oct29
   modes: [oct29, simplespace, auto]
 setup: adapter.ts
 deviations: deviations.yaml

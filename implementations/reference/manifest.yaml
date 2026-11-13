@@ -11,24 +11,25 @@ roles: [pds, repo-host, space-host]
 profile: pds
 capabilities:
   # Every PDS must serve the three baseline policies (#baseline-policies), so
-  # the reference is graded on them like the other PDSes. The pinned image
-  # (built 2026-10-01) predates the Oct 29 policy objects: it serves
-  # com.atproto.simplespace.* and no memberspace/managedspace methods, so
-  # those rows fail at this pin.
+  # the reference is graded on them like the other PDSes. The Nov 13 pin
+  # (HAP-427, atproto b27a037c) ships space.createSpace and the memberspace
+  # putMembers, removeMembers and listMembers handlers, and no simplespace.
+  # It hasn't run on this suite yet: this Mac can't emulate amd64 right now.
   policies: [personalspace, memberspace, managedspace]
   repo_host:
     foreign_authorities: true
   oauth:
     scripted: false
 # Per area, the code that implements it in the pinned image, built from
-# bluesky-social/atproto at 79d6307e (the image's revision label):
+# bluesky-social/atproto at b27a037c (the image's revision label), read from
+# the image's built packages:
 #   cbor    @atproto/lex-cbor: packages/pds/src/actor-store/space/transactor.ts imports its encode
-#   lthash  @atproto/space: packages/space/src/lthash.ts, repo-commit.ts
-#   mac     @atproto/space: packages/space/src/repo-commit.ts (hkdf/hmac primitives from @atproto/crypto)
-#   httpsig @atproto/space: packages/space/src/http-signature.ts
+#   lthash  @atproto/space: packages/space/src/lthash.ts (blake3 from @noble/hashes), repo-commit.ts
+#   mac     @atproto/space: packages/space/src/mac.ts (primitives from @atproto/crypto)
+#   httpsig @atproto/space: packages/space/src/http-signature.ts (structured-headers)
 #   jwt     @atproto/space: packages/space/src/credential.ts parses and signs the JWTs
-#   star    none: there's no STAR at 79d6307e (no packages/star), so unknown
-lineage: { cbor: "@atproto/lex-cbor", lthash: "@atproto/space", mac: "@atproto/space", httpsig: "@atproto/space", jwt: "@atproto/space" }
+#   star    @atproto/star: packages/space/src/sync/provider.ts writes getRepo's STAR with it
+lineage: { cbor: "@atproto/lex-cbor", lthash: "@atproto/space", mac: "@atproto/space", httpsig: "@atproto/space", jwt: "@atproto/space", star: "@atproto/star" }
 compose: compose.yml
 base_url: https://reference.test
 health: /xrpc/_health
@@ -37,9 +38,9 @@ accounts:
   write_auth: password-session
 spaces:
   authority: account
-  # Setup only (ungraded). The pinned image serves only the Oct 22
-  # simplespace.createSpace; cli/run.ts --setup-mode picks another mode.
-  create: simplespace
+  # Setup only (ungraded). Since the HAP-427 pin the image ships the Oct 29
+  # createSpace and no simplespace; cli/run.ts --setup-mode picks another mode.
+  create: oct29
   modes: [oct29, simplespace, auto]
 setup: adapter.ts
 deviations: deviations.yaml
