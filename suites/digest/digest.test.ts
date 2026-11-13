@@ -3,7 +3,7 @@ import { hex } from '../../harness/crypto/bytes.ts';
 import { recordCid } from '../../harness/crypto/drisl.ts';
 import { LtHash } from '../../harness/crypto/lthash.ts';
 import { COLLECTION, xrpcUrl } from '../fixtures.ts';
-import { commitOrFail, createOp, expectedDigest, freshRepo, listAll, note, type Repo, setupWrites } from '../repo.ts';
+import { commitOrFail, createOp, expectedDigest, freshRepo, gradedApply, listAll, note, type Repo, setupWrites } from '../repo.ts';
 
 const OTHER = 'com.example.conformance.reaction';
 
@@ -57,8 +57,8 @@ export function multiBatchRecords() {
 assertion('digest.multi-batch', async (ctx) => {
   const repo = await freshRepo(ctx);
   const recs = multiBatchRecords();
-  const w = setupWrites(repo);
-  for (const batch of [recs.slice(0, 20), recs.slice(20, 40), recs.slice(40)]) await w.apply(batch.map((r) => createOp(r.rkey, r.value, r.collection)));
+  // The batches are what this row checks, so a refused applyWrites is a fail.
+  for (const batch of [recs.slice(0, 20), recs.slice(20, 40), recs.slice(40)]) await gradedApply(repo, batch.map((r) => createOp(r.rkey, r.value, r.collection)));
   const expected = expectedDigest(recs);
   const commit = commitOrFail(await latestCommit(repo), expected);
   const listed = await listAll(repo, [COLLECTION, OTHER]);
