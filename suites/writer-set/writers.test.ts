@@ -88,6 +88,11 @@ assertion('writers.notify-write-sent', async (ctx) => {
   if (!e) fail(seen.some(about) ? `${method} came, but none with repoRev ${commit.rev}` : `no ${method} for the write reached the authority's space host within 20 s`, evidence);
   const data = (e!.input.data as { $bytes?: string } | undefined)?.$bytes;
   if (unpad(data) !== unpad(commit.data)) fail(`${method} carried data ${data}, not the repo's commit data ${commit.data}`, evidence);
+  // "These calls are authenticated using service auth" (#write-notifications): from the writer, or its repo host.
+  if (!e!.auth?.ok) fail(`${method}'s service auth doesn't verify: ${e!.auth?.reason ?? 'none'}`, evidence);
+  const issuers = [owner.did, `did:web:${new URL(owner.repoHost).host}`];
+  const iss = String(e!.auth!.iss ?? '').split('#')[0];
+  if (!issuers.includes(iss)) fail(`${method}'s service auth is issued by ${iss}, not the writer (${owner.did}) or its repo host (${issuers[1]})`, evidence);
 });
 
 assertion('writers.notify-write-forwarded', async (ctx) => {
@@ -96,12 +101,15 @@ assertion('writers.notify-write-forwarded', async (ctx) => {
   const repo = await publicSpace(ctx, owner);
   const from = rx.mark();
   const { sync, token, answers } = await credentialed(repo, { receiver: rx, register: true });
-  await write(ctx, owner, repo.space, 1);
+  const c1 = await write(ctx, owner, repo.space, 1);
   await write(ctx, owner, repo.space, 2);
   const got = await received(rx, from, writeNotice(ctx, repo.space, token, owner.did), 2);
   const fields = got.map((e) => noticeFields(ctx, e)).sort((a, b) => String(a.spaceRev).localeCompare(String(b.spaceRev)));
-  const evidence = { ...answers, authorize_spaceRev: sync.spaceRev ?? null, notices: JSON.stringify(fields).slice(0, 1500) };
+  const evidence = { ...answers, commit_form: c1.form, authorize_spaceRev: sync.spaceRev ?? null, notices: JSON.stringify(fields).slice(0, 1500) };
   if (got.length < 2) fail(`the registered syncer got ${got.length} of 2 write notifications within 20 s`, evidence);
+  // At 2026-10-29 the forwarded notifyWrite carries service auth to the syncer; it must verify. (2026-11-12 authenticates with the token.)
+  const unverified = got.filter((e) => !settled(ctx) && !e.auth?.ok);
+  if (unverified.length) fail(`${unverified.length} forwarded notifyWrite(s) carry service auth that doesn't verify: ${unverified[0].auth?.reason ?? 'none'}`, evidence);
   const missing = fields.filter((f) => typeof f.spaceRev !== 'string');
   if (missing.length) fail(`${missing.length} notification(s) carry no spaceRev`, evidence);
   const [a, b] = fields;
@@ -267,7 +275,7 @@ assertion('writers.list-repos-since-space-rev', async (ctx) => {
   const full = await until(() => sync.writers(), (w) => !!w.error || matches(latestByRepo(w.writers).get(member.did), mc));
   if (!matches(latestByRepo(full.writers).get(member.did), mc)) pending(`the full writer set doesn't show the member's write yet (${listing(full)}); list-repos grades that`);
   const since = gradedWriters(await sync.writers({ cursor: r1 }), `cursor ${r1}`);
-  const evidence = { ...answers, ...memberList, r1: r1!, since: listing(since), full: listing(full) };
+  const evidence = { ...answers, ...memberList, commit_form: `owner ${oc.form}, member ${mc.form}`, r1: r1!, since: listing(since), full: listing(full) };
   if (since.writers.some((w) => w.repo === owner.did)) fail(`listing from spaceRev ${r1} returned the owner, whose last update was at ${r1} (exclusive)`, evidence);
   if (!matches(latestByRepo(since.writers).get(member.did), mc)) fail(`listing from spaceRev ${r1} doesn't return the member's later write`, evidence);
 });
@@ -280,12 +288,12 @@ function removeWriter(repo: Repo, did: string) {
 
 /** A member that wrote and is listed, as setup; then removeWriter's answer and the listing after it. */
 async function removal(ctx: RunContext, o: { publicWriteOnly?: boolean } = {}) {
-  const { owner, member, repo, sync, mc, answers } = await twoWriters(ctx, o);
+  const { owner, member, repo, sync, oc, mc, answers } = await twoWriters(ctx, o);
   const before = await until(() => sync.writers(), (w) => !!w.error || present(w, member.did));
   if (!present(before, member.did)) pending(`the member never appeared in the writer set (${before.error ? short(before.error) : listing(before)}), so there's nothing to remove; list-repos grades that`);
   const r = await removeWriter(repo, member.did);
   const after = r.status < 300 ? await until(() => sync.writers(), (w) => !!w.error || !present(w, member.did), 10_000) : undefined;
-  return { owner, member, repo, sync, mc, r, before, after, answers };
+  return { owner, member, repo, sync, mc, r, before, after, answers: { ...answers, commit_form: `owner ${oc.form}, member ${mc.form}` } };
 }
 
 assertion('writers.remove-writer', async (ctx) => {
