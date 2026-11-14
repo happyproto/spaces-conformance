@@ -11,7 +11,7 @@
 // host that refuses both on auth grounds leaves the rows pending.
 
 import { assertion, fail, pending } from '../../harness/assert.ts';
-import type { ForeignAuthority } from '../../harness/actors/authority.ts';
+import { ForeignAuthority } from '../../harness/actors/authority.ts';
 import { SpaceSync } from '../../harness/actors/space-sync.ts';
 import type { Account } from '../../harness/adapter.ts';
 import type { RunContext } from '../../harness/context.ts';
@@ -72,13 +72,18 @@ async function bothRead(ctx: RunContext, owner: Account, c1: { sync: SpaceSync }
 }
 
 assertion('cred.foreign-authority-accepted', async (ctx) => {
-  const { owner, c1 } = await foreignRepo(ctx);
+  const { authority, owner, c1 } = await foreignRepo(ctx);
   const r = await read(ctx, owner, c1);
   if (transient(r)) pending(`getLatestCommit with the credential answered ${short(r)}`);
   if (r.status !== 200) fail(`getLatestCommit with a credential from the space's (foreign) authority answered ${short(r)}`, { answer: short(r) });
-  // Control: the same read without a credential is refused, or the 200 says nothing about the credential.
+  // Controls: the same read without a credential, and with one for the same
+  // space signed by a key that isn't the authority's, must be refused, or the
+  // 200 says nothing about checking the authority's signature.
   const bare = await http(xrpcUrl(owner.repoHost, 'com.atproto.space.getLatestCommit', { space: c1.sync.space, repo: owner.did }));
   if (bare.status === 200) pending('the host serves the repo with no credential at all, so accepting this one says nothing');
+  const forged = minted(new ForeignAuthority(authority.did, generate('p256')), c1.sync.space);
+  const f = await read(ctx, owner, forged);
+  if (f.status === 200) pending("the host also serves the repo to a credential not signed by the authority's key, so accepting this one says nothing");
 });
 
 assertion('cred.revoked-jti-rejected', async (ctx) => {

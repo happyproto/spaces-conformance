@@ -32,5 +32,7 @@ assertion('lifecycle.authority-names-space-host', async (ctx) => {
     return fail(`the #atproto_pds endpoint ${endpoint} doesn't answer: ${(e as Error).message}`, { ...evidence, endpoint: endpoint! });
   }
   if (transient(r)) pending(`${method} at ${endpoint} answered ${short(r)}`);
-  if (r.status !== 200 || !sync.credential) fail(`${method} at the authority's #atproto_pds (${endpoint}) answered ${short(r)}, for a space anyone may read`, { ...evidence, endpoint: endpoint! });
+  // The DID names a host; this checks that the named host serves the space.
+  if (r.status !== 200 || !sync.credential)
+    fail(`the authority's #atproto_pds (${endpoint}) is named, but doesn't serve the space: ${method} for a space anyone may read answered ${short(r)}`, { ...evidence, endpoint: endpoint! });
 });
