@@ -100,7 +100,11 @@ assertion(
     const evidence = { ...active.answers, received: JSON.stringify(seen.map((e) => ({ method: e.method, input: { ...e.input, token: e.input.token === active.token ? 'active' : e.input.token === lapsing?.token ? 'lapsed' : e.input.token } }))).slice(0, 1500) };
     const what = settled(ctx) ? 'a notifySpaceUpdate with #spaceDeleted' : 'notifySpaceDeleted';
     if (!notice) fail(`the registered syncer got no ${what} within 20 s of deleteSpace`, evidence);
-    if (!settled(ctx)) return;
+    // At 2026-10-29 the notice carries service auth from the authority, which must verify.
+    if (!settled(ctx)) {
+      if (!notice!.auth?.ok) fail(`notifySpaceDeleted's service auth doesn't verify: ${notice!.auth?.reason ?? 'none'}`, evidence);
+      return;
+    }
     if (!lapsing) pending(`${SLOW_PENDING} (the registered syncer was notified; the lapsed one wasn't checked)`);
     const [late] = await received(rx, from, deletionNotice(ctx, repo.space, lapsing!.token), 1);
     if (!late) fail('the syncer whose registration had lapsed got no deletion notice', evidence);
@@ -127,7 +131,11 @@ assertion(
       if (!first.length) pending('no deletion notice came at all, so there is nothing to retry; notify-space-deleted grades that');
       const both = await received(rx, from, isNotice, 2, RETRY_WINDOW_MS);
       const evidence = { window_s: String(RETRY_WINDOW_MS / 1000), deliveries: JSON.stringify(both.map((e) => ({ at: new Date(e.at).toISOString(), answered: e.answered }))) };
-      if (both.length < 2) fail(`after the syncer answered 503, the deletion notice was not delivered again within ${RETRY_WINDOW_MS / 1000} s`, evidence);
+      if (both.length < 2) {
+        // A fast run's window is short for exponential backoff: not yet redelivered there says nothing.
+        if (!slow()) pending(`${SLOW_PENDING} (no redelivery within ${RETRY_WINDOW_MS / 1000} s; a --slow run waits 15 minutes)`);
+        fail(`after the syncer answered 503, the deletion notice was not delivered again within ${RETRY_WINDOW_MS / 1000} s`, evidence);
+      }
     } finally {
       rx.respond(method, undefined);
     }

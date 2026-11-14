@@ -983,6 +983,8 @@ assertions:
     areas: [httpsig, jwt]
     checks: >-
       A repo host accepts a credential minted by another authority for a space it hosts a repo in.
+      Controls: it refuses the same read with no credential, and with a credential for the space
+      signed by a key that isn't the authority's.
 
   - id: cred.revoked-jti-rejected
     suite: credentials
@@ -1762,8 +1764,8 @@ assertions:
     roles: [space-host]
     areas: [httpsig, jwt]
     checks: >-
-      When the harness syncer answers 503 once, notifySpaceDeleted is delivered again, within 120 s
-      (15 minutes with --slow).
+      When the harness syncer answers 503 once, notifySpaceDeleted is delivered again within 15
+      minutes. A run without --slow waits only 120 s, and pends if nothing came by then.
     variants:
       "2026-11-12":
         section: "#registering-for-notifications"
@@ -1772,8 +1774,8 @@ assertions:
           network failures and transient HTTP statuses with exponential backoff for at least 72 hrs.
         checks: >-
           A deletion notice gets the same rigor as an expiry notice (#space-deletion): when the harness
-          syncer answers 503 once, the notifySpaceUpdate is delivered again, within 120 s (15 minutes
-          with --slow).
+          syncer answers 503 once, the notifySpaceUpdate is delivered again within 15 minutes. A run
+          without --slow waits only 120 s, and pends if nothing came by then.
 
   - id: deletion.credential-error
     suite: deletion
