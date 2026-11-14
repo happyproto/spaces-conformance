@@ -49,3 +49,7 @@ export const settled = (ctx: RunContext) => ctx.revision >= SETTLED;
 
 /** Why a row the spec still has isn't graded yet: the harness can't act out its setup. */
 export const PHASE7_PENDING = 'needs the phase 7 credential path (Receiver as syncer, foreign authority)';
+
+/** Whether this run has --slow: checks that wait out a host-issued credential run only then. */
+export const slow = () => process.env.CONFORMANCE_SLOW === '1';
+export const SLOW_PENDING = 'needs --slow: waits out a host-issued credential';

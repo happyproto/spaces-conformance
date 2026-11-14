@@ -93,6 +93,20 @@ describe('the pass index per revision and per assertion digest (HAP-432)', () =>
     expect(idx.sources[0].stale_passes).toEqual(['a.one']);
   });
 
+  it('counts a needs_slow row\'s pass only from a run with --slow, and names the refused ones', () => {
+    const slowOnly = (rev: string) => new Set(rev === '2026-11-12' ? ['a.one'] : []);
+    const fast = buildPassIndex([file('x', '2026-11-12')], [], () => ({}), slowOnly);
+    expect(fast.passes['2026-11-12']).toEqual({ 'a.two': ['x'] });
+    expect(fast.sources[0]).toMatchObject({ slow: false, fast_passes: ['a.one'] });
+    const slowFile = file('y', '2026-11-12');
+    slowFile.file.run = { ...slowFile.file.run, slow: true } as typeof slowFile.file.run;
+    const slow = buildPassIndex([slowFile], [], () => ({}), slowOnly);
+    expect(slow.passes['2026-11-12']).toEqual({ 'a.one': ['y'], 'a.two': ['y'] });
+    expect(slow.sources[0].fast_passes).toBeUndefined();
+    // The flag reads per revision: at 2026-10-29 the same row needs no --slow.
+    expect(buildPassIndex([file('z', '2026-10-29')], [], () => ({}), slowOnly).passes['2026-10-29']).toEqual({ 'a.one': ['z'], 'a.two': ['z'] });
+  });
+
   it('still counts every pass of a source from before per-assertion digests', () => {
     const idx = buildPassIndex([file('x', '2026-10-29')], [], () => ({ 'a.one': 'sha256:new' }));
     expect(idx.passes['2026-10-29']).toEqual({ 'a.one': ['x'], 'a.two': ['x'] });

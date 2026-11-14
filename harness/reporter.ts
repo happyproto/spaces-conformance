@@ -147,6 +147,7 @@ export function assemble(env: NodeJS.ProcessEnv, setupMode: SetupMode, raw: RawR
       started_at: env.CONFORMANCE_STARTED_AT ?? new Date().toISOString(),
       finished_at: new Date().toISOString(),
       attempt: Number(env.CONFORMANCE_ATTEMPT ?? 1),
+      slow: env.CONFORMANCE_SLOW === '1',
       ...(env.CONFORMANCE_CI_URL ? { ci_url: env.CONFORMANCE_CI_URL } : {}),
     },
     suite: {

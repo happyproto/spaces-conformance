@@ -1,3 +1,6 @@
+# Credential binding: the credential rows grade cnf.kid (a P-256 did:key) at
+# every revision. A credential bound to a DPoP key thumbprint (dpopJkt) is not
+# accepted as conformant, so G0 rows, when they're written, must refuse it.
 id: pdsjs
 name: pds.js
 source: https://tangled.org/chadtmiller.com/pds.js
@@ -13,9 +16,6 @@ capabilities:
   # At the Nov 13 pin (HAP-427) it still serves none of the memberspace
   # methods: putMember and putMembers answer 501.
   policies: [personalspace, memberspace, managedspace]
-  # Credential binding: the credential rows grade cnf.kid (a P-256 did:key) at
-  # every revision. A credential bound to a DPoP key thumbprint (dpopJkt) is not
-  # accepted as conformant, so G0 rows, when they're written, must refuse it.
   repo_host:
     foreign_authorities: true
   oauth:
