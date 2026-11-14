@@ -3,89 +3,52 @@
     {
       "file": "test/fixtures/results/parity-zds-2026-11-13.json",
       "implementation": "zds",
-      "run": "2026-11-13T19-04-24Z-zds-6071",
-      "suite_commit": "de52c940f7",
-      "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
+      "run": "2026-11-13T22-59-25Z-zds-2cb6",
+      "suite_commit": "6d8e6dd2c0",
+      "assertions_digest": "sha256:35e2cc9f4ee00f5e4ae068e4fe3945e23fc514bb6fb71a92d435e63fe4663a7c",
       "image": "ghcr.io/happyproto/pds-test/zds@sha256:2ec90ddaf8a94618a9654e010586ec503d0dd7c3ec23c9a8646e3b28ad2a998f",
       "revision": "2026-11-12",
-      "slow": false,
-      "stale_passes": [
-        "deletion.credential-error",
-        "mac.commit-header-present",
-        "mac.commit-valid",
-        "mac.kem-key-published",
-        "mac.list-repo-ops-every-page",
-        "mac.malformed-request-rejected",
-        "mac.record-valid",
-        "mac.vary-header",
-        "xrpc.error.SpaceDeleted"
-      ]
+      "slow": true
     },
     {
       "file": "test/fixtures/results/parity-atproto-pds-2026-11-13.json",
       "implementation": "atproto-pds",
-      "run": "2026-11-13T19-04-49Z-atproto-pds-29a3",
-      "suite_commit": "de52c940f7",
-      "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
+      "run": "2026-11-13T23-43-20Z-atproto-pds-105e",
+      "suite_commit": "6d8e6dd2c0",
+      "assertions_digest": "sha256:35e2cc9f4ee00f5e4ae068e4fe3945e23fc514bb6fb71a92d435e63fe4663a7c",
       "image": "ghcr.io/happyproto/pds-test/atproto-pds@sha256:0fe098d36c7fd8beedcdc3f68f4f8431eb4571cdf764599ee42520b22fa07a5f",
       "revision": "2026-10-29",
-      "slow": false,
-      "stale_passes": [
-        "mac.commit-header-present",
-        "mac.commit-valid",
-        "mac.kem-key-published",
-        "mac.vary-header"
-      ]
+      "slow": true
     },
     {
       "file": "test/fixtures/results/parity-pdsjs-2026-11-13.json",
       "implementation": "pdsjs",
-      "run": "2026-11-13T19-05-19Z-pdsjs-a202",
-      "suite_commit": "de52c940f7",
-      "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
+      "run": "2026-11-13T23-44-27Z-pdsjs-b477",
+      "suite_commit": "6d8e6dd2c0",
+      "assertions_digest": "sha256:35e2cc9f4ee00f5e4ae068e4fe3945e23fc514bb6fb71a92d435e63fe4663a7c",
       "image": "ghcr.io/happyproto/pds-test/pdsjs@sha256:37c16c3499b54b799399118a24154d64e5397ea93a2b4da74c182f133f9e1bca",
       "revision": "2026-10-29",
-      "slow": false,
-      "stale_passes": [
-        "mac.commit-header-present",
-        "mac.commit-valid",
-        "mac.kem-key-published",
-        "mac.vary-header"
-      ]
+      "slow": true
     },
     {
       "file": "test/fixtures/results/happyview-beta14-2026-11-13.json",
       "implementation": "happyview",
-      "run": "2026-11-13T19-05-36Z-happyview-c93a",
-      "suite_commit": "de52c940f7",
-      "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
+      "run": "2026-11-13T23-44-52Z-happyview-6c3a",
+      "suite_commit": "6d8e6dd2c0",
+      "assertions_digest": "sha256:35e2cc9f4ee00f5e4ae068e4fe3945e23fc514bb6fb71a92d435e63fe4663a7c",
       "image": "ghcr.io/gamesgamesgamesgamesgames/happyview@sha256:147a27668f0fc87c2dcfde5103d01f51efe55c329273c8ae7ae292cdb87a7b93",
       "revision": "2026-10-29",
-      "slow": false,
-      "stale_passes": [
-        "mac.kem-key-published"
-      ]
+      "slow": true
     },
     {
       "file": "test/fixtures/results/parity-reference-2026-11-13.json",
       "implementation": "reference",
-      "run": "2026-11-13T22-23-46Z-reference-8dc9",
-      "suite_commit": "58decb1d3e",
-      "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
+      "run": "2026-11-13T23-21-26Z-reference-000a",
+      "suite_commit": "6d8e6dd2c0",
+      "assertions_digest": "sha256:35e2cc9f4ee00f5e4ae068e4fe3945e23fc514bb6fb71a92d435e63fe4663a7c",
       "image": "ghcr.io/happyproto/pds-test/pds-spaces-alpha@sha256:1b3113b40eac2581b8f928bcec8840c8a0912c3a3d90bf3b965a775f8a97067a",
       "revision": "2026-11-12",
-      "slow": false,
-      "stale_passes": [
-        "deletion.credential-error",
-        "mac.commit-header-present",
-        "mac.commit-valid",
-        "mac.kem-key-published",
-        "mac.list-repo-ops-every-page",
-        "mac.malformed-request-rejected",
-        "mac.record-valid",
-        "mac.vary-header",
-        "xrpc.error.SpaceDeleted"
-      ]
+      "slow": true
     }
   ],
   "excluded": [
@@ -124,6 +87,25 @@
         "happyview",
         "pdsjs"
       ],
+      "cred.foreign-authority-accepted": [
+        "atproto-pds",
+        "pdsjs"
+      ],
+      "cred.revocation-idempotent": [
+        "atproto-pds",
+        "pdsjs"
+      ],
+      "cred.revoked-jti-rejected": [
+        "atproto-pds",
+        "pdsjs"
+      ],
+      "deletion.notify-retry": [
+        "atproto-pds"
+      ],
+      "deletion.notify-space-deleted": [
+        "atproto-pds",
+        "happyview"
+      ],
       "digest.cid-drisl-plain": [
         "atproto-pds",
         "happyview",
@@ -155,7 +137,33 @@
         "happyview",
         "pdsjs"
       ],
+      "lifecycle.authority-names-space-host": [
+        "atproto-pds",
+        "happyview",
+        "pdsjs"
+      ],
       "lifecycle.implicit-create": [
+        "atproto-pds",
+        "pdsjs"
+      ],
+      "mac.commit-bound-to-repo": [
+        "atproto-pds",
+        "pdsjs"
+      ],
+      "mac.commit-header-present": [
+        "atproto-pds",
+        "pdsjs"
+      ],
+      "mac.commit-valid": [
+        "atproto-pds",
+        "pdsjs"
+      ],
+      "mac.kem-key-published": [
+        "atproto-pds",
+        "happyview",
+        "pdsjs"
+      ],
+      "mac.vary-header": [
         "atproto-pds",
         "pdsjs"
       ],
@@ -214,9 +222,60 @@
         "atproto-pds",
         "happyview",
         "pdsjs"
+      ],
+      "writers.list-repos": [
+        "atproto-pds",
+        "pdsjs"
+      ],
+      "writers.list-repos-since-space-rev": [
+        "atproto-pds",
+        "pdsjs"
+      ],
+      "writers.notify-write-forwarded": [
+        "atproto-pds",
+        "happyview",
+        "pdsjs"
+      ],
+      "writers.notify-write-sent": [
+        "atproto-pds",
+        "pdsjs"
+      ],
+      "writers.register-expiry": [
+        "atproto-pds",
+        "pdsjs"
+      ],
+      "writers.remove-writer": [
+        "atproto-pds"
+      ],
+      "writers.removed-writer-retracked": [
+        "atproto-pds"
       ]
     },
     "2026-11-12": {
+      "cred.foreign-authority-accepted": [
+        "reference",
+        "zds"
+      ],
+      "cred.revocation-idempotent": [
+        "reference",
+        "zds"
+      ],
+      "cred.revoked-jti-rejected": [
+        "reference",
+        "zds"
+      ],
+      "deletion.credential-error": [
+        "reference",
+        "zds"
+      ],
+      "deletion.notify-retry": [
+        "reference",
+        "zds"
+      ],
+      "deletion.notify-space-deleted": [
+        "reference",
+        "zds"
+      ],
       "digest.cid-drisl-plain": [
         "reference",
         "zds"
@@ -245,7 +304,43 @@
         "reference",
         "zds"
       ],
+      "lifecycle.authority-names-space-host": [
+        "reference",
+        "zds"
+      ],
       "lifecycle.implicit-create": [
+        "reference",
+        "zds"
+      ],
+      "mac.commit-bound-to-repo": [
+        "reference",
+        "zds"
+      ],
+      "mac.commit-header-present": [
+        "reference",
+        "zds"
+      ],
+      "mac.commit-valid": [
+        "reference",
+        "zds"
+      ],
+      "mac.kem-key-published": [
+        "reference",
+        "zds"
+      ],
+      "mac.list-repo-ops-every-page": [
+        "reference",
+        "zds"
+      ],
+      "mac.malformed-request-rejected": [
+        "reference",
+        "zds"
+      ],
+      "mac.record-valid": [
+        "reference",
+        "zds"
+      ],
+      "mac.vary-header": [
         "reference",
         "zds"
       ],
@@ -310,6 +405,38 @@
         "zds"
       ],
       "records.read-requires-auth": [
+        "reference",
+        "zds"
+      ],
+      "writers.list-repos": [
+        "reference",
+        "zds"
+      ],
+      "writers.list-repos-since-space-rev": [
+        "reference",
+        "zds"
+      ],
+      "writers.notify-write-forwarded": [
+        "reference",
+        "zds"
+      ],
+      "writers.notify-write-sent": [
+        "reference",
+        "zds"
+      ],
+      "writers.register-expiry": [
+        "reference",
+        "zds"
+      ],
+      "writers.remove-writer": [
+        "reference",
+        "zds"
+      ],
+      "writers.removed-writer-retracked": [
+        "reference",
+        "zds"
+      ],
+      "xrpc.error.SpaceDeleted": [
         "reference",
         "zds"
       ]

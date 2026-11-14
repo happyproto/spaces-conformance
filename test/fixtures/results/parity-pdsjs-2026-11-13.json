@@ -1,15 +1,16 @@
 {
   "schema": 1,
   "run": {
-    "id": "2026-11-13T19-05-19Z-pdsjs-a202",
+    "id": "2026-11-13T23-44-27Z-pdsjs-b477",
     "kind": "local",
-    "started_at": "2026-11-13T19:05:19.093Z",
-    "finished_at": "2026-11-13T19:05:34.521Z",
-    "attempt": 1
+    "started_at": "2026-11-13T23:44:27.946Z",
+    "finished_at": "2026-11-13T23:44:51.319Z",
+    "attempt": 1,
+    "slow": true
   },
   "suite": {
-    "commit": "de52c940f7",
-    "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
+    "commit": "6d8e6dd2c0",
+    "assertions_digest": "sha256:35e2cc9f4ee00f5e4ae068e4fe3945e23fc514bb6fb71a92d435e63fe4663a7c",
     "assertion_digests": {
       "addressing.record-uri-shape": "sha256:2221a0422839dda216d3474cf0b02c77fffd942370e8d997d0e515ba1ae1ec0b",
       "addressing.skey-limits": "sha256:efe12199438eaf3b4566f814751865780f05612b9554458c81355c305aa07e48",
@@ -21,7 +22,7 @@
       "cred.delegation-token-single-use": "sha256:9d22d67901e7a184e544aaff4d2e39c21a20ebca0b997d8abd6696058b830448",
       "cred.delegation-token-verifiable": "sha256:930b70eaf82a14001981d8f675769fb93d71e52d156aecaf5d1c309c0683caab",
       "cred.extra-assertion-not-rejected": "sha256:c65d13a2e051bdc61a6b1333038a9dc5c0fddf27e62f21780120df01f0749cc8",
-      "cred.foreign-authority-accepted": "sha256:b9c0f123f0023c9e0e0f4b790e26a58e832da3dd8ff31983220a38d23bf2cddd",
+      "cred.foreign-authority-accepted": "sha256:3f62b9057ce0a7d9c8c08df6d88c3e565673eca0a9f133b52ab89624e22596e1",
       "cred.httpsig-expired": "sha256:87ce8479fb18f7fd17cf08a5fbd36699c7c8b8a4f3643fd1474ec59c803ddca7",
       "cred.httpsig-high-s-accepted": "sha256:fdf5c8ebb00f6f64fd44266e746e93a1bce72f402841a23921ee09b45e32d179",
       "cred.httpsig-no-signature": "sha256:622d095489e20f81e771088488cb3222821e80bec61df5fa5ff3b7cfa24ece0f",
@@ -30,13 +31,13 @@
       "cred.httpsig-wrong-components": "sha256:ed278f1636ef96f4fef2fa0b5d69d159ea940504a662e50ba1d935522f4eeb76",
       "cred.httpsig-wrong-tag": "sha256:e55d2eff437e6efd5b850b62390360c80c566e90019f61d0205844ec01cc5619",
       "cred.reuse-allowed": "sha256:209594880c7bb523a525b2b3412b9712238625e90c54a559453e20a05d59c6e7",
-      "cred.revocation-idempotent": "sha256:a0c3021c594dbb5edc5eaf06d113dd4c552c2a14ac430966ecd96868788c7988",
-      "cred.revoked-jti-rejected": "sha256:cfcb6f8829a5aec952ac5e1974afdb1d9aab28e00c42951b395342f750192c0e",
+      "cred.revocation-idempotent": "sha256:a5c774bad4815170c7f76f2a493866f6afeeca57880b303fa7515d2bd6ac74f8",
+      "cred.revoked-jti-rejected": "sha256:42297dae4d6f3da73407806fd40057778cc5d640202bcd1fab364f1b1117ffa5",
       "cred.scheme-case-insensitive": "sha256:5d04366e18a77b61a500f6aff8d64d6202152833d9182170d7296d3de5830b37",
-      "deletion.credential-error": "sha256:b6a6f2217d1a0ed0dda86cc71eeb09b2672a235b37818b979cadd9db07f2c659",
+      "deletion.credential-error": "sha256:7127b0474695223606d7a176027e6824d128733024e163bac1c5cafe2ad02c59",
       "deletion.member-records-survive": "sha256:a25f2bf9f9c755b5783454ecde8e81d2b1a8398273eb2b34181caa31552a2609",
-      "deletion.notify-retry": "sha256:2750e4eb869db52587bda3ce5c7a855acb66136103058b1e596d66d2c47b7260",
-      "deletion.notify-space-deleted": "sha256:7eff68839c7e8222019b6b3b056d5a9e8498e337a4b664a5d64b2a4f6f78cc4a",
+      "deletion.notify-retry": "sha256:0841fd8506ccb9283bf604c4533bc1fd300048a21bfd881d2dc2c2e585565d5d",
+      "deletion.notify-space-deleted": "sha256:462fa36f62e9f1d79d11ae71dceef96dbfafdb982a564a55a5483a25d736bc85",
       "digest.cid-drisl-plain": "sha256:ca6377729da5649327b308200d83794493b804d43c83cee8048ed7a0274c5d11",
       "digest.cid-drisl-typed": "sha256:af9d13820b853bd0522c97b553daa606a6a2a57a3109225d0645cf2429398d4b",
       "digest.covers-overwrite-and-delete": "sha256:3f910a173bf850af161d957c67e474d7ba9ec72aff6946c74ac7b1b0f76bbd5e",
@@ -50,20 +51,21 @@
       "export.star-sorted-unique": "sha256:1caf55f440fdd0335c60dd2e2fd518ca8fca1c55ed2fa2fe0f3a1cd2de903a1f",
       "info.read-auth-status": "sha256:845aa3b4c5c2c9e5c6a497a47b314a18c5782b517d5c860377375a5ab78cd97b",
       "info.unknown-method-status": "sha256:dffe6d5bb4cfcf87999ecd2034b1cc4c08c4eecbbd994d995c5ad177764a6ef8",
+      "lifecycle.authority-names-space-host": "sha256:2ad4ff6ab2a5ebc515291ea56fd805cf65ae87182fa5d5d48ee9949faf6368ae",
       "lifecycle.clear-records-empty-digest": "sha256:1f232926000bd0a85fad96b8a236b8ddbc4f6fc41c8155392d143f93a8db2af0",
       "lifecycle.create-caller-is-authority": "sha256:ef5ea7fbea49bbf3eb13a76cb5a3700590e9765824b012d4831cb4dfd065fea6",
       "lifecycle.empty-equals-missing": "sha256:28458d0c917b63efb047ed0533bc9d242db9752ec3d4db8cd9a56fe8f8fc7a60",
       "lifecycle.implicit-create": "sha256:ca6b92b0b466fc34d67484a0984bb24f171eb9c9349792f340ca4f77813521d4",
       "lifecycle.list-spaces": "sha256:24a4af29bb390d966ea954a063033efc7a8e41e4485867086932bb7311a1a579",
       "lifecycle.self-authority-needs-space": "sha256:f9964e85ec55be81b5e87a54774576bec6ffeebcf50180c88a3dac81527fc575",
-      "mac.commit-bound-to-repo": "sha256:0c3260768ad0c0d74ee48c74af926670819b2282664b9d41ef0778ac23ad9147",
-      "mac.commit-header-present": "sha256:bf3409d1a509278e8187ba1683dddd3144f8d89f5b31e97140ab559dd4a1dd5a",
-      "mac.commit-valid": "sha256:30debbd995732763bec575bbf5c17bd8a02ead59d60179b1864b29cc6ccb5786",
-      "mac.kem-key-published": "sha256:65c50bcdc18af0268045c65fcc57d275b9e765dda7ed71ba4a1454244f692517",
+      "mac.commit-bound-to-repo": "sha256:868957eff9a385659a462c16dd5e301dd785f1c7fff4e9f31bf8de55caec6fbd",
+      "mac.commit-header-present": "sha256:2e04206edfa209266d6255a941839e50bd9a2f84949d2dd13e6fe2f378d87f89",
+      "mac.commit-valid": "sha256:1d851a9585b84204d1d7da4e52d54be58b5f664b06de3a41fe4c787b1c445143",
+      "mac.kem-key-published": "sha256:afc7f01d55bb6cd875bf8964481b7c43d8dfebee8231b2fb89f60468612f1c45",
       "mac.list-repo-ops-final-page": "sha256:b7a290ae997e9f34055eebc315fe2538a9eec62b373a443d965aa2dd39ca03ab",
-      "mac.malformed-request-rejected": "sha256:c8eed808067de06e32ece8f5b3951e036c3f75585a19dcf54fe1c98ef6319285",
-      "mac.record-valid": "sha256:343ca3f06fc6473794fefc06fea9f07e466b4d18d3006a174642b97ae5c2bfdf",
-      "mac.vary-header": "sha256:a7317bfad18c748c9d3367ecd423d7d6618c589f0d072f0d2afed8e1373d98e1",
+      "mac.malformed-request-rejected": "sha256:1077e130e5740f56df45361a59cf3938a4574c8adaead4b52e88928a544bfb2d",
+      "mac.record-valid": "sha256:e6a600669ecc70d4011e6dbf4d46e05aad5425db5eb1919e4d5fd43f15b81779",
+      "mac.vary-header": "sha256:ecc42b98d904455b57d87c9e9075b0fe1eededb09dfaad6968dbc8d31ca9f356",
       "migration.export-meta": "sha256:3b4707cf26c6c4573ae69c528ab285b2e43f5ee7444676c2a3035b0d05f4fd74",
       "migration.get-import-repo": "sha256:c0a2a895991975769434998d00f5c8e4c4cda1ab72f00eafb82b8ebe5196eece",
       "migration.import-meta": "sha256:3f5bdf29a3692e91ac065792bb7371b47c4b5277c21b300b437cec44214bfa32",
@@ -109,20 +111,20 @@
       "scope.read-self-own-repo-only": "sha256:02ed1fb5b05edf735975fd3f8e8e4362b970a28673da9ed75d11641216b2fc42",
       "scope.wildcard-type-no-writes": "sha256:f68b043a2814a3123e195f0b328ae7b32003b1bf30b0b695a7a7e57d39ea87bb",
       "writers.future-rev-rejected": "sha256:a4f8a9cb7ab0a770230e1cc78b9683c97eb5beacd98158c25cc7802c6b8af61b",
-      "writers.list-repos": "sha256:5a7cd642795d038114345c7346070b0fa75f4898e8eea1bf7dfce5b95630932d",
-      "writers.list-repos-since-space-rev": "sha256:6517f611b72b15537b479bc0a0ad7595eea8665587ef914997802e15e0b89bb7",
-      "writers.notify-write-forwarded": "sha256:3524640561002bb765899e87d30d91a44e36cf48692d27a01598c23441b87e70",
-      "writers.notify-write-sent": "sha256:22c30565e20d7fa7ca00a7be8e665ed74d6c67d82ff6d0e44d7b82fe1fa692f1",
-      "writers.register-expiry": "sha256:8fecdc8d6f186f5a6f03a17095a623dae35fe2e03814f86b924dbadd7729b3d1",
-      "writers.remove-writer": "sha256:a856912ea05d1195d214126cbe03508ef6e4a283bb0e7eb48417a4584ee9549f",
-      "writers.removed-writer-retracked": "sha256:0cc4376d329a32582b91157ea9f7a4a871cbbd8b3c854037f3c6945fd8823731",
+      "writers.list-repos": "sha256:112680e0a21ebdf036215fda6e8d2332f038b26607e2a0c995564cfd48da1478",
+      "writers.list-repos-since-space-rev": "sha256:7c7da18294910888105b622e84bf385db7ea91fbedbe90d1415895483a6d3773",
+      "writers.notify-write-forwarded": "sha256:b392b63561233ade52de271d865155bc84cee9bba5d382c5097f89f04c983c77",
+      "writers.notify-write-sent": "sha256:7a892a82fec9d94a9dd5f15c1e30591068dd5aba09be14c42c3b9f684dd238af",
+      "writers.register-expiry": "sha256:946fbd362a52c2b40250247675cc245230b04a597594fc0320137546df7998d0",
+      "writers.remove-writer": "sha256:b747849c1ced786e23be4b65e7f487513e06c5b3de2a987eafab627c9504881a",
+      "writers.removed-writer-retracked": "sha256:4a9a456103213f7eb56b2cb9343e3f4ba4a16b5cf30c02a565c5d8283475bde1",
       "writers.repos-resolve-to-host": "sha256:add356f7d41af96c5c81e7eeff25315c23f04e9a979cd59fc899102e2890fce5",
       "writers.stale-rev-ignored": "sha256:a59e7166171732ea3eb74a9ce73264ccc4c3a2ef03800e549e403b60a9b8ed67",
       "writers.unauthorized-write-rejected": "sha256:d82a264a313f86cbe13e3d02a76977adf92cebc0697e0e38a75981e759ba2a3e",
       "xrpc.error.PolicyMismatch": "sha256:eed23aae1e31a9306fa217226927b042acfea44e6a255b416a60f4aaf3a0c466",
       "xrpc.error.RecordNotFound": "sha256:c7ed2adf048fbf503c242c44767bfd8b08e79b61d97fd6f5ec374f3d6bf5551e",
       "xrpc.error.RepoNotFound": "sha256:7674934fcd9d6751c26b8ec78acc7bf9bf99d65f7497a64e6c157cb43ef59cf9",
-      "xrpc.error.SpaceDeleted": "sha256:a5571fdd1ce0e479575c2b07b22c956561231249b92693df68629b25d30c3444",
+      "xrpc.error.SpaceDeleted": "sha256:f44b6122fab94d49b09c54131554e6f9f8b8d8bf2573618368eda40adc963194",
       "xrpc.error.SpaceNotFound": "sha256:225fb18be862665e77f8f97f4048ea9c3d5a85371b679ce5c363ff044a09f885",
       "xrpc.error.UnsupportedPolicy": "sha256:f99cb26889805737090ba78853003750cb9ed538ebb2c7b0b94598ed9b4be256"
     }
@@ -217,13 +219,25 @@
       "id": "cred.delegation-token-kid-enforced",
       "suite": "credentials",
       "status": "pass",
-      "ms": 115
+      "ms": 69
+    },
+    {
+      "id": "cred.foreign-authority-accepted",
+      "suite": "credentials",
+      "status": "pass",
+      "ms": 79
     },
     {
       "id": "cred.revocation-idempotent",
       "suite": "credentials",
-      "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
+      "status": "pass",
+      "ms": 57
+    },
+    {
+      "id": "cred.revoked-jti-rejected",
+      "suite": "credentials",
+      "status": "pass",
+      "ms": 48
     },
     {
       "id": "deletion.credential-error",
@@ -235,25 +249,25 @@
       "id": "deletion.notify-retry",
       "suite": "deletion",
       "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
+      "skip_reason": "pending: deleteSpace answered 501 {\"error\":\"MethodNotImplemented\",\"message\":\"Method Not Implemented\"}, so the row can't be set up"
     },
     {
       "id": "deletion.notify-space-deleted",
       "suite": "deletion",
       "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
+      "skip_reason": "pending: deleteSpace answered 501 {\"error\":\"MethodNotImplemented\",\"message\":\"Method Not Implemented\"}, so the row can't be set up"
     },
     {
       "id": "digest.cid-drisl-plain",
       "suite": "digest",
       "status": "pass",
-      "ms": 149
+      "ms": 86
     },
     {
       "id": "digest.cid-drisl-typed",
       "suite": "digest",
       "status": "fail",
-      "ms": 52,
+      "ms": 21,
       "message": "2 record CID(s) differ from DRISL",
       "evidence": {
         "mismatches": "[{\"record\":\"bigint\",\"expected\":\"bafyreiciwjycqqgzdnzlb27b423cbfkwpazbuvwr6cuo2iky2izjpcy47i\",\"createRecord\":\"bafyreianpq5ttxqgvpv2bv4t3fxb5jgnc4lcigkwyqpjg6bcghxfyfh32y\",\"getRecord\":\"bafyreianpq5ttxqgvpv2bv4t3fxb5jgnc4lcigkwyqpjg6bcghxfyfh32y\"},{\"record\":\"int32edge\",\"expected\":\"bafyreigebouhwxkg45klwndejbenmunuobia2wwmojhtyvyv3eu4fhuwze\",\"createRecord\":\"bafyreiaz2ouihzl4tngrgb2zgqttdvu4v5th66q6xepcm63phu5bvpco34\",\"getRecord\":\"bafyreiaz2ouihzl4tngrgb2zgqttdvu4v5th66q6xepcm63phu5bvpco34\"}]"
@@ -263,19 +277,19 @@
       "id": "digest.covers-overwrite-and-delete",
       "suite": "digest",
       "status": "pass",
-      "ms": 87
+      "ms": 22
     },
     {
       "id": "digest.matches-record-set",
       "suite": "digest",
       "status": "pass",
-      "ms": 161
+      "ms": 78
     },
     {
       "id": "digest.multi-batch",
       "suite": "digest",
       "status": "pass",
-      "ms": 82
+      "ms": 37
     },
     {
       "id": "info.read-auth-status",
@@ -292,34 +306,40 @@
       "message": "an unknown method answered 501"
     },
     {
+      "id": "lifecycle.authority-names-space-host",
+      "suite": "lifecycle",
+      "status": "pass",
+      "ms": 57
+    },
+    {
       "id": "lifecycle.implicit-create",
       "suite": "lifecycle",
       "status": "pass",
-      "ms": 147
+      "ms": 77
     },
     {
       "id": "mac.commit-bound-to-repo",
       "suite": "mac",
-      "status": "skip",
-      "skip_reason": "capability harness.credential_reads not claimed"
+      "status": "pass",
+      "ms": 16
     },
     {
       "id": "mac.commit-header-present",
       "suite": "mac",
       "status": "pass",
-      "ms": 47
+      "ms": 27
     },
     {
       "id": "mac.commit-valid",
       "suite": "mac",
       "status": "pass",
-      "ms": 37
+      "ms": 19
     },
     {
       "id": "mac.kem-key-published",
       "suite": "mac",
       "status": "pass",
-      "ms": 243
+      "ms": 54
     },
     {
       "id": "mac.list-repo-ops-every-page",
@@ -343,7 +363,7 @@
       "id": "mac.vary-header",
       "suite": "mac",
       "status": "pass",
-      "ms": 32
+      "ms": 16
     },
     {
       "id": "oplog.commit-every-page",
@@ -355,71 +375,71 @@
       "id": "oplog.entry-shape",
       "suite": "oplog",
       "status": "pass",
-      "ms": 186
+      "ms": 98
     },
     {
       "id": "oplog.fold-matches-commit",
       "suite": "oplog",
       "status": "fail",
-      "ms": 92,
+      "ms": 36,
       "message": "folding every op does not give the commit data",
       "evidence": {
         "folded": "8dd7834cb1a9e4b1d392c27ea92d39822f182ca7f2a5ab07a96ff4b70b22b6bb",
         "expected": "b2a90b0f6a41de011c0dcf6e8a02ab74a243ab2b95f15b513903ef14e9fca86a",
         "data": "b2a90b0f6a41de011c0dcf6e8a02ab74a243ab2b95f15b513903ef14e9fca86a",
-        "ops": "[{\"rev\":\"3n27oiec3ckfy\",\"rkey\":\"a\",\"cid\":\"bafyreihje4zjrs24gnxiciokziubf2bcsnwivwl5k3lhbvhyrhjuh7vcgi\",\"prev\":null},{\"rev\":\"3n27oiecjxcfy\",\"rkey\":\"b\",\"cid\":\"bafyreidgrh274lz6nkj7jaahardgjiwkwie2q5ubwosiqjcn4xgzfnc4ae\",\"prev\":null},{\"rev\":\"3n27oiec3ckfy\",\"rkey\":\"a\",\"cid\":\"bafyreihje4zjrs24gnxiciokziubf2bcsnwivwl5k3lhbvhyrhjuh7vcgi\",\"prev\":null},{\"rev\":\"3n27oiecjxcfy\",\"rkey\":\"b\",\"cid\":\"bafyreidgrh274lz6nkj7jaahardgjiwkwie2q5ubwosiqjcn4xgzfnc4ae\",\"prev\":null}]"
+        "ops": "[{\"rev\":\"3n2a63sobcsxl\",\"rkey\":\"a\",\"cid\":\"bafyreihje4zjrs24gnxiciokziubf2bcsnwivwl5k3lhbvhyrhjuh7vcgi\",\"prev\":null},{\"rev\":\"3n2a63soeakxl\",\"rkey\":\"b\",\"cid\":\"bafyreidgrh274lz6nkj7jaahardgjiwkwie2q5ubwosiqjcn4xgzfnc4ae\",\"prev\":null},{\"rev\":\"3n2a63sobcsxl\",\"rkey\":\"a\",\"cid\":\"bafyreihje4zjrs24gnxiciokziubf2bcsnwivwl5k3lhbvhyrhjuh7vcgi\",\"prev\":null},{\"rev\":\"3n2a63soeakxl\",\"rkey\":\"b\",\"cid\":\"bafyreidgrh274lz6nkj7jaahardgjiwkwie2q5ubwosiqjcn4xgzfnc4ae\",\"prev\":null}]"
       }
     },
     {
       "id": "oplog.pagination-batch-boundary",
       "suite": "oplog",
       "status": "fail",
-      "ms": 37,
+      "ms": 16,
       "message": "a page boundary inside one applyWrites batch lost ops: got [m1, m1, m2, m2]",
       "evidence": {
         "pages": "[2,2]",
-        "ops": "[{\"rev\":\"3n27oie5zgcfy\",\"rkey\":\"m1\",\"cid\":\"bafyreife6wrnazkbiqvbobtnjdacmssi4nlkspxtoylbgbdtlbz2bfrohm\",\"prev\":null,\"value\":true},{\"rev\":\"3n27oie5zgcfy\",\"rkey\":\"m2\",\"cid\":\"bafyreigqkaoxf3vbzxg7w2kjn7vfbk5nwwbgrudskbsdiaunlzxkywhztq\",\"prev\":null,\"value\":true},{\"rev\":\"3n27oie5zgcfy\",\"rkey\":\"m1\",\"cid\":\"bafyreife6wrnazkbiqvbobtnjdacmssi4nlkspxtoylbgbdtlbz2bfrohm\",\"prev\":null,\"value\":true},{\"rev\":\"3n27oie5zgcfy\",\"rkey\":\"m2\",\"cid\":\"bafyreigqkaoxf3vbzxg7w2kjn7vfbk5nwwbgrudskbsdiaunlzxkywhztq\",\"prev\":null,\"value\":true}]"
+        "ops": "[{\"rev\":\"3n2a63smufcxl\",\"rkey\":\"m1\",\"cid\":\"bafyreife6wrnazkbiqvbobtnjdacmssi4nlkspxtoylbgbdtlbz2bfrohm\",\"prev\":null,\"value\":true},{\"rev\":\"3n2a63smufcxl\",\"rkey\":\"m2\",\"cid\":\"bafyreigqkaoxf3vbzxg7w2kjn7vfbk5nwwbgrudskbsdiaunlzxkywhztq\",\"prev\":null,\"value\":true},{\"rev\":\"3n2a63smufcxl\",\"rkey\":\"m1\",\"cid\":\"bafyreife6wrnazkbiqvbobtnjdacmssi4nlkspxtoylbgbdtlbz2bfrohm\",\"prev\":null,\"value\":true},{\"rev\":\"3n2a63smufcxl\",\"rkey\":\"m2\",\"cid\":\"bafyreigqkaoxf3vbzxg7w2kjn7vfbk5nwwbgrudskbsdiaunlzxkywhztq\",\"prev\":null,\"value\":true}]"
       }
     },
     {
       "id": "oplog.pagination-complete",
       "suite": "oplog",
       "status": "fail",
-      "ms": 109,
+      "ms": 42,
       "message": "following cursor with limit=2 returned p0 2 times, not once",
       "evidence": {
         "pages": "[2,2]",
-        "ops": "[{\"rev\":\"3n27oie2m2cfy\",\"rkey\":\"p0\",\"cid\":\"bafyreiawph7lrdogmdrdlcws7dydjyczhweqyneviinmnd66urnjrcizz4\",\"prev\":null,\"value\":true},{\"rev\":\"3n27oie2xrcfy\",\"rkey\":\"p1\",\"cid\":\"bafyreife6wrnazkbiqvbobtnjdacmssi4nlkspxtoylbgbdtlbz2bfrohm\",\"prev\":null,\"value\":true},{\"rev\":\"3n27oie2m2cfy\",\"rkey\":\"p0\",\"cid\":\"bafyreiawph7lrdogmdrdlcws7dydjyczhweqyneviinmnd66urnjrcizz4\",\"prev\":null,\"value\":true},{\"rev\":\"3n27oie2xrcfy\",\"rkey\":\"p1\",\"cid\":\"bafyreife6wrnazkbiqvbobtnjdacmssi4nlkspxtoylbgbdtlbz2bfrohm\",\"prev\":null,\"value\":true}]"
+        "ops": "[{\"rev\":\"3n2a63sljgcxl\",\"rkey\":\"p0\",\"cid\":\"bafyreiawph7lrdogmdrdlcws7dydjyczhweqyneviinmnd66urnjrcizz4\",\"prev\":null,\"value\":true},{\"rev\":\"3n2a63slndcxl\",\"rkey\":\"p1\",\"cid\":\"bafyreife6wrnazkbiqvbobtnjdacmssi4nlkspxtoylbgbdtlbz2bfrohm\",\"prev\":null,\"value\":true},{\"rev\":\"3n2a63sljgcxl\",\"rkey\":\"p0\",\"cid\":\"bafyreiawph7lrdogmdrdlcws7dydjyczhweqyneviinmnd66urnjrcizz4\",\"prev\":null,\"value\":true},{\"rev\":\"3n2a63slndcxl\",\"rkey\":\"p1\",\"cid\":\"bafyreife6wrnazkbiqvbobtnjdacmssi4nlkspxtoylbgbdtlbz2bfrohm\",\"prev\":null,\"value\":true}]"
       }
     },
     {
       "id": "oplog.since-exclusive",
       "suite": "oplog",
       "status": "pass",
-      "ms": 57
+      "ms": 23
     },
     {
       "id": "oplog.stale-values-omitted",
       "suite": "oplog",
       "status": "pass",
-      "ms": 89
+      "ms": 28
     },
     {
       "id": "policy.create-get-roundtrip",
       "suite": "policy",
       "status": "fail",
-      "ms": 115,
+      "ms": 56,
       "message": "policy.$type is \"com.atproto.simplespace.defs#publicPolicy\", not \"com.atproto.memberspace.policy\"",
       "evidence": {
         "status": 200,
-        "body": "{\"uri\":\"at://did:plc:coltgyi3wgw7pomr5qhadduq/space/com.example.conformance.space/72122b32fd4c\",\"readPolicy\":{\"$type\":\"com.atproto.simplespace.defs#publicPolicy\"},\"writePolicy\":{\"$type\":\"com.atproto.simplespace.defs#memberListPolicy\"},\"policy\":{\"$type\":\"com.atproto.simplespace.defs#publicPolicy\"},\"appAccess\":{\"$type\":\"com.atproto.simplespace.defs#allowList\",\"allowed\":[\"https://app.example/oauth-client-metadata.json\"]},\"config\":{\"$type\":\"com.atproto.simplespace.defs#spaceConfig\",\"policy\":\"public\",\"appAccess\":{\"$type\":\"com.atproto.simplespace.defs#allowList\",\"allowed\":[\"https://app.example/oauth-client-metadata.json\"]}}}"
+        "body": "{\"uri\":\"at://did:plc:sd4bqgq75n4r6yievsonjvyb/space/com.example.conformance.space/3296b22d799c\",\"readPolicy\":{\"$type\":\"com.atproto.simplespace.defs#publicPolicy\"},\"writePolicy\":{\"$type\":\"com.atproto.simplespace.defs#memberListPolicy\"},\"policy\":{\"$type\":\"com.atproto.simplespace.defs#publicPolicy\"},\"appAccess\":{\"$type\":\"com.atproto.simplespace.defs#allowList\",\"allowed\":[\"https://app.example/oauth-client-metadata.json\"]},\"config\":{\"$type\":\"com.atproto.simplespace.defs#spaceConfig\",\"policy\":\"public\",\"appAccess\":{\"$type\":\"com.atproto.simplespace.defs#allowList\",\"allowed\":[\"https://app.example/oauth-client-metadata.json\"]}}}"
       }
     },
     {
       "id": "policy.member-methods",
       "suite": "policy",
       "status": "fail",
-      "ms": 75,
+      "ms": 11,
       "message": "memberspace.putMember answered 501",
       "evidence": {
         "body": "{\"error\":\"MethodNotImplemented\",\"message\":\"Method Not Implemented\"}"
@@ -429,7 +449,7 @@
       "id": "policy.put-member-upsert",
       "suite": "policy",
       "status": "fail",
-      "ms": 2,
+      "ms": 1,
       "message": "memberspace.putMember (write: false) answered 501",
       "evidence": {
         "body": "{\"error\":\"MethodNotImplemented\",\"message\":\"Method Not Implemented\"}"
@@ -439,79 +459,85 @@
       "id": "records.apply-writes-atomic",
       "suite": "records",
       "status": "pass",
-      "ms": 45
+      "ms": 21
     },
     {
       "id": "records.commit-bytes-encoding",
       "suite": "records",
       "status": "pass",
-      "ms": 14
+      "ms": 5
     },
     {
       "id": "records.commit-fields",
       "suite": "records",
       "status": "pass",
-      "ms": 99
+      "ms": 57
     },
     {
       "id": "records.commit-repo-space-match",
       "suite": "records",
       "status": "pass",
-      "ms": 14
+      "ms": 5
     },
     {
       "id": "records.crud-roundtrip",
       "suite": "records",
       "status": "pass",
-      "ms": 141
+      "ms": 69
     },
     {
       "id": "records.read-requires-auth",
       "suite": "records",
       "status": "pass",
-      "ms": 88
+      "ms": 58
     },
     {
       "id": "writers.list-repos",
       "suite": "writer-set",
-      "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
+      "status": "pass",
+      "ms": 114
     },
     {
       "id": "writers.list-repos-since-space-rev",
       "suite": "writer-set",
-      "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
+      "status": "pass",
+      "ms": 50
     },
     {
       "id": "writers.notify-write-forwarded",
       "suite": "writer-set",
-      "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
+      "status": "pass",
+      "ms": 47
     },
     {
       "id": "writers.notify-write-sent",
       "suite": "writer-set",
-      "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
+      "status": "pass",
+      "ms": 194
     },
     {
       "id": "writers.register-expiry",
       "suite": "writer-set",
-      "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
+      "status": "pass",
+      "ms": 10241
     },
     {
       "id": "writers.remove-writer",
       "suite": "writer-set",
-      "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
+      "status": "fail",
+      "ms": 25,
+      "message": "removeWriter answered 501 {\"error\":\"MethodNotImplemented\",\"message\":\"Method Not Implemented\"}",
+      "evidence": {
+        "credential": "200 {\"credential\":\"eyJhbGciOiJFUzI1NiIsInR5cCI6ImF0cHJvdG8tc3BhY2UtY3JlZGVudGlhbCtqd3QiLCJraWQiOiIjYXRwcm90byJ9.eyJpc3MiOiJkaWQ6cGxjOnNkNGJxZ3E3NW40cjZ5aWV2c29uanZ5YiIsInN1YiI6ImF0Oi8vZGlkOnBsYzpzZDRicWdxNzVuNHI2eWlldnNvbmp2eWIvc3BhY2UvY29tLmV4YW1wbGUuY29uZm9ybWFuY2Uuc3BhY2UvMTZmZmUyZDA4YTBiIiwiY25mIjp7",
+        "removeWriter": "501 {\"error\":\"MethodNotImplemented\",\"message\":\"Method Not Implemented\"}",
+        "before": "{\"pages\":[{\"status\":200,\"n\":2,\"cursor\":\"3n2a63rixxcxl\"},{\"status\":200,\"n\":0}],\"writers\":[{\"repo\":\"did:plc:sd4bqgq75n4r6yievsonjvyb\",\"present\":true,\"repoRev\":\"3n2a63rin7lxl\",\"data\":\"qaHbg/Oj2xhdP5Af+blVxbAlM0mqmDGjFopTBIZaCsM\",\"spaceRev\":\"3n2a63rip62xl\"},{\"repo\":\"did:plc:vlgcbcodoggitmqtqlutioqi\",\"present\":true,\"repoRev\":\"3n2a63riu2cdr\",\"data\":\"Sh8pfexxiSUrksjpxVoLJUtW74ygZY60GHcYwie0QwQ\",\"spaceRev\":\"3n2a63rixxcxl\"}]}"
+      }
     },
     {
       "id": "writers.removed-writer-retracked",
       "suite": "writer-set",
       "status": "skip",
-      "skip_reason": "pending: needs the phase 7 credential path (Receiver as syncer, foreign authority)"
+      "skip_reason": "pending: removeWriter answered 501 {\"error\":\"MethodNotImplemented\",\"message\":\"Method Not Implemented\"}, so the row can't be set up"
     },
     {
       "id": "xrpc.error.SpaceDeleted",
@@ -529,14 +555,14 @@
         "should_pass": 0
       },
       "repo-host": {
-        "must_applicable": 19,
-        "must_pass": 17,
+        "must_applicable": 16,
+        "must_pass": 14,
         "should_applicable": 0,
         "should_pass": 0
       },
       "space-host": {
-        "must_applicable": 4,
-        "must_pass": 1,
+        "must_applicable": 5,
+        "must_pass": 2,
         "should_applicable": 0,
         "should_pass": 0
       }

@@ -45,6 +45,18 @@ What changed from the old pins:
 
 HappyView 3.0.0-beta.14 was rerun at 2026-10-29 with its deviation list: [0 unexpected](../test/fixtures/results/happyview-beta14-2026-11-13.json).
 
+## With the credential path (phase 7)
+
+On Nov 13, 2026 every implementation was rerun at the same pins with the phase 7 suites: the writer set and notifications, deletion notices, revocation, foreign-authority credentials, space-host discovery, and the MAC rows read with a space credential. The committed results files are these runs, and every one ran with `--slow`, so the rows that wait out a host-issued credential (`needs_slow`, docs/catalogue.md) were graded in full.
+
+| Implementation | Revision | Unexpected | Notes |
+|---|---|---|---|
+| ZDS | 2026-11-12 | 0 | Every phase 7 row passes. |
+| reference | 2026-11-12 | 0 | Every phase 7 row passes. |
+| atproto-pds | 2026-10-29 | 0 | Every phase 7 row graded at that revision passes. |
+| pds.js | 2026-10-29 | 3 | The three policy rows, as before (cause D). `writers.remove-writer` fails, because removeWriter answers 501; it's still provisional, so it warns. `deleteSpace` answers 501, so the deletion rows pend. |
+| HappyView beta.14 | 2026-10-29 | 0 | Run with its list plus three new entries (its repo's list PR): `mac.commit-bound-to-repo` (the getLatestCommit parameter), `writers.register-expiry` (unregisterNotify refuses the space credential) and `deletion.notify-retry` (no redelivery after a 503). Its writer list and remove rows pend, because its memberspace methods aren't routed in that release. |
+
 ## What was compared
 
 | | HappyView | This suite |
@@ -212,3 +224,4 @@ So the results above use `simplespace`, as HappyView's tests do. An `oct29` run 
 
 - **STAR framing.** The pinned 0016 text (`701ef9c6be`, `#repo-serialization`) draws the archive without the `0x01` and `0x00` control bytes, but also says "Framing and parsing follow STAR's rules". STAR's own interop fixtures, the reference implementation and HappyView all use the control bytes, so the harness does too (`vectors/README.md`). Later revisions of the proposal draw them.
 - **The MAC on reads without a space credential.** 0016 requires the MAC only on space-credential reads. It says nothing about a read without one (OAuth or a password session) that sends `Atproto-Space-Want-Mac`. pds.js answers such a password-session read with no MAC.
+- **The audience of the authority's service auth.** 2026-11-12 says notifyCredentialsRevoked "is authenticated with service auth from the space authority", but not what `aud` that token names. 2026-10-29's lexicon said the repo DID. The harness tries the repo DID, then the host's own did:web, and the revocation rows pend if a host refuses both on auth grounds. ZDS, atproto-pds and pds.js each accept one of the two.
