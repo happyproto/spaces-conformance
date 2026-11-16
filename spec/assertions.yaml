@@ -1770,6 +1770,8 @@ assertions:
         quote: >-
           The space host is responsible for reliably delivering the expiry notice, and should retry
           network failures and transient HTTP statuses with exponential backoff for at least 72 hrs.
+        # The 15-minute window is the harness's choice: the spec asks for retries with
+        # backoff "for at least 72 hrs" and sets no deadline for the first one.
         checks: >-
           A deletion notice gets the same rigor as an expiry notice (#space-deletion): when the harness
           syncer answers 503 once, the notifySpaceUpdate is delivered again within 15 minutes. A run
