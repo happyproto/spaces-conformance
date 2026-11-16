@@ -11,6 +11,13 @@
       "slow": false,
       "stale_passes": [
         "deletion.credential-error",
+        "mac.commit-header-present",
+        "mac.commit-valid",
+        "mac.kem-key-published",
+        "mac.list-repo-ops-every-page",
+        "mac.malformed-request-rejected",
+        "mac.record-valid",
+        "mac.vary-header",
         "xrpc.error.SpaceDeleted"
       ]
     },
@@ -22,7 +29,13 @@
       "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
       "image": "ghcr.io/happyproto/pds-test/atproto-pds@sha256:0fe098d36c7fd8beedcdc3f68f4f8431eb4571cdf764599ee42520b22fa07a5f",
       "revision": "2026-10-29",
-      "slow": false
+      "slow": false,
+      "stale_passes": [
+        "mac.commit-header-present",
+        "mac.commit-valid",
+        "mac.kem-key-published",
+        "mac.vary-header"
+      ]
     },
     {
       "file": "test/fixtures/results/parity-pdsjs-2026-11-13.json",
@@ -32,7 +45,13 @@
       "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
       "image": "ghcr.io/happyproto/pds-test/pdsjs@sha256:37c16c3499b54b799399118a24154d64e5397ea93a2b4da74c182f133f9e1bca",
       "revision": "2026-10-29",
-      "slow": false
+      "slow": false,
+      "stale_passes": [
+        "mac.commit-header-present",
+        "mac.commit-valid",
+        "mac.kem-key-published",
+        "mac.vary-header"
+      ]
     },
     {
       "file": "test/fixtures/results/happyview-beta14-2026-11-13.json",
@@ -42,7 +61,10 @@
       "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
       "image": "ghcr.io/gamesgamesgamesgamesgames/happyview@sha256:147a27668f0fc87c2dcfde5103d01f51efe55c329273c8ae7ae292cdb87a7b93",
       "revision": "2026-10-29",
-      "slow": false
+      "slow": false,
+      "stale_passes": [
+        "mac.kem-key-published"
+      ]
     },
     {
       "file": "test/fixtures/results/parity-reference-2026-11-13.json",
@@ -55,6 +77,13 @@
       "slow": false,
       "stale_passes": [
         "deletion.credential-error",
+        "mac.commit-header-present",
+        "mac.commit-valid",
+        "mac.kem-key-published",
+        "mac.list-repo-ops-every-page",
+        "mac.malformed-request-rejected",
+        "mac.record-valid",
+        "mac.vary-header",
         "xrpc.error.SpaceDeleted"
       ]
     }
@@ -127,23 +156,6 @@
         "pdsjs"
       ],
       "lifecycle.implicit-create": [
-        "atproto-pds",
-        "pdsjs"
-      ],
-      "mac.commit-header-present": [
-        "atproto-pds",
-        "pdsjs"
-      ],
-      "mac.commit-valid": [
-        "atproto-pds",
-        "pdsjs"
-      ],
-      "mac.kem-key-published": [
-        "atproto-pds",
-        "happyview",
-        "pdsjs"
-      ],
-      "mac.vary-header": [
         "atproto-pds",
         "pdsjs"
       ],
@@ -234,34 +246,6 @@
         "zds"
       ],
       "lifecycle.implicit-create": [
-        "reference",
-        "zds"
-      ],
-      "mac.commit-header-present": [
-        "reference",
-        "zds"
-      ],
-      "mac.commit-valid": [
-        "reference",
-        "zds"
-      ],
-      "mac.kem-key-published": [
-        "reference",
-        "zds"
-      ],
-      "mac.list-repo-ops-every-page": [
-        "reference",
-        "zds"
-      ],
-      "mac.malformed-request-rejected": [
-        "reference",
-        "zds"
-      ],
-      "mac.record-valid": [
-        "reference",
-        "zds"
-      ],
-      "mac.vary-header": [
         "reference",
         "zds"
       ],

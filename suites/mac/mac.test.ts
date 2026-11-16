@@ -1,32 +1,55 @@
-// MAC reads use the owner's own session with a MAC request, as HappyView's
-// interop tests do: Atproto-Space-Want-Mac at 2026-10-29, or from 2026-11-12
-// an RFC 9421 Accept-Signature keyed by the HPKE export (harness/crypto/macsig.ts). 0016 requires the MAC only "when called with
-// a space credential" (#authenticity-headers), and the harness's credential
-// path comes in phase 7. So until then:
-//   - no Atproto-Space-Mac on a session read is `skip` ("pending: …"), never
-//     `fail` or `error`;
+// MAC reads (#requesting-a-mac). 0016 requires the MAC on space-credential
+// reads, so the rows read with one: the harness asks the space host for a
+// credential (the spaces here are memberspace with publicRead) and presents
+// it to the author's repo host, with a MAC request: Atproto-Space-Want-Mac at
+// 2026-10-29, or from 2026-11-12 an RFC 9421 Accept-Signature keyed by the
+// HPKE export (harness/crypto/macsig.ts). Then:
+//   - no MAC on a credential read is a `fail`;
+//   - when the host won't issue the credential, the row reads with the
+//     owner's session instead, as HappyView's interop tests do, and no MAC
+//     there is `skip` ("pending: …"), since 0016 doesn't require one;
 //   - no #atproto_kem key is `skip` too: mac.kem-key-published grades it once;
 //   - a MAC that is present but wrong (type, ver, or doesn't verify) is `fail`.
 // Evidence names the read auth used. Rows with no 2026-10-29 test say so as
 // pending there; they're graded from 2026-11-12.
 
-import { assertion, fail, pending, setup } from '../../harness/assert.ts';
-import { CREDENTIAL_PENDING, requireAuthorKem, requireMac, requireMacHeader } from './precondition.ts';
-import type { MacCheck } from '../../harness/actors/syncer.ts';
+import { assertion, fail, Pending, pending, setup } from '../../harness/assert.ts';
+import { CREDENTIAL_PENDING, NO_MAC_ON_CREDENTIAL, requireAuthorKem, requireMac, requireMacHeader } from './precondition.ts';
+import type { MacCheck, Syncer, Target } from '../../harness/actors/syncer.ts';
 import { didKey, generate, parseMultikey } from '../../harness/crypto/keys.ts';
 import { REPO_TYPE, parseMacHeader } from '../../harness/crypto/mac.ts';
 import { COMMIT_PROFILE, MAC_ALG, macRequestList, recordFromFields } from '../../harness/crypto/macsig.ts';
 import { isInnerList, parseDictionary, serializeDictionary, type SfDictionary, type SfInnerList } from '../../harness/crypto/sf.ts';
 import { COLLECTION, ownerSpace, settled } from '../fixtures.ts';
-import { commitOrFail, freshRepo, note, type Repo, setupWrites, syncerFor } from '../repo.ts';
+import { commitOrFail, note, type Repo, setupWrites, syncerFor } from '../repo.ts';
+import { credentialed, credentialSyncer, publicSpace } from '../sync.ts';
 
-async function repoWithRecord(ctx: Parameters<typeof freshRepo>[0]): Promise<Repo> {
-  const repo = await freshRepo(ctx);
+/** A fresh publicRead space owned by the fixture owner, with one record. */
+async function repoWithRecord(ctx: Parameters<typeof ownerSpace>[0]): Promise<Repo> {
+  const { owner } = await ownerSpace(ctx);
+  const repo = await publicSpace(ctx, owner);
   await setupWrites(repo).put('m', note('mac'));
   return repo;
 }
 
-const readAuth = (repo: Repo) => ({ read_auth: repo.owner.auth.mode });
+interface Reader {
+  syncer: Syncer;
+  target: Target;
+  /** Whether the reads present a space credential (else the owner's session). */
+  credential: boolean;
+  readAuth: Record<string, string>;
+}
+
+/** A credential reader for the repo, or the owner's session when the host won't issue a credential. */
+async function reader(repo: Repo): Promise<Reader> {
+  try {
+    const { sync } = await credentialed(repo);
+    return { ...(await credentialSyncer(repo.ctx, sync, repo.owner)), credential: true, readAuth: { read_auth: 'space-credential' } };
+  } catch (e) {
+    if (!(e instanceof Pending)) throw e;
+    return { ...(await syncerFor(repo)), credential: false, readAuth: { read_auth: repo.owner.auth.mode, credential_refused: e.reason } };
+  }
+}
 
 const G1_UNTESTED = 'no 2026-10-29 test; this row is graded from 2026-11-12';
 
@@ -60,13 +83,14 @@ assertion('mac.kem-key-published', async (ctx) => {
 
 assertion('mac.commit-header-present', async (ctx) => {
   const repo = await repoWithRecord(ctx);
-  const { syncer, target } = await syncerFor(repo);
+  const rd = await reader(repo);
+  const { syncer, target } = rd;
   requireAuthorKem(target);
   const { response, mac } = await syncer.commit(target);
   if (settled(ctx)) {
-    const evidence = { ...readAuth(repo), status: response.status, ...sigEvidence(mac) };
+    const evidence = { ...rd.readAuth, status: response.status, ...sigEvidence(mac) };
     if (response.status !== 200) fail(`getLatestCommit answered ${response.status}`, evidence);
-    requireMac(mac);
+    requireMac(mac, rd.credential, evidence);
     const missing = [!mac.header && 'Atproto-Space-Commit', !mac.signatureInput && 'Signature-Input', !mac.signature && 'Signature'].filter(Boolean);
     if (missing.length) fail(`the MAC answer has no ${missing.join(', ')}`, evidence);
     parsed(mac.header!, 'Atproto-Space-Commit', evidence);
@@ -79,9 +103,9 @@ assertion('mac.commit-header-present', async (ctx) => {
       fail(`the ${COMMIT_PROFILE} signature doesn't cover exactly ("${COMMIT_PROFILE}";sf)`, evidence);
     return;
   }
-  const evidence = { ...readAuth(repo), status: response.status, header: mac.header ?? null, vary: mac.vary };
+  const evidence = { ...rd.readAuth, status: response.status, header: mac.header ?? null, vary: mac.vary };
   if (response.status !== 200) fail(`getLatestCommit answered ${response.status}`, evidence);
-  const header = requireMacHeader(mac);
+  const header = requireMacHeader(mac, rd.credential, evidence);
   let m;
   try {
     m = parseMacHeader(header);
@@ -93,26 +117,28 @@ assertion('mac.commit-header-present', async (ctx) => {
 
 assertion('mac.commit-valid', async (ctx) => {
   const repo = await repoWithRecord(ctx);
-  const { syncer, target } = await syncerFor(repo);
+  const rd = await reader(repo);
+  const { syncer, target } = rd;
   requireAuthorKem(target);
   const { response, mac } = await syncer.commit(target);
-  if (response.status !== 200) fail(`getLatestCommit answered ${response.status}`, { status: response.status });
-  if (settled(ctx)) requireMac(mac);
-  else requireMacHeader(mac);
+  if (response.status !== 200) fail(`getLatestCommit answered ${response.status}`, { ...rd.readAuth, status: response.status });
+  if (settled(ctx)) requireMac(mac, rd.credential, rd.readAuth);
+  else requireMacHeader(mac, rd.credential, rd.readAuth);
   commitOrFail(response.body?.commit);
   if (!mac.verified)
-    fail(`the commit MAC doesn't verify: ${mac.reason}`, { ...readAuth(repo), ...sigEvidence(mac), commit: JSON.stringify(response.body?.commit).slice(0, 1000) });
+    fail(`the commit MAC doesn't verify: ${mac.reason}`, { ...rd.readAuth, ...sigEvidence(mac), commit: JSON.stringify(response.body?.commit).slice(0, 1000) });
 });
 
 assertion('mac.vary-header', async (ctx) => {
   const repo = await repoWithRecord(ctx);
-  const { syncer, target } = await syncerFor(repo);
+  const rd = await reader(repo);
+  const { syncer, target } = rd;
   requireAuthorKem(target);
   if (!settled(ctx)) {
     const { response, mac } = await syncer.commit(target);
-    const evidence = { ...readAuth(repo), status: response.status, header: mac.header ?? null, vary: response.headers.get('vary') };
+    const evidence = { ...rd.readAuth, status: response.status, header: mac.header ?? null, vary: response.headers.get('vary') };
     if (response.status !== 200) fail(`getLatestCommit answered ${response.status}`, evidence);
-    const header = requireMacHeader(mac);
+    const header = requireMacHeader(mac, rd.credential, evidence);
     if (!mac.vary) fail('Vary does not list Atproto-Space-Want-Mac', evidence);
     let m;
     try {
@@ -126,9 +152,9 @@ assertion('mac.vary-header', async (ctx) => {
   // A label and an alg the host must echo, rather than the defaults.
   const ks = syncer.keyShare(target, COMMIT_PROFILE, { label: 'sig1', alg: MAC_ALG });
   const { response, mac } = await syncer.commit(target, ks);
-  const evidence = { ...readAuth(repo), status: response.status, request: ks.headers['accept-signature'], ...sigEvidence(mac), vary_header: response.headers.get('vary') };
+  const evidence = { ...rd.readAuth, status: response.status, request: ks.headers['accept-signature'], ...sigEvidence(mac), vary_header: response.headers.get('vary') };
   if (response.status !== 200) fail(`getLatestCommit answered ${response.status}`, evidence);
-  requireMac(mac);
+  requireMac(mac, rd.credential, evidence);
   if (!mac.vary) fail('Vary does not list Accept-Signature', evidence);
   if (!mac.signatureInput || !mac.signature) fail('the MAC answer has no Signature-Input or Signature', evidence);
   const input = parsed(mac.signatureInput!, 'Signature-Input', evidence).get('sig1');
@@ -147,15 +173,17 @@ assertion('mac.vary-header', async (ctx) => {
 assertion('mac.malformed-request-rejected', async (ctx) => {
   if (!settled(ctx)) pending(G1_UNTESTED);
   const repo = await repoWithRecord(ctx);
-  const { syncer, target } = await syncerFor(repo);
+  const rd = await reader(repo);
+  const { syncer, target } = rd;
   requireAuthorKem(target);
-  // Control: a host that doesn't MAC this read at all (no space credential)
-  // can't show that it refuses a bad request rather than ignoring it.
+  // Control: a host that doesn't MAC this read at all can't show that it
+  // refuses a bad request rather than ignoring it.
   // getLatestCommit failing at all is graded elsewhere, so here it's pending.
   const control = await syncer.commit(target);
   if (control.response.status !== 200)
     pending(`getLatestCommit answered ${control.response.status} to a well-formed MAC request, so a refusal below couldn't be told apart`);
-  requireMac(control.mac);
+  // A control: no MAC here pends (mac.commit-header-present grades the MAC itself).
+  if (!control.mac.present) pending(rd.credential ? `the control read got no MAC (${NO_MAC_ON_CREDENTIAL}), so a refusal below couldn't be told apart` : CREDENTIAL_PENDING);
   const list = (o: { params?: [string, string][]; keyid?: string } = {}): SfInnerList => {
     const l = macRequestList(COMMIT_PROFILE, o.keyid ?? didKey(generate('p256')));
     return { ...l, params: [...l.params, ...(o.params ?? [])] };
@@ -176,7 +204,7 @@ assertion('mac.malformed-request-rejected', async (ctx) => {
     if (r.status < 300) answered.push(name);
     else if (r.status === 429 || r.status >= 500) unanswered.push(name);
   }
-  if (answered.length) fail(`getLatestCommit answered ${answered.join('; ')} instead of refusing it`, { ...readAuth(repo), answers: JSON.stringify(answers) });
+  if (answered.length) fail(`getLatestCommit answered ${answered.join('; ')} instead of refusing it`, { ...rd.readAuth, answers: JSON.stringify(answers) });
   if (unanswered.length) pending(`the host answered 429 or 5xx for ${unanswered.join('; ')}, so those requests weren't judged`);
   // Control again: if a well-formed request no longer gets a MAC, the
   // refusals above may be the host's state (a limit, a revoked session).
@@ -185,27 +213,38 @@ assertion('mac.malformed-request-rejected', async (ctx) => {
     pending(`after the malformed requests a well-formed one got ${after.response.status}${after.response.status === 200 ? ' with no MAC' : ''}, so the refusals can't be told apart from host state`);
 });
 
-// A real check reads the author's repo as another account (caller != author)
-// and verifies the MAC against the author's #atproto_kem, not the caller's.
-// Reading as a non-author needs a space credential, so the catalogue row
-// requires harness.credential_reads, which no manifest claims until phase 7:
-// it records skip. (Asking, as the author, for a MAC keyed to some other key
-// proves nothing: the host never sees that key, so it can never verify.)
-assertion('mac.commit-bound-to-repo', async () => {
-  pending('needs a reader who is not the author, which needs the space-credential path (phase 7)');
+// The harness reads the author's repo as a syncer holding a space
+// credential, not as the author, and asks for a MAC keyed by its own
+// ephemeral key share. The MAC can only verify if the host did ECDH (2026-11-12:
+// the HPKE export) with the author's #atproto_kem private key: the harness
+// verifies it against the author's public key. (Asking, as the author, for a
+// MAC keyed to some other key proves nothing: the host never sees that key.)
+assertion('mac.commit-bound-to-repo', async (ctx) => {
+  const repo = await repoWithRecord(ctx);
+  const rd = await reader(repo);
+  if (!rd.credential) pending(`needs a reader who is not the author, and the host didn't issue a space credential (${rd.readAuth.credential_refused})`);
+  const { syncer, target } = rd;
+  requireAuthorKem(target);
+  const { response, mac } = await syncer.commit(target);
+  const evidence = { ...rd.readAuth, status: response.status, ...sigEvidence(mac), commit: (JSON.stringify(response.body?.commit) ?? 'none').slice(0, 800) };
+  if (response.status !== 200) fail(`getLatestCommit with a space credential answered ${response.status}`, evidence);
+  requireMac(mac, true, evidence);
+  if (!mac.verified) fail(`the MAC for a non-author reader doesn't verify against the author's #atproto_kem: ${mac.reason}`, evidence);
 });
 
 assertion('mac.list-repo-ops-every-page', async (ctx) => {
-  const repo = await freshRepo(ctx);
+  const { owner } = await ownerSpace(ctx);
+  const repo = await publicSpace(ctx, owner);
   const w = setupWrites(repo);
   for (const k of ['a', 'b', 'c']) await w.put(k, note(k));
-  const { syncer, target } = await syncerFor(repo);
+  const rd = await reader(repo);
+  const { syncer, target } = rd;
   requireAuthorKem(target);
   const r = await syncer.oplog(target, { limit: 1 });
-  const evidence = { ...readAuth(repo), pages: JSON.stringify(r.pages.map((p) => ({ status: p.status, ops: p.ops, commit: p.commit, mac: p.mac.present, verified: p.mac.verified, reason: p.mac.reason }))).slice(0, 2000) };
+  const evidence = { ...rd.readAuth, pages: JSON.stringify(r.pages.map((p) => ({ status: p.status, ops: p.ops, commit: p.commit, mac: p.mac.present, verified: p.mac.verified, reason: p.mac.reason }))).slice(0, 2000) };
   if (r.error) fail(`listRepoOps answered ${r.error.status}`, { ...evidence, body: JSON.stringify(r.error.body).slice(0, 500) });
   if (r.pages.length < 2) pending(`listRepoOps with limit=1 gave ${r.pages.length} page(s), so there's no earlier page to check`);
-  if (!r.pages.some((p) => p.mac.present)) pending(CREDENTIAL_PENDING);
+  if (!r.pages.some((p) => p.mac.present)) (rd.credential ? fail(NO_MAC_ON_CREDENTIAL, evidence) : pending(CREDENTIAL_PENDING));
   const bad = r.pages
     .map((p, i) => (!p.commit ? `page ${i + 1} has no commit` : !p.mac.verified ? `page ${i + 1}'s MAC: ${p.mac.reason}` : null))
     .filter((x): x is string => !!x);
@@ -215,12 +254,13 @@ assertion('mac.list-repo-ops-every-page', async (ctx) => {
 assertion('mac.record-valid', async (ctx) => {
   if (!settled(ctx)) pending(G1_UNTESTED);
   const repo = await repoWithRecord(ctx);
-  const { syncer, target } = await syncerFor(repo);
+  const rd = await reader(repo);
+  const { syncer, target } = rd;
   requireAuthorKem(target);
   const { response, uri, mac } = await syncer.record(target, COLLECTION, 'm');
-  const evidence = { ...readAuth(repo), status: response.status, uri, ...sigEvidence(mac), body: JSON.stringify(response.body).slice(0, 1000) };
+  const evidence = { ...rd.readAuth, status: response.status, uri, ...sigEvidence(mac), body: JSON.stringify(response.body).slice(0, 1000) };
   if (response.status !== 200) fail(`getRecord answered ${response.status}`, evidence);
-  requireMac(mac);
+  requireMac(mac, rd.credential, evidence);
   if (!mac.verified) fail(`the record MAC doesn't verify: ${mac.reason}`, evidence);
   // The body's own uri and cid, when given, must name the record the MAC covers.
   const covered = recordFromFields(parseDictionary(mac.header!));
