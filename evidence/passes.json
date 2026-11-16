@@ -8,7 +8,11 @@
       "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
       "image": "ghcr.io/happyproto/pds-test/zds@sha256:2ec90ddaf8a94618a9654e010586ec503d0dd7c3ec23c9a8646e3b28ad2a998f",
       "revision": "2026-11-12",
-      "slow": false
+      "slow": false,
+      "stale_passes": [
+        "deletion.credential-error",
+        "xrpc.error.SpaceDeleted"
+      ]
     },
     {
       "file": "test/fixtures/results/parity-atproto-pds-2026-11-13.json",
@@ -48,7 +52,11 @@
       "assertions_digest": "sha256:99b46ecb6f542c176971f36719907c475c0cfb95995000a8cda435af3e5570cd",
       "image": "ghcr.io/happyproto/pds-test/pds-spaces-alpha@sha256:1b3113b40eac2581b8f928bcec8840c8a0912c3a3d90bf3b965a775f8a97067a",
       "revision": "2026-11-12",
-      "slow": false
+      "slow": false,
+      "stale_passes": [
+        "deletion.credential-error",
+        "xrpc.error.SpaceDeleted"
+      ]
     }
   ],
   "excluded": [
@@ -197,10 +205,6 @@
       ]
     },
     "2026-11-12": {
-      "deletion.credential-error": [
-        "reference",
-        "zds"
-      ],
       "digest.cid-drisl-plain": [
         "reference",
         "zds"
@@ -322,10 +326,6 @@
         "zds"
       ],
       "records.read-requires-auth": [
-        "reference",
-        "zds"
-      ],
-      "xrpc.error.SpaceDeleted": [
         "reference",
         "zds"
       ]
