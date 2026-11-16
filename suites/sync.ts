@@ -15,7 +15,7 @@ import { pending, setup } from '../harness/assert.ts';
 import { ForeignAuthority } from '../harness/actors/authority.ts';
 import { Resolver } from '../harness/actors/identity.ts';
 import { Plc, serviceEndpoint } from '../harness/actors/plc.ts';
-import { Receiver } from '../harness/actors/receiver.ts';
+import { type Received, Receiver } from '../harness/actors/receiver.ts';
 import { authorityOf, SpaceSync } from '../harness/actors/space-sync.ts';
 import type { RunContext } from '../harness/context.ts';
 import type { HttpResponse } from '../harness/http.ts';
@@ -99,7 +99,9 @@ export interface Credentialed {
   sync: SpaceSync;
   /** 2026-11-12: the registration token, when one was asked for. */
   token?: string;
-  /** The answer to the credential request (and, at 2026-10-29, to registerNotify). */
+  /** 2026-10-29: registerNotify's answer, when registering. */
+  registration?: HttpResponse;
+  /** The credential request's answer (and registerNotify's), for evidence. */
   answers: Record<string, string>;
 }
 
@@ -112,28 +114,67 @@ export interface Credentialed {
  * Not for a row that grades token-less issuance for a publicRead space: it
  * retries with a delegation token after any 4xx, so it would hide that refusal.
  */
-export async function credentialed(repo: Repo, o: { receiver?: Receiver; register?: boolean } = {}): Promise<Credentialed> {
+export async function credentialed(repo: Repo, o: { receiver?: Receiver; register?: boolean; token?: string; gradeRegistration?: boolean } = {}): Promise<Credentialed> {
   const { ctx, owner, space } = repo;
   const host = await spaceHost(ctx, space, owner);
   const sync = new SpaceSync(host, space, settled(ctx));
-  const token = o.register && settled(ctx) ? o.receiver!.issue(space) : undefined;
+  const token = o.register && settled(ctx) ? (o.token ?? o.receiver!.issue(space)) : undefined;
   let r = await sync.authorize({ notifyToken: token });
   if (r.status >= 400 && r.status < 500 && owner.keys) r = await sync.authorize({ notifyToken: token, delegationToken: delegationToken(owner, space, owner.keys.signing) });
   const answers: Record<string, string> = { credential: short(r) };
   setupOk(settled(ctx) ? 'authorizeSpaceSync' : 'getSpaceCredential', r);
-  if (o.register && !settled(ctx)) answers.registerNotify = short(setupOk('registerNotify', await sync.register()));
-  return { sync, ...(token ? { token } : {}), answers };
+  let registration: HttpResponse | undefined;
+  if (o.register && !settled(ctx)) {
+    registration = await sync.register();
+    answers.registerNotify = short(registration);
+    // registerNotify is setup, unless the row is about registration itself.
+    if (!o.gradeRegistration) setupOk('registerNotify', registration);
+  }
+  return { sync, ...(token ? { token } : {}), ...(registration ? { registration } : {}), answers };
 }
 
-/** The repo's current commit, read with its owner's session (setup). */
-export async function commitOf(account: Account, space: string): Promise<{ rev: string; data: string }> {
+/** A repo's current state as its repo host reports it. */
+export interface RepoState {
+  rev: string;
+  /** The commit's `data` (base64). For a pre-0016 commit, its `hash`, which is what that form has in its place. */
+  data: string;
+  form: '0016' | 'pre-0016';
+}
+
+/**
+ * The repo's current commit, read with its owner's session (setup). A host
+ * that names the parameter `did` instead of the lexicon's `repo` is asked
+ * again that way, and a pre-0016 commit gives its `hash` as the data: this
+ * is only setup here, and the records and mac rows grade getLatestCommit
+ * and the commit's shape themselves.
+ */
+export async function commitOf(account: Account, space: string): Promise<RepoState> {
   return setup(`getLatestCommit for ${account.handle}`, async () => {
-    const r = await account.auth.request('GET', xrpcUrl(account.repoHost, 'com.atproto.space.getLatestCommit', { space, repo: account.did }));
+    const get = (param: 'repo' | 'did') => account.auth.request('GET', xrpcUrl(account.repoHost, 'com.atproto.space.getLatestCommit', { space, [param]: account.did }));
+    let r = await get('repo');
+    if (r.status === 400 && /\bdid\b/.test(JSON.stringify(r.body))) r = await get('did');
     const c = r.body?.commit ?? r.body;
-    if (r.status !== 200 || typeof c?.rev !== 'string' || typeof c?.data?.$bytes !== 'string') throw new Error(short(r));
-    return { rev: c.rev, data: c.data.$bytes };
+    const data = c?.data?.$bytes ?? c?.hash?.$bytes;
+    if (r.status !== 200 || typeof c?.rev !== 'string' || typeof data !== 'string') throw new Error(short(r));
+    return { rev: c.rev, data, form: c?.data?.$bytes ? '0016' : 'pre-0016' };
   });
 }
 
 /** Strip base64 padding, so two $bytes forms compare equal. */
 export const unpad = (b: string | undefined) => (b ?? '').replace(/=+$/, '');
+
+/** Poll `read` until `done` holds or `ms` passes; the last value either way. */
+export async function until<T>(read: () => Promise<T>, done: (t: T) => boolean, ms = 15_000, every = 1_000): Promise<T> {
+  const end = Date.now() + ms;
+  let v = await read();
+  while (!done(v) && Date.now() < end) {
+    await new Promise((r) => setTimeout(r, every));
+    v = await read();
+  }
+  return v;
+}
+
+/** Wait until the receiver holds `n` events matching pred since `from`, or `ms` passes; those events. */
+export async function received(rx: Receiver, from: number, pred: (e: Received) => boolean, n: number, ms = 20_000) {
+  return until(async () => rx.since(from, pred), (es) => es.length >= n, ms, 250);
+}
