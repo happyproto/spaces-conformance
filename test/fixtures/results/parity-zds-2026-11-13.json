@@ -1,16 +1,16 @@
 {
   "schema": 1,
   "run": {
-    "id": "2026-11-13T22-59-25Z-zds-2cb6",
+    "id": "2026-11-14T20-24-12Z-zds-5a34",
     "kind": "local",
-    "started_at": "2026-11-13T22:59:25.329Z",
-    "finished_at": "2026-11-13T23:21:22.481Z",
+    "started_at": "2026-11-14T20:24:12.198Z",
+    "finished_at": "2026-11-14T20:46:06.531Z",
     "attempt": 1,
     "slow": true
   },
   "suite": {
-    "commit": "6d8e6dd2c0",
-    "assertions_digest": "sha256:35e2cc9f4ee00f5e4ae068e4fe3945e23fc514bb6fb71a92d435e63fe4663a7c",
+    "commit": "1f65b9b1fc",
+    "assertions_digest": "sha256:1c3979b0f6ece44b2c5ea433aa16a3bb1aaab5772fe18d558a3c8cb7494cb5c5",
     "assertion_digests": {
       "addressing.record-uri-shape": "sha256:1b070e190996c114106183bc98c46543c94360c7102a84f86b18b78c5135ae0e",
       "addressing.skey-limits": "sha256:f475fb135f2a19d7e3142bb99bfe53d54ca267d5a533dd9237ad1edfc38d2e0d",
@@ -22,7 +22,7 @@
       "cred.delegation-token-single-use": "sha256:e021e5d232770ba6595521b99aab5b5ffeeb44d43becb43858b784b2322962f1",
       "cred.delegation-token-verifiable": "sha256:fc2f5665e3ad51aa9bec819da8372dda144d802d628c50cf541f822318e09634",
       "cred.extra-assertion-not-rejected": "sha256:c224a6d8128c416c1627dde1ea22c0ede8d4bfc136966252a5980e5dd20d3592",
-      "cred.foreign-authority-accepted": "sha256:1fa95bc912b22ab2d6b34c57ec378c52290c2f10bf51f27eeb8b3976423da154",
+      "cred.foreign-authority-accepted": "sha256:9407b1f42c2c0192d7cf42a7066b808f0e7f715366fac662b69ffaa799eed67a",
       "cred.httpsig-expired": "sha256:22fdda53b89b5329872fa101268708c5f82ad76f47e79583d01322fe38291d58",
       "cred.httpsig-high-s-accepted": "sha256:524c7ef5917ebda230fbf920327da935351723ba9000de122fab5a4e300e370f",
       "cred.httpsig-no-signature": "sha256:eb54014065d9007672a9332f7591c4fa1f3b72e77ac3faba6d04a337856615db",
@@ -31,13 +31,13 @@
       "cred.httpsig-wrong-components": "sha256:0b7be50d2933645832ff4bc2fd7eb8fcb8dd15a82371ba81ff904ffadac7d305",
       "cred.httpsig-wrong-tag": "sha256:24a65722995b893bced58a889f6f087bf3a59bdea484fa73da5fbe9d5c96b13a",
       "cred.reuse-allowed": "sha256:1cd2d6e360b4f86ca6e1a7a8132dd1e3c962c8f08bc761e92725583195d4cd94",
-      "cred.revocation-idempotent": "sha256:c3758f38d2f7fe2beab7af7ac7b54f54283f8258d1b117f726408a91b5b1ead4",
-      "cred.revoked-jti-rejected": "sha256:00f3a4fe8389f4742a1476524086d6a43fed9bddb2c8b8f3e1859a7323ee7342",
+      "cred.revocation-idempotent": "sha256:4003a37fa7111ad426545ab5f1b3e388db76ff61eef4ea0294c564db8fcd3358",
+      "cred.revoked-jti-rejected": "sha256:5795c9212d93b679782a20ec9979d25345991ed65814867919f645b6d5a5cb58",
       "cred.scheme-case-insensitive": "sha256:9862bcae2bf3ff4b6f76810d59b862a08ff085f5ab4c11bb859ab3649ff05dda",
-      "deletion.credential-error": "sha256:a0f249ac98d3fd2703ccc26b93b86e17199376aa5b1057799b72ee0ba92af6de",
+      "deletion.credential-error": "sha256:1d36a59d378fa3d31fae2f5c0ecfb54caa5e99803286417199e3c48ba4b85f4b",
       "deletion.member-records-survive": "sha256:51465951dee6fbdd882dc8069f3a633544c7cfa7b4ead93d700d051f84a11f3a",
-      "deletion.notify-retry": "sha256:6808b5c6fc25218bc0de2383288ba0c74968ff4b928186a53662cdc4b8024bd0",
-      "deletion.notify-space-deleted": "sha256:d5e6c5a9b22b81fab85de3dcd129fcf13ca83a63a31914a29562fcee7b34a617",
+      "deletion.notify-retry": "sha256:5355428d076f8dd9155d96873316fe4e986ddd6de02adfdb560e7a8746fca4b4",
+      "deletion.notify-space-deleted": "sha256:ad7a7876a44eb9a15c8d0e74fa5a1decedc6765319a59663fcbd1ab26536c91a",
       "digest.cid-drisl-plain": "sha256:810c58365a1bf70007e6fa792d0ae280aba3cd2607ae75444971a80af69d0001",
       "digest.cid-drisl-typed": "sha256:c7cf555fc85355a8825e1b6cfd062737a017e97af2d3b948f8fa834ed8846324",
       "digest.covers-overwrite-and-delete": "sha256:c44f1358bc8ff9247883614c0ccc8b088ea737701a7eb1b0db96b937c7180efc",
@@ -51,7 +51,7 @@
       "export.star-sorted-unique": "sha256:b15f41dbc7a5bc6f2c3c2faf8f29eace67e75088a8435b90ac0babd621f0c9df",
       "info.read-auth-status": "sha256:efc91fb24b3fe7ff4db72238c1c6a7ac201375925c492865d0a3b890c6b85988",
       "info.unknown-method-status": "sha256:5b3e0e86e09690f78b04935716dfe3d6ca2354c8111fc1146bfc3c9728dd4a7c",
-      "lifecycle.authority-names-space-host": "sha256:b81c9913616cd848635d0e16e42022640c533f0a92521107f223ffa37160e7b1",
+      "lifecycle.authority-names-space-host": "sha256:ee767bb18c0aad1b178dfb59bda60112194354fae2248065f9eeb9b40e10671d",
       "lifecycle.clear-records-empty-digest": "sha256:27b3dd464b5d7638ebc777db776303583ca5fcbfe6891016102b5cac36c23874",
       "lifecycle.create-caller-is-authority": "sha256:df97cd4e8c4d785c8d9ef4ba6c589cdd6a03337dfa12fa14e4fb8dde45596650",
       "lifecycle.empty-equals-missing": "sha256:85c04d68521949cb18ce8c059e2decad40ee01c6dfee56c9281d9706a12bdc30",
@@ -112,20 +112,20 @@
       "scope.read-self-own-repo-only": "sha256:7ada684f3f2fd04d8b23647b4cfb27979adfac60c6152e595e913312b385fd2f",
       "scope.wildcard-type-no-writes": "sha256:dd1120f096335ab0bb32f0e804610481552344b326ca839d2a0b42b125943c21",
       "writers.future-rev-rejected": "sha256:763ea08700e9c714c04e9c5dff7e9ed3ca1a92707f9007a86756f158bb33a445",
-      "writers.list-repos": "sha256:30fbffe280742ddaa74b465de9f6db49aa9d180903acef38afa09a243c5db28c",
-      "writers.list-repos-since-space-rev": "sha256:a5deecaf36dac172060a030ae2449f5c5298ebce8b487225ad98eb86c4457929",
-      "writers.notify-write-forwarded": "sha256:7d564bb78c5ae02eaf8addac28e9ff0978eefbdc5882d66381de54a5594507f0",
-      "writers.notify-write-sent": "sha256:785ee5ada001d42b69b7b25d69aa5fe7a59749cbad0be4ca4f94bc7f41f07c57",
-      "writers.register-expiry": "sha256:88d4714a71b6a1b1385b250895c435f03a40a6abd551c2eed13739e1194ecce2",
-      "writers.remove-writer": "sha256:75dba481684d45d82af4e047ddad9af85bba7e49720b42b651c10feb28fe1cf3",
-      "writers.removed-writer-retracked": "sha256:d28726d115a9534f620a60b12cf9a7dab460854d9bba0a5df936829cc87bf38e",
+      "writers.list-repos": "sha256:ec465c561d1a2c15415d859ad144da131360a18cf4f83f14df730f89af6e463d",
+      "writers.list-repos-since-space-rev": "sha256:c664a2de1d63f7f01ad0a4cec46231d9f311a07567ba121dc4a11fb5d04e5032",
+      "writers.notify-write-forwarded": "sha256:11b5143eeb0eb77a1ddabb423eb46d6c1287cc0a86f0193f1e4a95f993039c59",
+      "writers.notify-write-sent": "sha256:a97b19e2fc77b35cac5bf9f337aae8d3dcd49a4310401a83363daf957c9c5b90",
+      "writers.register-expiry": "sha256:bc7df47b55de21f20474faaf9cfea95731ab4be61b11ba63d893a6d6d6bba5c4",
+      "writers.remove-writer": "sha256:13eeb7dd1696f9f1a25bed9b578d0a0b18c7352d46c3ee1edd910f92c99a9660",
+      "writers.removed-writer-retracked": "sha256:6dfc2b23f603d0d7997deec1e32e2eaadcca047365e46acf1fa03002ae245f33",
       "writers.repos-resolve-to-host": "sha256:62e3c643c76e2da99295ab15e566b82cb8b8c0041a4df1944175d9161019dd57",
       "writers.stale-rev-ignored": "sha256:cea35da98a9f37116e2a641b9b18b283b1dbf8a5e864287a7e70f7e1183b33a0",
       "writers.unauthorized-write-rejected": "sha256:334b6f77de49cdea1982365ed96efdfb62c0b72f05a615ab00905715d83348cf",
       "xrpc.error.PolicyMismatch": "sha256:7715a5f8b3491f3d04623bd571194f36fe11608368e7a47f3e14958da6010722",
       "xrpc.error.RecordNotFound": "sha256:576c5561e5307bc4ed9bd2371fe863f36091294886cb4dc0d478c9c990180bb4",
       "xrpc.error.RepoNotFound": "sha256:f1fd533065112223c8e1b054f37eaee0f0ed3ae48f8a8b8fd2429974f81146be",
-      "xrpc.error.SpaceDeleted": "sha256:61cc2e3d37a36281666626021a8131cc33aaa066c4a475f8ca88c32342f9b831",
+      "xrpc.error.SpaceDeleted": "sha256:e6135d1cc2908ff62c985ea84d306cbedab12f426d4a9b8d57cc2e817af0b413",
       "xrpc.error.SpaceNotFound": "sha256:d5bf79582bbb7a957cd10f8450d553ca99788789017e7331c0f1c700283e2451",
       "xrpc.error.UnsupportedPolicy": "sha256:c8a43391ab029137a2cc043ee6f226971ea42a5749eaabf67675d17b16c04c4e"
     }
@@ -169,37 +169,37 @@
       "id": "cred.foreign-authority-accepted",
       "suite": "credentials",
       "status": "pass",
-      "ms": 219
+      "ms": 214
     },
     {
       "id": "cred.revocation-idempotent",
       "suite": "credentials",
       "status": "pass",
-      "ms": 116
+      "ms": 99
     },
     {
       "id": "cred.revoked-jti-rejected",
       "suite": "credentials",
       "status": "pass",
-      "ms": 91
+      "ms": 101
     },
     {
       "id": "deletion.credential-error",
       "suite": "deletion",
       "status": "pass",
-      "ms": 132
+      "ms": 136
     },
     {
       "id": "deletion.notify-retry",
       "suite": "deletion",
       "status": "pass",
-      "ms": 61428
+      "ms": 61259
     },
     {
       "id": "deletion.notify-space-deleted",
       "suite": "deletion",
       "status": "pass",
-      "ms": 615933
+      "ms": 615085
     },
     {
       "id": "digest.cid-drisl-plain",
@@ -211,25 +211,25 @@
       "id": "digest.cid-drisl-typed",
       "suite": "digest",
       "status": "pass",
-      "ms": 13
+      "ms": 15
     },
     {
       "id": "digest.covers-overwrite-and-delete",
       "suite": "digest",
       "status": "pass",
-      "ms": 15
+      "ms": 17
     },
     {
       "id": "digest.matches-record-set",
       "suite": "digest",
       "status": "pass",
-      "ms": 131
+      "ms": 160
     },
     {
       "id": "digest.multi-batch",
       "suite": "digest",
       "status": "pass",
-      "ms": 24
+      "ms": 23
     },
     {
       "id": "info.read-auth-status",
@@ -242,98 +242,98 @@
       "id": "info.unknown-method-status",
       "suite": "records",
       "status": "pass",
-      "ms": 2,
+      "ms": 1,
       "message": "an unknown method answered 404"
     },
     {
       "id": "lifecycle.authority-names-space-host",
       "suite": "lifecycle",
       "status": "pass",
-      "ms": 137
+      "ms": 124
     },
     {
       "id": "lifecycle.implicit-create",
       "suite": "lifecycle",
       "status": "pass",
-      "ms": 205
+      "ms": 186
     },
     {
       "id": "mac.commit-bound-to-repo",
       "suite": "mac",
       "status": "pass",
-      "ms": 14
+      "ms": 18
     },
     {
       "id": "mac.commit-header-present",
       "suite": "mac",
       "status": "pass",
-      "ms": 40
+      "ms": 38
     },
     {
       "id": "mac.commit-valid",
       "suite": "mac",
       "status": "pass",
-      "ms": 17
+      "ms": 18
     },
     {
       "id": "mac.kem-key-published",
       "suite": "mac",
       "status": "pass",
-      "ms": 115
+      "ms": 110
     },
     {
       "id": "mac.list-repo-ops-every-page",
       "suite": "mac",
       "status": "pass",
-      "ms": 35
+      "ms": 39
     },
     {
       "id": "mac.malformed-request-rejected",
       "suite": "mac",
       "status": "pass",
-      "ms": 44
+      "ms": 43
     },
     {
       "id": "mac.record-valid",
       "suite": "mac",
       "status": "pass",
-      "ms": 16
+      "ms": 23
     },
     {
       "id": "mac.vary-header",
       "suite": "mac",
       "status": "pass",
-      "ms": 17
+      "ms": 16
     },
     {
       "id": "oplog.commit-every-page",
       "suite": "oplog",
       "status": "pass",
-      "ms": 41
+      "ms": 30
     },
     {
       "id": "oplog.entry-shape",
       "suite": "oplog",
       "status": "pass",
-      "ms": 173
+      "ms": 150
     },
     {
       "id": "oplog.fold-matches-commit",
       "suite": "oplog",
       "status": "pass",
-      "ms": 37
+      "ms": 30
     },
     {
       "id": "oplog.pagination-batch-boundary",
       "suite": "oplog",
       "status": "pass",
-      "ms": 14
+      "ms": 13
     },
     {
       "id": "oplog.pagination-complete",
       "suite": "oplog",
       "status": "pass",
-      "ms": 44
+      "ms": 48
     },
     {
       "id": "oplog.since-exclusive",
@@ -345,31 +345,31 @@
       "id": "oplog.stale-values-omitted",
       "suite": "oplog",
       "status": "pass",
-      "ms": 43
+      "ms": 23
     },
     {
       "id": "policy.create-get-roundtrip",
       "suite": "policy",
       "status": "pass",
-      "ms": 115
+      "ms": 107
     },
     {
       "id": "policy.member-methods",
       "suite": "policy",
       "status": "pass",
-      "ms": 92
+      "ms": 84
     },
     {
       "id": "policy.put-member-upsert",
       "suite": "policy",
       "status": "pass",
-      "ms": 5
+      "ms": 4
     },
     {
       "id": "records.apply-writes-atomic",
       "suite": "records",
       "status": "pass",
-      "ms": 32
+      "ms": 33
     },
     {
       "id": "records.commit-bytes-encoding",
@@ -381,31 +381,31 @@
       "id": "records.commit-fields",
       "suite": "records",
       "status": "pass",
-      "ms": 119
+      "ms": 116
     },
     {
       "id": "records.commit-repo-space-match",
       "suite": "records",
       "status": "pass",
-      "ms": 4
+      "ms": 5
     },
     {
       "id": "records.crud-roundtrip",
       "suite": "records",
       "status": "pass",
-      "ms": 131
+      "ms": 137
     },
     {
       "id": "records.read-requires-auth",
       "suite": "records",
       "status": "pass",
-      "ms": 123
+      "ms": 111
     },
     {
       "id": "writers.list-repos",
       "suite": "writer-set",
       "status": "pass",
-      "ms": 140
+      "ms": 130
     },
     {
       "id": "writers.list-repos-since-space-rev",
@@ -417,37 +417,37 @@
       "id": "writers.notify-write-forwarded",
       "suite": "writer-set",
       "status": "pass",
-      "ms": 161
+      "ms": 156
     },
     {
       "id": "writers.notify-write-sent",
       "suite": "writer-set",
       "status": "pass",
-      "ms": 278
+      "ms": 256
     },
     {
       "id": "writers.register-expiry",
       "suite": "writer-set",
       "status": "pass",
-      "ms": 625885
+      "ms": 625049
     },
     {
       "id": "writers.remove-writer",
       "suite": "writer-set",
       "status": "pass",
-      "ms": 20
+      "ms": 25
     },
     {
       "id": "writers.removed-writer-retracked",
       "suite": "writer-set",
       "status": "pass",
-      "ms": 25
+      "ms": 31
     },
     {
       "id": "xrpc.error.SpaceDeleted",
       "suite": "deletion",
       "status": "pass",
-      "ms": 14
+      "ms": 17
     }
   ],
   "summary": {
@@ -459,8 +459,8 @@
         "should_pass": 0
       },
       "repo-host": {
-        "must_applicable": 19,
-        "must_pass": 19,
+        "must_applicable": 26,
+        "must_pass": 26,
         "should_applicable": 0,
         "should_pass": 0
       },
