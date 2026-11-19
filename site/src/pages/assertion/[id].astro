@@ -38,8 +38,8 @@ for (const r of a.revisions) {
     <dl class="facts">
       <div><dt>Suite</dt><dd>{a.suite}</dd></div>
       <div><dt>Level</dt><dd>{latestLevel === 'must' ? 'Required' : latestLevel === 'should' ? 'Recommended, scored separately' : 'Info only, never scored'}</dd></div>
-      <div><dt>Roles</dt><dd>{a.roles.map((r) => ROLE_LABEL[r] ?? r).join(', ')}</dd></div>
-      {a.profiles.length < 2 && <div><dt>Profile</dt><dd>{a.profiles.join(', ')} only</dd></div>}
+      <div><dt>Jobs</dt><dd>{a.roles.map((r) => ROLE_LABEL[r] ?? r).join(', ')}</dd></div>
+      {a.profiles.length < 2 && <div><dt>Kind of host</dt><dd>{a.profiles.join(', ')} only</dd></div>}
       {a.requires.length > 0 && <div><dt>Requires</dt><dd>{a.requires.map((r, i) => <>{i > 0 && ', '}<code>{r}</code></>)}</dd></div>}
       {a.areas.length > 0 && <div><dt>Our crypto it relies on</dt><dd>{a.areas.join(', ')}</dd></div>}
       {a.needs_slow && <div><dt>Timing</dt><dd>Waits for a credential to expire, so only full runs check all of it</dd></div>}

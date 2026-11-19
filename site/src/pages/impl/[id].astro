@@ -28,8 +28,8 @@ const order: Group[] = ['fail', 'deviation', 'provisional', 'error', 'pass', 'pe
     <p class="crumbs"><a href="/">Results</a> / {impl.name}</p>
     <h1>{impl.name}</h1>
     <dl class="facts">
-      <div><dt>Roles</dt><dd>{impl.roles.map((r) => ROLE_LABEL[r] ?? r).join(', ')}</dd></div>
-      <div><dt>Profile</dt><dd>{PROFILE_LABEL[impl.profile] ?? impl.profile}</dd></div>
+      <div><dt>Jobs</dt><dd>{impl.roles.map((r) => ROLE_LABEL[r] ?? r).join(', ')}</dd></div>
+      <div><dt>Kind of host</dt><dd>{PROFILE_LABEL[impl.profile] ?? impl.profile}</dd></div>
       <div><dt>Targets spec</dt><dd>{impl.spec_revisions.join(', ')}</dd></div>
       {(impl.homepage || impl.source) && (
         <div><dt>Project</dt><dd>
