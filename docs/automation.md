@@ -100,6 +100,14 @@ The workflows share these rules:
 - A target that no manifest's `image.dispatch_target` claims is skipped. So is an image an implementation already pins.
 - Nothing is opened or posted on another project's repository.
 
+### Re-runs by hand
+
+Nothing reruns on a schedule. A scenario is graded again only when its fingerprint changes, or by hand:
+- Anyone can ask with the "Request a re-run" issue template (`.github/ISSUE_TEMPLATE/rerun.yml`): the implementation, the run, and why.
+- A maintainer then runs `nightly.yml` with `workflow_dispatch`, `force: true` and `implementations: <id>`.
+
+Issue comments trigger nothing.
+
 ### The scripts they call
 
 Each script is in `cli/ci/` and takes `PUBLISH_DRY_RUN=1`, which does the work locally and prints the push, PR or issue instead of making it.

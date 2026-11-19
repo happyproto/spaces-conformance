@@ -1,0 +1,40 @@
+name: Request a re-run
+description: Ask for an implementation to be graded again with the same inputs, for example after a suspected flake.
+title: "Re-run: <implementation>"
+labels: [rerun]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The nightly run grades an implementation again only when something it depends on changes: its image, the suite, or the spec revision. To have the same inputs graded again, ask here. A maintainer of this repository starts the run by hand.
+
+        If you think a result is wrong rather than flaky, open a regular issue instead, so it can be checked as a possible harness bug.
+  - type: input
+    id: implementation
+    attributes:
+      label: Implementation
+      description: The id from the results site, e.g. zds or pdsjs.
+    validations:
+      required: true
+  - type: input
+    id: run
+    attributes:
+      label: Run
+      description: The run id or the link to its CI run, from the implementation's page.
+    validations:
+      required: true
+  - type: dropdown
+    id: why
+    attributes:
+      label: Why
+      options:
+        - Suspected flake
+        - Our infrastructure or a dependency had an outage during the run
+        - Something else (below)
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Which assertions look off, and anything else that helps.
