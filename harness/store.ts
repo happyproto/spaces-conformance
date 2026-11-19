@@ -33,6 +33,8 @@ export interface RunEntry {
   suite_commit: string;
   slow: boolean;
   ci_url?: string;
+  /** The scenario fingerprint (harness/fingerprint.ts), when the run recorded one. */
+  fingerprint?: string;
   /** Raw statuses, counted. Display states are derived at read time, never stored. */
   counts: { pass: number; fail: number; error: number; skip: number };
 }
@@ -85,6 +87,7 @@ function entry(path: string, f: ResultsFile): RunEntry {
     suite_commit: f.suite.commit,
     slow: f.run.slow === true,
     ...(f.run.ci_url ? { ci_url: f.run.ci_url } : {}),
+    ...(f.run.fingerprint ? { fingerprint: f.run.fingerprint.digest } : {}),
     counts,
   };
 }

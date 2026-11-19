@@ -26,6 +26,7 @@ export interface ResultsFile {
     logs_artifact?: string;
     previous_attempts?: { id: string; failed: string[]; errored: string[] }[];
     infrastructure?: string;
+    fingerprint?: { digest: string; code: string; images: Record<string, string>; revision: { key: string; proposal: string; lexicons: string }; slow: boolean };
   };
   suite: { commit: string; assertions_digest: string; assertion_digests?: Record<string, string> };
   spec: { proposal: string; revision: string; commit: string; lexicons: string };

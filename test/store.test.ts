@@ -89,6 +89,16 @@ describe('the results store (design ch. 7.2)', () => {
     expect(checkStore(dir).map((p) => p.message)).toContain('index file for an implementation with no runs');
   });
 
+  it('carries a run\'s fingerprint into its index entry', () => {
+    const dir = store();
+    const f = zds();
+    f.run.fingerprint = { digest: `sha256:${'a'.repeat(64)}`, code: `sha256:${'b'.repeat(64)}`, images: { zds: f.implementation.image }, revision: { key: '2026-11-12', proposal: 'x', lexicons: 'y' }, slow: true };
+    expect(addRuns(dir, [{ name: 'zds', data: f }], cat).problems).toEqual([]);
+    const idx: ImplIndex = JSON.parse(readFileSync(join(dir, 'index', 'zds.json'), 'utf8'));
+    expect(idx.runs[0].fingerprint).toBe(`sha256:${'a'.repeat(64)}`);
+    expect(checkStore(dir)).toEqual([]);
+  });
+
   it('is not a store without runs/', () => {
     expect(checkStore(mkdtempSync(join(tmpdir(), 'nostore-')))[0].message).toMatch(/not a results store/);
   });

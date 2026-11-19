@@ -99,6 +99,57 @@
         "infrastructure": {
           "description": "Set when the stack or bootstrap failed on an earlier attempt.",
           "type": "string"
+        },
+        "fingerprint": {
+          "description": "The scenario's inputs, hashed (harness/fingerprint.ts). The nightly run skips a scenario whose fingerprint the store already has. Files from before it don't have it.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "digest",
+            "code",
+            "images",
+            "revision",
+            "slow"
+          ],
+          "properties": {
+            "digest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "code": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "images": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "revision": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "key",
+                "proposal",
+                "lexicons"
+              ],
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "proposal": {
+                  "type": "string"
+                },
+                "lexicons": {
+                  "type": "string"
+                }
+              }
+            },
+            "slow": {
+              "type": "boolean"
+            }
+          }
         }
       }
     },
@@ -258,7 +309,9 @@
     "deviations_applied": {
       "description": "The entries of the list in force for the assertions that ran. Files from before `expect` existed have entries without it.",
       "type": "array",
-      "items": { "$ref": "deviations.schema.json#/$defs/entry" }
+      "items": {
+        "$ref": "deviations.schema.json#/$defs/entry"
+      }
     },
     "results": {
       "type": "array",
