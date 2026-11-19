@@ -1,0 +1,113 @@
+name: Nightly
+
+# Every implementation at its pin, with --slow (design ch. 6.2). The results
+# go to the `results` branch as kind `nightly`, and any deviation a run shows
+# as "fixed, still listed" gets a prune PR (cli/prune.ts). Nothing here fails
+# because an implementation does: an implementation's own CI is the only
+# place its results gate anything (design ch. 4.4 rule 6).
+#
+# Pairing runs (space host A with repo host B) come later: the harness has no
+# pairing runner yet.
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  list:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      implementations: ${{ steps.list.outputs.implementations }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+
+      - run: bun install --frozen-lockfile
+
+      - id: list
+        run: echo "implementations=$(node cli/ci/targets.ts matrix)" >> "$GITHUB_OUTPUT"
+
+  run:
+    needs: list
+    strategy:
+      fail-fast: false
+      matrix:
+        implementation: ${{ fromJSON(needs.list.outputs.implementations) }}
+    uses: ./.github/workflows/run.yml
+    with:
+      implementation: ${{ matrix.implementation }}
+      kind: nightly
+      slow: true
+      suite_ref: ${{ github.sha }}
+
+  publish:
+    needs: run
+    # Publish whatever finished: one implementation's infrastructure failure
+    # mustn't hold back the others' results.
+    if: always() && needs.run.result != 'cancelled'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    concurrency:
+      group: results-writer
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ secrets.CONFORMANCE_BOT_TOKEN || github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.CONFORMANCE_BOT_TOKEN || github.token }}
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+
+      - run: bun install --frozen-lockfile
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/spec
+          key: spec-${{ hashFiles('spec/revisions.json') }}
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: results-*-${{ github.run_id }}-*
+          path: incoming
+          merge-multiple: true
+
+      - name: Publish the results
+        id: publish
+        run: |
+          set -eu
+          set -- incoming/*.json
+          if [ ! -e "$1" ]; then
+            echo "::warning::no implementation produced results"
+            exit 0
+          fi
+          echo "any=true" >> "$GITHUB_OUTPUT"
+          cli/ci/publish-results.sh "nightly: $(date -u +%Y-%m-%d), $# run(s)" "$@"
+
+      - name: Open a prune PR
+        if: steps.publish.outputs.any == 'true'
+        run: cli/ci/open-prune-pr.sh incoming/*.json

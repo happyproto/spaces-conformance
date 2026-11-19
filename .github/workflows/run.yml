@@ -1,0 +1,140 @@
+name: Run
+
+# Reusable: one implementation's suites on one image (design ch. 6.2). It runs
+# the stack and the harness, and uploads the results file and the container
+# logs as artifacts. It commits nothing and references no secrets, so it's
+# safe to call for an image built from a fork's pull request (design ch. 6.4).
+#
+# Outputs:
+#   outcome   results (a results file exists) or infrastructure (none: the
+#             stack, bootstrap or harness failed twice)
+#   artifact  the results artifact's name, when outcome is results
+#
+# A caller outside this repository (HappyView's conformance.yml) must pass
+# suite_ref, the commit of this repository to run, because checkout would
+# otherwise take the caller's own repository.
+
+permissions:
+  contents: read
+
+on:
+  workflow_call:
+    inputs:
+      implementation:
+        description: Implementation id (implementations/<id>/)
+        type: string
+        required: true
+      image:
+        description: Image by digest. Empty runs the pin.
+        type: string
+        default: ''
+      revision:
+        description: Spec revision to grade. Empty takes the manifest's first.
+        type: string
+        default: ''
+      suites:
+        description: Comma-separated suites. Empty runs all.
+        type: string
+        default: ''
+      slow:
+        description: Also run the checks that wait out a host-issued credential
+        type: boolean
+        default: true
+      kind:
+        description: nightly, candidate, release or local
+        type: string
+        default: local
+      suite_ref:
+        description: Commit of happyproto/spaces-conformance to run. Empty takes this workflow's own.
+        type: string
+        default: ''
+    outputs:
+      outcome:
+        value: ${{ jobs.run.outputs.outcome }}
+      artifact:
+        value: ${{ jobs.run.outputs.artifact }}
+
+jobs:
+  run:
+    name: ${{ inputs.implementation }}
+    # GitHub's ephemeral runner, never a persistent self-hosted one: this can
+    # run images built from fork pull requests. amd64, which the reference needs.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    outputs:
+      outcome: ${{ steps.run.outputs.outcome }}
+      artifact: ${{ steps.run.outputs.artifact }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: happyproto/spaces-conformance
+          ref: ${{ inputs.suite_ref || github.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+
+      - run: bun install --frozen-lockfile
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/spec
+          key: spec-${{ hashFiles('spec/revisions.json') }}
+
+      # Inputs reach the script through env, never interpolated into it.
+      - name: Run the suites
+        id: run
+        env:
+          IMPL: ${{ inputs.implementation }}
+          IMAGE: ${{ inputs.image }}
+          REVISION: ${{ inputs.revision }}
+          SUITES: ${{ inputs.suites }}
+          SLOW: ${{ inputs.slow }}
+          KIND: ${{ inputs.kind }}
+          CONFORMANCE_CI_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          CONFORMANCE_LOGS_ARTIFACT: logs-${{ inputs.implementation }}-${{ github.run_id }}-${{ github.run_attempt }}
+          ARTIFACT: results-${{ inputs.implementation }}-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -u
+          case "$IMPL" in *[!a-z0-9-]*|'') echo "::error::bad implementation id"; exit 2 ;; esac
+          set -- "$IMPL" --kind "$KIND" --emit results-local/final-path --logs results-local/logs
+          [ -n "$IMAGE" ] && set -- "$@" --image "$IMAGE"
+          [ -n "$REVISION" ] && set -- "$@" --revision "$REVISION"
+          [ -n "$SUITES" ] && set -- "$@" --suites "$SUITES"
+          [ "$SLOW" = true ] && set -- "$@" --slow
+          status=0
+          node cli/run.ts "$@" || status=$?
+          # 0 and 1 are results (1: the verdict found something unexpected,
+          # which the caller judges). 3 is infrastructure, anything else a bug.
+          if [ "$status" -le 1 ] && [ -s results-local/final-path ]; then
+            mkdir -p out
+            cp "$(cat results-local/final-path)" out/
+            echo "outcome=results" >> "$GITHUB_OUTPUT"
+            echo "artifact=$ARTIFACT" >> "$GITHUB_OUTPUT"
+            node cli/report.ts "out/$(basename "$(cat results-local/final-path)")" --body summary >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "outcome=infrastructure" >> "$GITHUB_OUTPUT"
+            echo "::error::no results: cli/run.ts exited $status"
+            exit 1
+          fi
+
+      - name: Upload results
+        if: steps.run.outputs.outcome == 'results'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ steps.run.outputs.artifact }}
+          path: out/*.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Upload container logs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: logs-${{ inputs.implementation }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: results-local/logs/
+          if-no-files-found: ignore
+          retention-days: 90

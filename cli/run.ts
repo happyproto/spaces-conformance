@@ -7,6 +7,7 @@
 //   node cli/run.ts happyview --revision 2026-11-12   grade another revision it claims
 //   node cli/run.ts zds --slow                also run the checks that wait out a host-issued credential
 //   node cli/run.ts zds --image ghcr.io/happyproto/pds-test/zds@sha256:...   run a candidate instead of the pin
+//   node cli/run.ts zds --logs results-local/logs --emit results-local/final   what CI adds
 //
 // It brings up base + the implementation's fragment (+ its partner's), runs
 // the implementation's bootstrap.sh if it has one, runs the suites inside the
@@ -47,6 +48,8 @@ const { values, positionals } = parseArgs({
     image: { type: 'string' },
     // CI: a file to write the final results path to, so a workflow step needn't parse the log.
     emit: { type: 'string' },
+    // CI: a folder for each attempt's container logs, saved before the stack comes down.
+    logs: { type: 'string' },
   },
 });
 const impl = positionals[0];
@@ -103,6 +106,8 @@ const dc = (args: string[], opts: { input?: string; stdio?: 'inherit' | 'pipe' }
     cwd: ROOT,
     input: opts.input,
     stdio: opts.input !== undefined ? ['pipe', opts.stdio ?? 'inherit', 'inherit'] : (opts.stdio ?? 'inherit'),
+    // Container logs from a long run can pass spawnSync's 1 MiB default.
+    maxBuffer: 1 << 28,
     encoding: 'utf8',
   });
   return r;
@@ -208,6 +213,11 @@ function attempt(n: number): Outcome {
     // Vitest exits 1 when any assertion fails: that's a result. Anything else is the harness breaking.
     if (v.status !== 0 && v.status !== 1) return { kind: 'infrastructure', runId, step: `harness: vitest exited ${v.status}` };
   } finally {
+    if (values.logs) {
+      mkdirSync(values.logs, { recursive: true });
+      const l = dc(['logs', '--no-color', '--timestamps'], { stdio: 'pipe' });
+      writeFileSync(join(values.logs, `${runId}.log`), `${l.stdout ?? ''}${l.stderr ?? ''}`);
+    }
     if (!values.keep) dc(['down', '-v'], { stdio: 'pipe' });
   }
   const out = join(ROOT, 'results-local', `${runId}.json`);
