@@ -1,0 +1,30 @@
+name: Add a PDS
+description: Ask for a PDS, or another spaces implementation, to be added to the conformance results.
+title: "Add: <implementation>"
+labels: [add-implementation]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Implementation name
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Repository or homepage
+      description: Where its source, or its project page, lives.
+    validations:
+      required: true
+  - type: textarea
+    id: run
+    attributes:
+      label: Image, or how to run it
+      description: A container image (ideally by digest), or the steps to build and start it. Say which spec revision it targets, if you know.
+    validations:
+      required: true
+  - type: input
+    id: contact
+    attributes:
+      label: Contact
+      description: Who to talk to about it, such as a maintainer's handle. Leave it empty if you're not the maintainer.
