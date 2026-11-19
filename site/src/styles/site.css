@@ -37,6 +37,9 @@ html {
 body {
   margin: 0;
   caret-color: var(--hp-color-accent);
+  /* The frame's "+" marks reach half a mark past the rails; at full width
+     that's past the viewport, and the page mustn't scroll sideways for it. */
+  overflow-x: clip;
 }
 
 ::selection {
@@ -404,48 +407,50 @@ section + section {
 
 .grid {
   inline-size: 100%;
-  min-inline-size: 60rem;
   border-collapse: separate;
   border-spacing: 0;
   font-size: var(--hp-text-sm);
+  /* Columns share the room, but never shrink below a readable cell. */
+  table-layout: fixed;
+  min-inline-size: calc(9rem + var(--impls) * 8.5rem);
 }
 
 .grid th,
 .grid td {
-  padding: var(--hp-space-3) var(--hp-space-2);
+  padding: var(--hp-space-3) var(--hp-space-3);
   border-block-end: 1px solid var(--hp-color-border);
   text-align: start;
   vertical-align: top;
 }
 
 .grid thead th {
-  padding-block: var(--hp-space-2);
-  color: var(--hp-color-fg-muted);
-  font-size: var(--hp-text-xs);
-  font-weight: var(--hp-weight-medium);
   vertical-align: bottom;
-  white-space: nowrap;
-}
-
-.grid thead th a {
-  color: inherit;
-  text-decoration: none;
 }
 
 .grid tbody tr:last-child > * {
   border-block-end: 0;
 }
 
-/* The implementation column stays put while the suites scroll under it. */
-.grid .impl-col {
+/* The suite column stays put while the implementations scroll under it. */
+.grid .suite-col {
   position: sticky;
   inset-inline-start: 0;
   z-index: 1;
-  inline-size: 12.5rem;
-  min-inline-size: 12.5rem;
-  padding-inline: var(--hp-space-4) var(--hp-space-3);
+  inline-size: 9rem;
   background: var(--hp-color-surface-raised);
   border-inline-end: 1px solid var(--hp-color-border);
+  color: var(--hp-color-fg);
+  font-weight: var(--hp-weight-medium);
+  white-space: nowrap;
+}
+
+.grid thead .suite-col {
+  color: var(--hp-color-fg-muted);
+  font-size: var(--hp-text-xs);
+}
+
+.grid .impl-head {
+  padding-block: var(--hp-space-4) var(--hp-space-3);
 }
 
 .impl-name {
@@ -453,8 +458,10 @@ section + section {
   color: var(--hp-color-fg);
   font-size: var(--hp-text-base);
   font-weight: var(--hp-weight-semibold);
+  line-height: var(--hp-leading-snug);
   text-decoration: none;
   letter-spacing: var(--hp-tracking-tight);
+  overflow-wrap: anywhere;
 }
 
 .impl-name:hover {
@@ -462,12 +469,12 @@ section + section {
 }
 
 .impl-sub {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--hp-space-1) var(--hp-space-2);
+  display: grid;
   margin-block-start: var(--hp-space-1);
   color: var(--hp-color-fg-muted);
   font-size: var(--hp-text-xs);
+  font-weight: var(--hp-weight-regular);
+  font-variant-numeric: var(--hp-font-numeric);
 }
 
 .cell {
@@ -534,6 +541,7 @@ a.cell:hover {
 /* ---- The legend ----------------------------------------------------------- */
 
 .legend {
+  align-items: start;
   display: flex;
   flex-wrap: wrap;
   gap: var(--hp-space-3) var(--hp-space-6);
@@ -925,9 +933,8 @@ a.cell:hover {
   .home-name {
     font-size: var(--hp-text-xs);
   }
-  .grid .impl-col {
-    inline-size: 9.5rem;
-    min-inline-size: 9.5rem;
+  .grid .suite-col {
+    inline-size: 7rem;
   }
   .cause {
     padding: var(--hp-space-4);

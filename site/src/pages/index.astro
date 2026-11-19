@@ -36,25 +36,27 @@ const suiteCount = data.suites.length
       </header>
       <div class="hp-window-body flush">
         <div class="grid-scroll" role="region" aria-labelledby="latest" tabindex="0">
-          <table class="grid">
-            <caption class="sr-only">Tests passed, by implementation and suite</caption>
+          <table class="grid" style={`--impls: ${rows.length}`}>
+            <caption class="sr-only">Tests passed, by suite and implementation</caption>
             <thead>
               <tr>
-                <th scope="col" class="impl-col">Implementation</th>
-                {data.suites.map((s) => <th scope="col">{s}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(({ impl, revision, run }) => (
-                <tr>
-                  <th scope="row" class="impl-col">
+                <th scope="col" class="suite-col">Suite</th>
+                {rows.map(({ impl, revision, run }) => (
+                  <th scope="col" class="impl-head">
                     <a class="impl-name" href={implHref(impl.id)}>{impl.name}</a>
                     <span class="impl-sub">
                       <span>Spec {revision}</span>
-                      <span>{KIND_LABEL[run.kind]}, {day(run.started_at)}</span>
+                      <span>{day(run.started_at)}</span>
                     </span>
                   </th>
-                  {data.suites.map((s) => {
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {data.suites.map((s) => (
+                <tr>
+                  <th scope="row" class="suite-col">{s}</th>
+                  {rows.map(({ impl, run }) => {
                     const t = run.bySuite[s]
                     const n = graded(t)
                     const waiting = t.pending + t.untested
