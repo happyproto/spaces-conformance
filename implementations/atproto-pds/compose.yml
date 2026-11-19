@@ -36,7 +36,7 @@ services:
   # PDS's network namespace and reports its health endpoint, so `up --wait`
   # waits for a PDS that can serve.
   atproto-pds-ready:
-    image: curlimages/curl:8.11.1
+    image: ${CURL_IMAGE:?set from pins/images.env}
     network_mode: service:atproto-pds
     init: true
     entrypoint: ["sleep", "infinity"]

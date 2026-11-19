@@ -12,7 +12,7 @@
 
 services:
   postgres:
-    image: postgres:17
+    image: ${POSTGRES_IMAGE:?set from pins/images.env}
     environment:
       POSTGRES_USER: conf
       POSTGRES_PASSWORD: conf
@@ -37,7 +37,7 @@ services:
         condition: service_healthy
 
   caddy:
-    image: caddy:2-alpine
+    image: ${CADDY_IMAGE:?set from pins/images.env}
     volumes:
       - ./base/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -57,6 +57,8 @@ services:
     build:
       context: ..
       dockerfile: implementations/base/harness.Dockerfile
+      args:
+        HARNESS_BASE_IMAGE: ${HARNESS_BASE_IMAGE:?set from pins/images.env}
     image: spaces-conformance-harness:local
     command: ["sleep", "infinity"]
     init: true

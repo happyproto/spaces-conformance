@@ -29,6 +29,7 @@ import { parseArgs } from 'node:util';
 import { loadCatalogue } from '../harness/catalogue.ts';
 import { loadCheckedDeviations } from '../harness/deviations.ts';
 import { loadManifest } from '../harness/manifest.ts';
+import { scenarioFingerprint } from '../harness/fingerprint.ts';
 import { formatProblem } from '../harness/problems.ts';
 import { validateResults } from '../harness/results.ts';
 import { loadRevisions, USER_AGENT } from '../harness/spec.ts';
@@ -173,6 +174,11 @@ if (deviations) {
   }
 }
 
+// What this run's raw results depend on (harness/fingerprint.ts). A run
+// narrowed with --suites isn't the whole scenario, so it records none.
+const fp = values.suites ? undefined : scenarioFingerprint(impl, { image: values.image, revision, slow: values.slow! });
+if (fp) console.log(`fingerprint: ${fp.digest}`);
+
 type Outcome =
   | { kind: 'results'; runId: string; out: string; file: any }
   | { kind: 'infrastructure'; runId: string; step: string };
@@ -206,6 +212,7 @@ function attempt(n: number): Outcome {
       ...(setupMode ? { CONFORMANCE_SPACES_MODE: setupMode } : {}),
       ...(deviations ? { CONFORMANCE_DEVIATIONS: `/suite/${deviations}` } : {}),
       ...(process.env.CONFORMANCE_CI_URL ? { CONFORMANCE_CI_URL: process.env.CONFORMANCE_CI_URL } : {}),
+      ...(fp ? { CONFORMANCE_FINGERPRINT: JSON.stringify(fp) } : {}),
       ...(process.env.CONFORMANCE_LOGS_ARTIFACT ? { CONFORMANCE_LOGS_ARTIFACT: process.env.CONFORMANCE_LOGS_ARTIFACT } : {}),
     };
     const suites = values.suites ? values.suites.split(',').map((x) => `suites/${x}`) : [];

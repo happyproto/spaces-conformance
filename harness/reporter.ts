@@ -150,6 +150,7 @@ export function assemble(env: NodeJS.ProcessEnv, setupMode: SetupMode, raw: RawR
       slow: env.CONFORMANCE_SLOW === '1',
       ...(env.CONFORMANCE_CI_URL ? { ci_url: env.CONFORMANCE_CI_URL } : {}),
       ...(env.CONFORMANCE_LOGS_ARTIFACT ? { logs_artifact: env.CONFORMANCE_LOGS_ARTIFACT } : {}),
+      ...(env.CONFORMANCE_FINGERPRINT ? { fingerprint: JSON.parse(env.CONFORMANCE_FINGERPRINT) } : {}),
     },
     suite: {
       commit: env.SUITE_COMMIT ?? '0000000',

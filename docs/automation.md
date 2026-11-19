@@ -27,6 +27,21 @@ The rules:
 - `check` validates every stored run against the schema only. A row retired from the catalogue later doesn't break the history it was graded in.
 - `check` fails when a run sits at the wrong path, or when the index doesn't equal what `runs/` rebuilds to.
 
+## Scenario fingerprints
+
+The nightly run grades only scenarios whose inputs changed. A scenario is one implementation graded at one revision, with `--slow`. `harness/fingerprint.ts` hashes everything that can change its raw results:
+
+| Part | What |
+|---|---|
+| `images` | Every image in the stack, by digest: the implementation's (a candidate's replaces the pin's), its partner's, and the helpers: PLC, Postgres, Caddy, the curl sidecar and the harness container's base. Every one is pinned in `pins/images.env`, so nothing moves under a tag between runs. |
+| `revision` | The revision key, and its proposal and lexicon commits. |
+| `slow` | Whether the slow checks ran. |
+| `code` | The files a result can depend on: `harness/`, `suites/`, `spec/assertions.yaml`, `spec/revisions.json`, that revision's lexicons, `fixtures/`, the base stack, the implementation's folder and its partner's, `package.json`, `bun.lock` and `vitest.suite.config.ts`. |
+
+Left out, because they change how a result is shown and never the result: deviation lists, `vectors/` (provisional status), `evidence/`, docs, the site and CI files.
+
+`cli/run.ts` records the fingerprint as `run.fingerprint` in the results file, except for a run narrowed with `--suites`, which isn't the whole scenario. The store copies its digest into each index entry. A stored run with the same digest and no `error` result means the scenario is already graded.
+
 ## What a run decides
 
 ```sh
@@ -77,7 +92,7 @@ It finds entries that a run shows as "fixed, still listed" and, with `--write`, 
 |---|---|---|
 | `run.yml` | `workflow_call` | One implementation on one image. It uploads the results file and the container logs as artifacts. It commits nothing, holds no secrets and runs on GitHub's ephemeral runner, so it is safe to call for an image built from a fork's pull request. |
 | `candidate.yml` | `repository_dispatch` (`pds-test-image`, `happyview-image`), `workflow_dispatch` | Runs a new image as a candidate and publishes the result. Then it opens a pin PR, opens or updates the implementation's issue, or does neither on an error. |
-| `nightly.yml` | daily at 04:17 UTC, `workflow_dispatch` | Runs every implementation at its pin with `--slow`, publishes, then opens a prune PR if any entry is fixed. |
+| `nightly.yml` | daily at 04:17 UTC, `workflow_dispatch` (`force`, `implementations`) | Runs each implementation whose scenario fingerprint changed, at its pin with `--slow`, publishes, then opens a prune PR if any entry is fixed. `force` reruns everything given. |
 
 The workflows share these rules:
 - Only `publish` jobs write. Each runs under the `results-writer` concurrency group, so one job writes to the `results` branch at a time.
@@ -85,12 +100,21 @@ The workflows share these rules:
 - A target that no manifest's `image.dispatch_target` claims is skipped. So is an image an implementation already pins.
 - Nothing is opened or posted on another project's repository.
 
+### Re-runs by hand
+
+Nothing reruns on a schedule. A scenario is graded again only when its fingerprint changes, or by hand:
+- Anyone can ask with the "Request a re-run" issue template (`.github/ISSUE_TEMPLATE/rerun.yml`): the implementation, the run, and why.
+- A maintainer then runs `nightly.yml` with `workflow_dispatch`, `force: true` and `implementations: <id>`.
+
+Issue comments trigger nothing.
+
 ### The scripts they call
 
 Each script is in `cli/ci/` and takes `PUBLISH_DRY_RUN=1`, which does the work locally and prints the push, PR or issue instead of making it.
 
 | Script | Does |
 |---|---|
+| `plan.ts` | The nightly matrix: each implementation whose fingerprint has no stored run without an error. With no `results` branch yet, everything runs. Its summary says what's unchanged and since when. |
 | `targets.ts` | The implementation list for a matrix, the implementation a dispatch target names, and an implementation's current pin. |
 | `publish-results.sh` | Checks the `results` branch out into `.store/` (creating it as an orphan the first time), runs `store.ts add` and `check`, commits and pushes. It retries a push that lost a race. |
 | `open-pin-pr.sh` | `pin/<impl>-<digest12>`: runs `cli/pin.ts`, runs `bun run validate`, then opens the PR. Does nothing while one from that branch is open. |
