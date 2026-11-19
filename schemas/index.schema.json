@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/happyproto/spaces-conformance/schemas/index.schema.json",
+  "title": "Results store index",
+  "description": "index/latest.json or index/<impl>.json on the results branch (design ch. 7.2). Derived from runs/ by harness/store.ts; never edited by hand.",
+  "oneOf": [{ "$ref": "#/$defs/latest" }, { "$ref": "#/$defs/implementation" }],
+  "$defs": {
+    "pointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run", "path"],
+      "properties": {
+        "run": { "type": "string" },
+        "path": { "type": "string", "pattern": "^runs/[a-z0-9-]+/[0-9]{4}/[0-9]{2}/[^/]+\\.json$" }
+      }
+    },
+    "byRevision": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "propertyNames": { "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+        "additionalProperties": { "$ref": "#/$defs/pointer" }
+      }
+    },
+    "latest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "updated_at", "implementations", "candidates"],
+      "properties": {
+        "schema": { "const": 1 },
+        "updated_at": { "type": ["string", "null"], "format": "date-time" },
+        "implementations": { "$ref": "#/$defs/byRevision" },
+        "candidates": { "$ref": "#/$defs/byRevision" }
+      }
+    },
+    "implementation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "implementation", "runs"],
+      "properties": {
+        "schema": { "const": 1 },
+        "implementation": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "runs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "path", "kind", "started_at", "finished_at", "revision", "image", "suite_commit", "slow", "counts"],
+            "properties": {
+              "id": { "type": "string" },
+              "path": { "type": "string" },
+              "kind": { "enum": ["nightly", "candidate", "release", "local"] },
+              "started_at": { "type": "string", "format": "date-time" },
+              "finished_at": { "type": "string", "format": "date-time" },
+              "revision": { "type": "string" },
+              "image": { "type": "string" },
+              "source_revision": { "type": "string" },
+              "suite_commit": { "type": "string" },
+              "slow": { "type": "boolean" },
+              "ci_url": { "type": "string", "format": "uri" },
+              "counts": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["pass", "fail", "error", "skip"],
+                "properties": {
+                  "pass": { "type": "integer", "minimum": 0 },
+                  "fail": { "type": "integer", "minimum": 0 },
+                  "error": { "type": "integer", "minimum": 0 },
+                  "skip": { "type": "integer", "minimum": 0 }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -6,6 +6,7 @@
 //   node cli/run.ts zds --setup-mode oct29    space creation through Oct 29 createSpace
 //   node cli/run.ts happyview --revision 2026-11-12   grade another revision it claims
 //   node cli/run.ts zds --slow                also run the checks that wait out a host-issued credential
+//   node cli/run.ts zds --image ghcr.io/happyproto/pds-test/zds@sha256:...   run a candidate instead of the pin
 //
 // It brings up base + the implementation's fragment (+ its partner's), runs
 // the implementation's bootstrap.sh if it has one, runs the suites inside the
@@ -43,11 +44,18 @@ const { values, positionals } = parseArgs({
     'setup-mode': { type: 'string' },
     revision: { type: 'string' },
     slow: { type: 'boolean', default: false },
+    image: { type: 'string' },
+    // CI: a file to write the final results path to, so a workflow step needn't parse the log.
+    emit: { type: 'string' },
   },
 });
 const impl = positionals[0];
 if (!impl) {
-  console.error('usage: node cli/run.ts <implementation> [--keep] [--suites a,b] [--deviations file] [--setup-mode oct29|simplespace|auto] [--revision key] [--slow] [--kind local]');
+  console.error('usage: node cli/run.ts <implementation> [--keep] [--suites a,b] [--deviations file] [--setup-mode oct29|simplespace|auto] [--revision key] [--slow] [--kind local] [--image repo@sha256:...]');
+  process.exit(2);
+}
+if (!['nightly', 'candidate', 'release', 'local'].includes(values.kind!)) {
+  console.error(`--kind must be nightly, candidate, release or local, not ${values.kind}`);
   process.exit(2);
 }
 const manifest = loadManifest(join(ROOT, 'implementations', impl, 'manifest.yaml'));
@@ -73,6 +81,19 @@ const pins = Object.fromEntries(
     .filter((m): m is RegExpExecArray => !!m)
     .map((m) => [m[1], m[2]]),
 );
+
+// A candidate (design ch. 6.2): the implementation's own image by digest,
+// from its manifest's repository. Compose reads the pin variable from the
+// environment before --env-file, so only this run sees the override.
+if (values.image) {
+  const repo = manifest.image.repository.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (!new RegExp(`^${repo}@sha256:[0-9a-f]{64}$`).test(values.image)) {
+    console.error(`--image must be ${manifest.image.repository}@sha256:<64 hex>, not ${values.image}`);
+    process.exit(2);
+  }
+  pins[manifest.image.pin] = values.image;
+  process.env[manifest.image.pin] = values.image;
+}
 
 const ids = [impl, ...(manifest.accounts.partner ? [manifest.accounts.partner] : [])];
 const files = ['implementations/base.compose.yml', ...ids.map((id) => `implementations/${id}/compose.yml`)];
@@ -180,6 +201,7 @@ function attempt(n: number): Outcome {
       ...(setupMode ? { CONFORMANCE_SPACES_MODE: setupMode } : {}),
       ...(deviations ? { CONFORMANCE_DEVIATIONS: `/suite/${deviations}` } : {}),
       ...(process.env.CONFORMANCE_CI_URL ? { CONFORMANCE_CI_URL: process.env.CONFORMANCE_CI_URL } : {}),
+      ...(process.env.CONFORMANCE_LOGS_ARTIFACT ? { CONFORMANCE_LOGS_ARTIFACT: process.env.CONFORMANCE_LOGS_ARTIFACT } : {}),
     };
     const suites = values.suites ? values.suites.split(',').map((x) => `suites/${x}`) : [];
     const v = dc(['exec', '-T', ...Object.entries(env).flatMap(([k, val]) => ['-e', `${k}=${val}`]), 'harness', 'node_modules/.bin/vitest', 'run', '--config', 'vitest.suite.config.ts', ...suites]);
@@ -233,5 +255,6 @@ if (final !== first) {
   writeFileSync(final.out, `${JSON.stringify(f, null, 2)}\n`);
 }
 console.log(`\nresults: ${final.out}`);
+if (values.emit) writeFileSync(values.emit, `${final.out}\n`);
 const v = spawnSync(process.execPath, [join(ROOT, 'cli', 'verdict.ts'), final.out, ...(deviations ? ['--deviations', deviations] : [])], { stdio: 'inherit' });
 process.exit(v.status ?? 1);

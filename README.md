@@ -17,6 +17,8 @@ An over-the-wire conformance suite for atproto spaces ([Proposal 0016](https://g
 | `pins/images.env` | Image digests. They change only by pull request. |
 | `cli/validate.ts` | Validates every data file. |
 | `cli/run.ts`, `cli/verdict.ts` | The stack runner and the verdict. |
+| `cli/store.ts` | The results store: the `results` branch's `runs/` and `index/` (`docs/automation.md`). |
+| `cli/report.ts`, `cli/pin.ts`, `cli/prune.ts` | What CI does with a run: the pin-or-issue decision and its text, a pin bump, and pruning fixed deviations. |
 | `suites/` | The tests, one `assertion(id, ...)` per catalogue row. |
 | `fixtures/records/` | Record samples, plain and typed. |
 | `docs/catalogue.md` | The formats and the rules the validator enforces. |
