@@ -99,7 +99,7 @@ Each script is in `cli/ci/` and takes `PUBLISH_DRY_RUN=1`, which does the work l
 
 ### Settings and secrets
 
-Without any of these, `run.yml` and the builds still work. Publishing and PRs need them:
+Without these, `run.yml`, the builds and publishing to the `results` branch still work. Pin PRs, prune PRs and dispatches need them:
 - **"Allow GitHub Actions to create and approve pull requests"**, under the repository's Actions settings, so `GITHUB_TOKEN` can open pin and prune PRs.
 - **`CONFORMANCE_BOT_TOKEN`** (optional secret): a token with contents, pull requests and issues write on this repository. GitHub doesn't start workflows for PRs opened with `GITHUB_TOKEN`, so without it a pin PR gets no CI until someone closes and reopens it.
 - **pds-test**: this repository in `targets.json`'s `consumers`, and a `CONSUMER_DISPATCH_TOKEN` that can dispatch to it.
