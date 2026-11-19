@@ -17,6 +17,7 @@ import { loadManifest, type Manifest, notApplicable } from '../../harness/manife
 import { formatProblem } from '../../harness/problems.ts';
 import { ROOT } from '../../harness/schema.ts';
 import { headings, loadRevisions, loadSpecText, plainText } from '../../harness/spec.ts';
+import { pinnedImages } from '../../harness/independence.ts';
 import { addRuns, checkStore, type ImplIndex, type LatestIndex, readRuns } from '../../harness/store.ts';
 import type { Display } from '../../harness/verdict.ts';
 
@@ -205,6 +206,7 @@ function limits(m: Manifest): string[] {
 }
 
 const now = latest.updated_at ?? new Date(0).toISOString();
+const pins = pinnedImages();
 const views = new Map<string, RunView>();
 const viewOf = (path: string) => {
   if (!views.has(path)) views.set(path, view(path, runs.get(path)!));
@@ -216,8 +218,22 @@ const implementations = [...manifests.values()]
     const indexPath = join(store, 'index', `${m.id}.json`);
     const history: ImplIndex['runs'] = existsSync(indexPath) ? (JSON.parse(readFileSync(indexPath, 'utf8')) as ImplIndex).runs : [];
     const cutoff = Date.parse(now) - HISTORY_DAYS * 86_400_000;
-    const latestRuns = Object.fromEntries(Object.entries(latest.implementations[m.id] ?? {}).map(([rev, p]) => [rev, viewOf(p.path)]));
-    const candidates = Object.fromEntries(Object.entries(latest.candidates[m.id] ?? {}).map(([rev, p]) => [rev, viewOf(p.path)]));
+    // What the site shows for each revision: the newest run of the image the
+    // implementation pins now, whatever kind it was. A candidate run becomes
+    // the pin's result once its pin PR merges, and the nightly run won't
+    // regrade it (its fingerprint is unchanged). With no run of the pinned
+    // image, the newest non-candidate run stands in, then the newest run.
+    const pin = pins.get(m.id);
+    const revs = new Set([...history.map((r) => r.revision), ...Object.keys(latest.implementations[m.id] ?? {})]);
+    const latestRuns: Record<string, RunView> = {};
+    const candidates: Record<string, RunView> = {};
+    for (const rev of revs) {
+      const atRev = history.filter((r) => r.revision === rev);
+      const shown = atRev.find((r) => r.image === pin) ?? atRev.find((r) => r.kind !== 'candidate') ?? atRev[0];
+      if (shown) latestRuns[rev] = viewOf(shown.path);
+      const cand = atRev.find((r) => r.kind === 'candidate' && r.image !== pin);
+      if (cand && cand !== shown && (!shown || cand.started_at > shown.started_at)) candidates[rev] = viewOf(cand.path);
+    }
     return {
       id: m.id,
       name: m.name,
