@@ -73,4 +73,34 @@ It finds entries that a run shows as "fixed, still listed" and, with `--write`, 
 
 ## Workflows
 
-Added with the workflows.
+| Workflow | Trigger | What it does |
+|---|---|---|
+| `run.yml` | `workflow_call` | One implementation on one image. It uploads the results file and the container logs as artifacts. It commits nothing, holds no secrets and runs on GitHub's ephemeral runner, so it is safe to call for an image built from a fork's pull request. |
+| `candidate.yml` | `repository_dispatch` (`pds-test-image`, `happyview-image`), `workflow_dispatch` | Runs a new image as a candidate and publishes the result. Then it opens a pin PR, opens or updates the implementation's issue, or does neither on an error. |
+| `nightly.yml` | daily at 04:17 UTC, `workflow_dispatch` | Runs every implementation at its pin with `--slow`, publishes, then opens a prune PR if any entry is fixed. |
+
+The workflows share these rules:
+- Only `publish` jobs write. Each runs under the `results-writer` concurrency group, so one job writes to the `results` branch at a time.
+- A dispatch payload is untrusted text. It reaches a script only through `env`, and `cli/run.ts --image` accepts only `<the manifest's repository>@sha256:<digest>`.
+- A target that no manifest's `image.dispatch_target` claims is skipped. So is an image an implementation already pins.
+- Nothing is opened or posted on another project's repository.
+
+### The scripts they call
+
+Each script is in `cli/ci/` and takes `PUBLISH_DRY_RUN=1`, which does the work locally and prints the push, PR or issue instead of making it.
+
+| Script | Does |
+|---|---|
+| `targets.ts` | The implementation list for a matrix, the implementation a dispatch target names, and an implementation's current pin. |
+| `publish-results.sh` | Checks the `results` branch out into `.store/` (creating it as an orphan the first time), runs `store.ts add` and `check`, commits and pushes. It retries a push that lost a race. |
+| `open-pin-pr.sh` | `pin/<impl>-<digest12>`: runs `cli/pin.ts`, runs `bun run validate`, then opens the PR. Does nothing while one from that branch is open. |
+| `candidate-issue.sh` | One open issue per implementation, labelled `candidate:<impl>`. Each new candidate with unexpected results replaces its body. |
+| `open-prune-pr.sh` | `prune/<date>`: runs `cli/prune.ts --write` and validates. Does nothing while a prune PR is open. |
+
+### Settings and secrets
+
+Without any of these, `run.yml` and the builds still work. Publishing and PRs need them:
+- **"Allow GitHub Actions to create and approve pull requests"**, under the repository's Actions settings, so `GITHUB_TOKEN` can open pin and prune PRs.
+- **`CONFORMANCE_BOT_TOKEN`** (optional secret): a token with contents, pull requests and issues write on this repository. GitHub doesn't start workflows for PRs opened with `GITHUB_TOKEN`, so without it a pin PR gets no CI until someone closes and reopens it.
+- **pds-test**: this repository in `targets.json`'s `consumers`, and a `CONSUMER_DISPATCH_TOKEN` that can dispatch to it.
+- **HappyView**: a `happyview-image` dispatch from its beta and main image jobs, with `client_payload.image` set to the image by digest.
