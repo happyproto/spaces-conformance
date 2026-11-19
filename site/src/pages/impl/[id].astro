@@ -87,6 +87,7 @@ const order: Group[] = ['fail', 'deviation', 'provisional', 'error', 'pass', 'pe
             <div><dt>Run</dt><dd>{runLink(run) ? <a href={runLink(run)!}>CI run and logs</a> : <span class="muted">Local run, no CI log</span>}</dd></div>
             <div><dt>Run id</dt><dd><code>{run.id}</code></dd></div>
             <div><dt>Suite commit</dt><dd><a href={`https://github.com/happyproto/spaces-conformance/tree/${run.suite_commit}`}><code>{run.suite_commit}</code></a></dd></div>
+            {run.fingerprint && <div><dt>Fingerprint</dt><dd><code title={run.fingerprint}>{run.fingerprint.slice(7, 19)}</code></dd></div>}
             <div><dt>Setup</dt><dd>spaces {run.setup_mode.spaces}, accounts {run.setup_mode.accounts}, writes by {run.write_auth}</dd></div>
             <div><dt>Peers</dt><dd>{run.peers.map((p, i) => <>{i > 0 && ', '}{p.id}{p.as ? ` as ${p.as}` : ''} <Digest image={p.image} short /></>)}</dd></div>
             {run.previous_attempts.length > 0 && <div class="facts-wide"><dt>Earlier attempt</dt><dd>Rerun after {run.previous_attempts.map((a) => `${a.errored.length} error(s) and ${a.failed.length} fail(s) in ${a.id}`).join('; ')}</dd></div>}

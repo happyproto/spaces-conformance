@@ -37,7 +37,7 @@ const states: { group: Group; label?: string; scored: string; text: string }[] =
       can still be graded on everything after that.
     </p>
     <ul>
-      <li>Every night, each implementation runs at the image it&rsquo;s pinned to.</li>
+      <li>Every night, each implementation runs at the image it&rsquo;s pinned to, but only if its image, the suite or the spec revision changed since its last result.</li>
       <li>When a new image of an implementation is built, it runs as a candidate. A candidate with nothing unexpected gets a pull request that moves the pin. One with unexpected results gets an issue in the suite&rsquo;s repository, and the pin stays.</li>
       <li>Every run&rsquo;s raw results are committed to the <a href={`${REPO}/tree/results`}>results branch</a>, with the deviation list it was judged against. Nothing is edited afterwards: a wrong result is corrected by a new run.</li>
     </ul>
@@ -111,6 +111,18 @@ const states: { group: Group; label?: string; scored: string; text: string }[] =
       If a result looks wrong, <a href={`${REPO}/issues/new`}>open an issue</a> with the run id from the implementation&rsquo;s page
       and the assertion id. The harness is the first suspect. A confirmed harness bug is fixed in the suite, and the next run
       replaces the result. Nothing is ever posted on another project&rsquo;s tracker automatically.
+    </p>
+
+    <h2 id="rerun">Asking for a re-run</h2>
+    <p>
+      Nothing is graded again on a schedule. A new run happens when something the result depends on changes: the
+      implementation&rsquo;s image, the suite, or the spec revision. Each run records a fingerprint of those inputs, and the
+      nightly job skips any implementation whose fingerprint already has a result.
+    </p>
+    <p>
+      To have the same inputs graded again, for example after a suspected flake, use
+      the <a href={`${REPO}/issues/new?template=rerun.yml`}>re-run request form</a>. Give the implementation, the run id from its
+      page, and why. A maintainer of the suite then starts the run by hand.
     </p>
   </div>
 </Base>

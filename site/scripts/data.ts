@@ -179,6 +179,7 @@ function view(path: string, file: ResultsFile) {
     spec_commit: file.spec.commit,
     lexicons: file.spec.lexicons,
     suite_commit: file.suite.commit,
+    fingerprint: file.run.fingerprint?.digest ?? null,
     summary: summary.by_role,
     unexpected: summary.unexpected,
     total,
