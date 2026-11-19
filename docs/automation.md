@@ -27,6 +27,21 @@ The rules:
 - `check` validates every stored run against the schema only. A row retired from the catalogue later doesn't break the history it was graded in.
 - `check` fails when a run sits at the wrong path, or when the index doesn't equal what `runs/` rebuilds to.
 
+## Scenario fingerprints
+
+The nightly run grades only scenarios whose inputs changed. A scenario is one implementation graded at one revision, with `--slow`. `harness/fingerprint.ts` hashes everything that can change its raw results:
+
+| Part | What |
+|---|---|
+| `images` | Every image in the stack, by digest: the implementation's (a candidate's replaces the pin's), its partner's, and the helpers: PLC, Postgres, Caddy, the curl sidecar and the harness container's base. Every one is pinned in `pins/images.env`, so nothing moves under a tag between runs. |
+| `revision` | The revision key, and its proposal and lexicon commits. |
+| `slow` | Whether the slow checks ran. |
+| `code` | The files a result can depend on: `harness/`, `suites/`, `spec/assertions.yaml`, `spec/revisions.json`, that revision's lexicons, `fixtures/`, the base stack, the implementation's folder and its partner's, `package.json`, `bun.lock` and `vitest.suite.config.ts`. |
+
+Left out, because they change how a result is shown and never the result: deviation lists, `vectors/` (provisional status), `evidence/`, docs, the site and CI files.
+
+`cli/run.ts` records the fingerprint as `run.fingerprint` in the results file, except for a run narrowed with `--suites`, which isn't the whole scenario. The store copies its digest into each index entry. A stored run with the same digest and no `error` result means the scenario is already graded.
+
 ## What a run decides
 
 ```sh
