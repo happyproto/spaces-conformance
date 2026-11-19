@@ -1,0 +1,209 @@
+---
+// One implementation (design ch. 8.1): what it claims and what that rules
+// out, its score per role, the run behind it (image digest, source
+// revision, a link to the CI run), its deviations by cause with each
+// entry's age, every row by suite, and the last 90 days.
+import Base from '../../layouts/Base.astro'
+import Digest from '../../components/Digest.astro'
+import History from '../../components/History.astro'
+import Meter from '../../components/Meter.astro'
+import State from '../../components/State.astro'
+import { assertionHref, data, day, graded, KIND_LABEL, latestRuns, moment, pct, shortDigest, trackingUrl, type Impl, type Group } from '../../lib/data'
+
+export function getStaticPaths() {
+  return data.implementations.map((impl) => ({ params: { id: impl.id }, props: { impl } }))
+}
+interface Props { impl: Impl }
+const { impl } = Astro.props
+const runs = latestRuns(impl)
+const ROLE_LABEL: Record<string, string> = { pds: 'PDS', 'repo-host': 'Repo host', 'space-host': 'Space host' }
+const PROFILE_LABEL: Record<string, string> = { pds: 'PDS: the space authority is the user’s own account', 'bespoke-space-host': 'Bespoke space host: spaces live on DIDs the host mints' }
+const OLD_DAYS = 30
+const runLink = (r: { ci_url: string | null }) => r.ci_url
+const order: Group[] = ['fail', 'deviation', 'provisional', 'error', 'pass', 'pending', 'untested', 'na']
+---
+<Base title={impl.name} description={`Spaces conformance results for ${impl.name}: score per role, deviations and every assertion.`}>
+  <div class="page-head">
+    <p class="crumbs"><a href="/">Results</a> / {impl.name}</p>
+    <h1>{impl.name}</h1>
+    <dl class="facts">
+      <div><dt>Roles</dt><dd>{impl.roles.map((r) => ROLE_LABEL[r] ?? r).join(', ')}</dd></div>
+      <div><dt>Profile</dt><dd>{PROFILE_LABEL[impl.profile] ?? impl.profile}</dd></div>
+      <div><dt>Spec revisions claimed</dt><dd>{impl.spec_revisions.join(', ')}</dd></div>
+      {(impl.homepage || impl.source) && (
+        <div><dt>Project</dt><dd>
+          {impl.homepage && <a href={impl.homepage}>Homepage</a>}
+          {impl.homepage && impl.source && ' · '}
+          {impl.source && <a href={impl.source}>Source</a>}
+        </dd></div>
+      )}
+    </dl>
+  </div>
+
+  {impl.limits.length > 0 && (
+    <section aria-labelledby="limits">
+      <aside class="hp-callout" data-kind="note">
+        <p class="hp-callout-title" id="limits">What this implementation&rsquo;s manifest rules out</p>
+        <ul class="limits">{impl.limits.map((l) => <li>{l}</li>)}</ul>
+      </aside>
+    </section>
+  )}
+
+  {runs.length === 0 && (
+    <section>
+      <div class="hp-window"><div class="hp-window-body flush"><div class="empty">
+        <h3>No published runs yet</h3>
+        <p>The nightly run grades every implementation at its pinned image. This one hasn&rsquo;t run yet.</p>
+      </div></div></div>
+    </section>
+  )}
+
+  {runs.map(({ revision, run }) => {
+    const candidate = impl.candidates[revision]
+    return (
+      <section aria-labelledby={`rev-${revision}`}>
+        <div class="section-head">
+          <h2 id={`rev-${revision}`}>Graded at {revision}</h2>
+          <p>{KIND_LABEL[run.kind]} on {moment(run.started_at)}{run.slow ? '' : ', without the slow checks'}.</p>
+        </div>
+
+        <dl class="scores">
+          {Object.entries(run.summary).map(([role, s]) => (
+            <div class="score">
+              <dt>{ROLE_LABEL[role] ?? role}</dt>
+              <dd>
+                <span class="hp-figure">{pct(s.must_pass, s.must_applicable)}<span class="hp-figure-unit">of must rows</span></span>
+                <span class="detail">{s.must_pass} of {s.must_applicable} must rows pass{s.should_applicable ? `; ${s.should_pass} of ${s.should_applicable} should` : ''}</span>
+              </dd>
+            </div>
+          ))}
+        </dl>
+
+        <div class="block">
+          <h3 class="sr-only">The run</h3>
+          <dl class="facts">
+            <div class="facts-wide"><dt>Image</dt><dd><Digest image={run.image} /></dd></div>
+            <div><dt>Source revision</dt><dd>{run.source_revision ? <code>{run.source_revision.slice(0, 12)}</code> : <span class="muted">not recorded</span>}</dd></div>
+            <div><dt>Run</dt><dd>{runLink(run) ? <a href={runLink(run)!}>CI run and logs</a> : <span class="muted">Local run, no CI log</span>}</dd></div>
+            <div><dt>Run id</dt><dd><code>{run.id}</code></dd></div>
+            <div><dt>Suite commit</dt><dd><a href={`https://github.com/happyproto/spaces-conformance/tree/${run.suite_commit}`}><code>{run.suite_commit}</code></a></dd></div>
+            <div><dt>Setup</dt><dd>spaces {run.setup_mode.spaces}, accounts {run.setup_mode.accounts}, writes by {run.write_auth}</dd></div>
+            <div><dt>Peers</dt><dd>{run.peers.map((p, i) => <>{i > 0 && ', '}{p.id}{p.as ? ` as ${p.as}` : ''} <Digest image={p.image} short /></>)}</dd></div>
+            {run.previous_attempts.length > 0 && <div class="facts-wide"><dt>Earlier attempt</dt><dd>Rerun after {run.previous_attempts.map((a) => `${a.errored.length} error(s) and ${a.failed.length} fail(s) in ${a.id}`).join('; ')}</dd></div>}
+          </dl>
+          {candidate && (
+            <aside class="hp-callout" data-kind="note" style="margin-block-start: var(--hp-space-6)">
+              <p class="hp-callout-title">A newer candidate image ran on {day(candidate.started_at)}</p>
+              <p>
+                <Digest image={candidate.image} short /> passed {candidate.total.pass} of {graded(candidate.total)} graded rows.
+                {candidate.unexpected === 0 ? ' Nothing unexpected, so a pin PR moves this implementation to it.' : ` ${candidate.unexpected} result(s) weren’t expected, so the pin stays.`}
+                {candidate.ci_url && <> <a href={candidate.ci_url}>The candidate run</a>.</>}
+              </p>
+            </aside>
+          )}
+        </div>
+
+        {run.deviations.length > 0 && (
+          <div class="block">
+            <div class="section-head">
+              <h3>Known deviations</h3>
+              <p>
+                {run.deviations.reduce((n, c) => n + c.entries.length, 0)} entries from {run.deviations.length} {run.deviations.length === 1 ? 'cause' : 'causes'}, as the
+                implementation lists them. A listed row still counts as not passing. Ages are on the day of the run.
+              </p>
+            </div>
+            <div class="causes">
+              {run.deviations.map((c) => (
+                <article class="cause">
+                  <div class="cause-head">
+                    <h3><code>{c.cause}</code></h3>
+                    <span class="muted small">{c.entries.length} {c.entries.length === 1 ? 'assertion' : 'assertions'}, one cause</span>
+                  </div>
+                  <ul>
+                    {c.entries.map((e) => (
+                      <li>
+                        <span><a href={assertionHref(e.assertion)}><code>{e.assertion}</code></a>: {e.reason}</span>
+                        <span class="entry-meta">
+                          <span>Tracking: {trackingUrl(e.tracking) ? <a href={e.tracking}>{e.tracking.replace(/^https?:\/\//, '')}</a> : e.tracking}</span>
+                          <span class="age" data-old={String(e.age_days > OLD_DAYS)}>Listed {e.age_days === 0 ? 'that day' : `${e.age_days} ${e.age_days === 1 ? 'day' : 'days'}`} (since {e.since})</span>
+                          <span>Shown as {e.display}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div class="block">
+          <div class="section-head">
+            <h3>Every assertion</h3>
+            <p>Grouped by suite. Fails first in each suite, then deviations, then the rest.</p>
+          </div>
+          {data.suites.filter((s) => run.rows.some((r) => r.suite === s)).map((s) => {
+            const t = run.bySuite[s]
+            const untested = run.rows.filter((r) => r.suite === s && r.group === 'untested')
+            const rows = run.rows.filter((r) => r.suite === s && r.group !== 'untested').sort((a, b) => order.indexOf(a.group as Group) - order.indexOf(b.group as Group) || (a.id < b.id ? -1 : 1))
+            return (
+              <div class="suite-block" id={`suite-${s}`}>
+                <h3>
+                  {s}
+                  <span class="muted">{graded(t) ? `${t.pass} of ${graded(t)} graded pass` : 'none graded yet'}{t.pending ? `, ${t.pending} pending` : ''}{t.untested ? `, ${t.untested} with no test yet` : ''}{t.na ? `, ${t.na} not applicable` : ''}</span>
+                </h3>
+                {graded(t) > 0 && <div style="max-inline-size: 16rem; margin-block-end: var(--hp-space-3)"><Meter tally={t} /></div>}
+                {rows.length > 0 && <div class="rows-wrap">
+                  <table class="rows">
+                    <thead><tr><th class="col-state">State</th><th class="col-id">Assertion</th><th class="col-level">Level</th><th>What the run saw</th></tr></thead>
+                    <tbody>
+                      {rows.map((r) => (
+                        <tr>
+                          <td class="col-state"><State group={r.group as Group} label={r.display} /></td>
+                          <td class="col-id"><a href={assertionHref(r.id)}><code>{r.id}</code></a></td>
+                          <td class="col-level">{r.level}</td>
+                          <td class="why">
+                            {r.message ?? ''}
+                            {r.changed && <span class="note">Listed, but it failed differently: {r.changed}</span>}
+                            {r.provisional && <span class="note">Provisional: {r.provisional}</span>}
+                            {(r.group === 'fail' || r.group === 'error') && runLink(run) && <span class="note"><a href={runLink(run)!}>The failing run</a></span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>}
+                {untested.length > 0 && (
+                  <p class="untested small">
+                    <State group="untested" label={`No test yet for ${untested.length} applicable ${untested.length === 1 ? 'row' : 'rows'}`} />
+                    <span class="ids">{untested.map((r) => <a href={assertionHref(r.id)}><code>{r.id}</code></a>)}</span>
+                  </p>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        <div class="block">
+          <div class="section-head"><h3>History</h3></div>
+          <History runs={impl.history} revision={revision} />
+          <div class="rows-wrap" style="margin-block-start: var(--hp-space-4)">
+            <table class="rows">
+              <thead><tr><th>Run</th><th>Kind</th><th>Image</th><th>Graded rows passing</th></tr></thead>
+              <tbody>
+                {impl.history.filter((h) => h.revision === revision).map((h) => (
+                  <tr>
+                    <td>{h.ci_url ? <a href={h.ci_url}>{day(h.started_at)}</a> : day(h.started_at)}</td>
+                    <td>{KIND_LABEL[h.kind]}</td>
+                    <td><code title={h.image}>{shortDigest(h.image)}</code></td>
+                    <td style="font-variant-numeric: var(--hp-font-numeric)">{h.total.pass} of {graded(h.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    )
+  })}
+</Base>

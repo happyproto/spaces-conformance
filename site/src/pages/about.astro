@@ -1,0 +1,116 @@
+---
+// How the results are made and read (design ch. 8.1): how it runs, who runs
+// it, scoring, profiles, adding an implementation, disputing a result.
+import Base from '../layouts/Base.astro'
+import State from '../components/State.astro'
+import type { Group } from '../lib/data'
+
+const REPO = 'https://github.com/happyproto/spaces-conformance'
+const states: { group: Group; label?: string; scored: string; text: string }[] = [
+  { group: 'pass', scored: 'passing', text: 'The implementation did what the quoted sentence says.' },
+  { group: 'deviation', scored: 'not passing', text: 'It failed the way the implementation’s own deviation list says it will, and the entry names a tracking issue.' },
+  { group: 'fail', scored: 'not passing', text: 'It failed, and no entry covers that failure.' },
+  { group: 'fail', label: 'deviation changed', scored: 'not passing', text: 'An entry covers the row, but the failure isn’t the one the entry describes, so it’s judged as an unlisted fail.' },
+  { group: 'pass', label: 'fixed, still listed', scored: 'passing', text: 'It passed, but the implementation still lists it as a deviation. The entry is due to come out.' },
+  { group: 'provisional', scored: 'left out', text: 'It failed on a check the harness hasn’t yet confirmed on two independent implementations, so the harness may be the one that’s wrong.' },
+  { group: 'error', scored: 'left out', text: 'The stack, the setup or the harness broke. An error is no result, and the run is retried once.' },
+  { group: 'pending', scored: 'left out', text: 'The harness can’t judge the row against this implementation yet, and says why.' },
+  { group: 'untested', scored: 'left out', text: 'The row applies, but the suite has no test for it yet.' },
+  { group: 'na', scored: 'left out', text: 'The implementation doesn’t claim the role, profile or capability the row needs.' },
+]
+---
+<Base title="About" description="How the atproto spaces conformance suite runs, how results are scored, and how to add an implementation or dispute a result." current="about">
+  <div class="page-head">
+    <h1>About these results</h1>
+    <p class="lede">
+      An over-the-wire test suite for atproto spaces. It talks to each implementation only over HTTP, and every assertion
+      quotes the sentence of Proposal 0016 it tests, at a pinned commit.
+    </p>
+  </div>
+
+  <div class="prose">
+    <h2 id="how">How it runs</h2>
+    <p>
+      Each run starts a fresh stack for one implementation: its image, pinned by digest, behind a TLS front on a private network
+      with no route to the internet, next to a PLC directory and the harness. The harness creates its own accounts and spaces,
+      then runs every suite that applies. Account and space setup isn&rsquo;t graded: an implementation that sets up spaces an older way
+      can still be graded on everything after that.
+    </p>
+    <ul>
+      <li>Every night, each implementation runs at the image it&rsquo;s pinned to.</li>
+      <li>When a new image of an implementation is built, it runs as a candidate. A candidate with nothing unexpected gets a pull request that moves the pin. One with unexpected results gets an issue in the suite&rsquo;s repository, and the pin stays.</li>
+      <li>Every run&rsquo;s raw results are committed to the <a href={`${REPO}/tree/results`}>results branch</a>, with the deviation list it was judged against. Nothing is edited afterwards: a wrong result is corrected by a new run.</li>
+    </ul>
+
+    <h2 id="who">Who runs it</h2>
+    <p>
+      <a href="https://happyproto.at/">HappyProto</a> runs the suite. HappyProto also makes HappyView, which is graded here like
+      every other implementation: from its published image, with the same harness, and with its deviation list shown in full.
+      The harness implements the spec&rsquo;s crypto and wire formats itself, from the spec text, and imports no implementation&rsquo;s code.
+    </p>
+
+    <h2 id="scoring">Scoring</h2>
+    <p>
+      Each row has a level. <strong>Must</strong> rows are scored. <strong>Should</strong> rows are scored on their own.{' '}
+      <strong>Info</strong> rows record what an implementation does where the spec doesn&rsquo;t say, and are never scored.
+      A row is a must when its quoted sentence uses the keyword, or when the sentence defines the wire format, field or method being checked.
+    </p>
+    <p>
+      An implementation&rsquo;s score for a role is its passing must rows over the must rows that apply to it in that role.
+      Known deviations count as not passing, so listing one never raises a score.
+    </p>
+  </div>
+
+  <div class="rows-wrap" style="margin-block-start: var(--hp-space-6); max-inline-size: 60rem">
+    <table class="rows">
+      <thead><tr><th class="col-state">Shown as</th><th style="inline-size: 7rem">Scored as</th><th>When</th></tr></thead>
+      <tbody>
+        {states.map((s) => (
+          <tr>
+            <td class="col-state"><State group={s.group} label={s.label} /></td>
+            <td>{s.scored}</td>
+            <td class="why">{s.text}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="prose" style="margin-block-start: var(--hp-space-8)">
+    <h2 id="provisional">Why some fails are provisional</h2>
+    <p>
+      A suite that grades crypto can itself be wrong. So a check that runs through the harness&rsquo;s own crypto stays provisional
+      until it has passed on two implementations whose code for that area doesn&rsquo;t share a lineage. Two hosts built on the same
+      library count as one. Until then, a fail on that check is shown, and not scored.
+    </p>
+
+    <h2 id="profiles">Profiles and roles</h2>
+    <p>
+      The proposal splits the work into roles: a <strong>repo host</strong> stores and serves space repos, a <strong>space host</strong>
+      handles credentials, the writer set and notifications, and a <strong>PDS</strong> serves the baseline every PDS must serve.
+      Each implementation claims the roles it plays, and only those rows apply.
+    </p>
+    <p>
+      Some rules assume the space authority is an account someone signs in as. A <strong>bespoke space host</strong> keeps spaces on
+      DIDs it mints, so those rules don&rsquo;t apply to it. The catalogue, not the implementation, decides which rows each profile
+      covers, so no implementation can opt itself out. Each implementation&rsquo;s page states what its manifest rules out.
+    </p>
+
+    <h2 id="adding">Adding an implementation</h2>
+    <p>Open a pull request on <a href={REPO}>happyproto/spaces-conformance</a> with a folder under <code>implementations/</code>:</p>
+    <ul>
+      <li>a manifest: the roles and profile it claims, its capabilities, and the library behind each crypto area;</li>
+      <li>a compose fragment that starts it on the stack&rsquo;s network;</li>
+      <li>an adapter for account and space setup, if <code>createAccount</code> and <code>createSpace</code> aren&rsquo;t enough;</li>
+      <li>a pin for its image, by digest.</li>
+    </ul>
+    <p>Its deviation list can live in the suite&rsquo;s repository or in its own, read at the commit its image was built from.</p>
+
+    <h2 id="disputing">Disputing a result</h2>
+    <p>
+      If a result looks wrong, <a href={`${REPO}/issues/new`}>open an issue</a> with the run id from the implementation&rsquo;s page
+      and the assertion id. The harness is the first suspect. A confirmed harness bug is fixed in the suite, and the next run
+      replaces the result. Nothing is ever posted on another project&rsquo;s tracker automatically.
+    </p>
+  </div>
+</Base>

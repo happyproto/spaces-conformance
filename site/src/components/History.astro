@@ -1,0 +1,42 @@
+---
+// The last 90 days of runs for one revision: the share of graded must rows
+// that passed, per run, drawn at build time. Each run is also a row in the
+// table under it, which carries the same figures.
+import { day, KIND_LABEL, type Impl } from '../lib/data'
+interface Props { runs: Impl['history']; revision: string }
+const { runs, revision } = Astro.props
+const points = runs
+  .filter((r) => r.revision === revision)
+  .map((r) => {
+    const roles = Object.values(r.summary as Record<string, { must_pass: number; must_applicable: number }>)
+    const pass = roles.reduce((n, s) => n + s.must_pass, 0)
+    const all = roles.reduce((n, s) => n + s.must_applicable, 0)
+    return { ...r, share: all ? pass / all : null }
+  })
+  .reverse()
+const W = 640, H = 120, PAD = 28
+const t0 = points.length ? Date.parse(points[0].started_at) : 0
+const t1 = points.length ? Date.parse(points[points.length - 1].started_at) : 1
+const x = (iso: string) => (t1 === t0 ? W / 2 : PAD + ((Date.parse(iso) - t0) / (t1 - t0)) * (W - 2 * PAD))
+const y = (share: number) => 8 + (1 - share) * (H - 24)
+const drawn = points.filter((p) => p.share !== null)
+const path = drawn.map((p, i) => `${i ? 'L' : 'M'}${x(p.started_at).toFixed(1)},${y(p.share!).toFixed(1)}`).join(' ')
+---
+{drawn.length > 0 && (
+  <figure class="history" style="margin:0">
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Share of graded must rows passing, per run, at ${revision}. The table below lists the same runs.`}>
+      <line class="axis" x1={PAD} x2={W - PAD} y1={y(1)} y2={y(1)} />
+      <line class="axis" x1={PAD} x2={W - PAD} y1={y(0)} y2={y(0)} />
+      <text class="tick" x={0} y={y(1) + 4}>100%</text>
+      <text class="tick" x={0} y={y(0) + 4}>0%</text>
+      {drawn.length > 1 && <path class="line" d={path} />}
+      {drawn.map((p) => <circle class="dot" data-kind={p.kind} cx={x(p.started_at)} cy={y(p.share!)} r="3.5"><title>{`${day(p.started_at)}: ${Math.round(100 * p.share!)}%`}</title></circle>)}
+      <text class="tick" x={PAD} y={H - 2}>{day(points[0].started_at)}</text>
+      {points.length > 1 && <text class="tick" x={W - PAD} y={H - 2} text-anchor="end">{day(points[points.length - 1].started_at)}</text>}
+    </svg>
+    <figcaption class="muted small">
+      Must rows passing, per run, over the last 90 days. {drawn.length === 1 ? 'One run so far.' : `${drawn.length} runs.`}
+      {points.some((p) => p.kind === 'candidate') && ' Filled dots are candidate images, not the pin.'}
+    </figcaption>
+  </figure>
+)}

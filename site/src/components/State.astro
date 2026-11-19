@@ -1,0 +1,9 @@
+---
+// A state: its mark, then its word. The word is the meaning; the mark's
+// shape repeats it without colour, and the ink repeats it again.
+import Mark from './Mark.astro'
+import { GROUP_LABEL, type Group } from '../lib/data'
+interface Props { group: Group; label?: string }
+const { group, label } = Astro.props
+---
+<span class="state" data-group={group}><Mark group={group} /><span>{label ?? GROUP_LABEL[group]}</span></span>

@@ -1,0 +1,126 @@
+---
+// The grid (design ch. 8.1): each implementation's newest run, one row per
+// implementation and revision, one column per suite. A cell counts the rows
+// that run graded in that suite: how many passed, and what didn't.
+import Base from '../layouts/Base.astro'
+import Mark from '../components/Mark.astro'
+import Meter from '../components/Meter.astro'
+import { data, day, graded, GROUP_LABEL, implHref, KIND_LABEL, latestRuns, type Group } from '../lib/data'
+
+const rows = data.implementations.flatMap((impl) => latestRuns(impl).map(({ revision, run }) => ({ impl, revision, run })))
+const notes: Group[] = ['deviation', 'fail', 'provisional', 'error']
+const legend: { group: Group; text: string }[] = [
+  { group: 'pass', text: 'The implementation does what the quoted sentence says.' },
+  { group: 'deviation', text: 'Fails, and the implementation lists it as a known gap with a tracking issue. Counts as not passing.' },
+  { group: 'fail', text: 'Fails, and nobody has listed it. Also shown when a listed row fails for a different reason.' },
+  { group: 'provisional', text: 'Fails where the harness hasn’t yet been cross-checked against two independent implementations. Not scored.' },
+  { group: 'error', text: 'The stack or the harness broke, so there is no result. Not scored.' },
+  { group: 'pending', text: 'The harness can’t judge this row against this implementation yet.' },
+]
+const suiteCount = data.suites.length
+---
+<Base title="Spaces conformance" description="Over-the-wire conformance results for atproto spaces (Proposal 0016), per implementation and suite." current="results">
+  <div class="page-head">
+    <h1>atproto spaces conformance</h1>
+    <p class="lede">
+      Every implementation of permissioned spaces we can run, graded over HTTP against the sentences of{' '}
+      <a href={data.generated.revisions.at(-1)!.url}>Proposal 0016</a>.
+      Each result cites the spec text it tests, and every known gap is shown, not hidden.
+    </p>
+  </div>
+
+  <section aria-labelledby="latest">
+    <div class="results hp-window">
+      <header class="hp-window-bar">
+        <h2 class="hp-window-title" id="latest">Latest results</h2>
+        <span class="hp-window-meta">{rows.length} implementations, {suiteCount} suites</span>
+      </header>
+      <div class="hp-window-body flush">
+        <div class="grid-scroll" role="region" aria-labelledby="latest" tabindex="0">
+          <table class="grid">
+            <caption class="sr-only">Passing rows of the rows graded, per implementation and suite</caption>
+            <thead>
+              <tr>
+                <th scope="col" class="impl-col">Implementation</th>
+                {data.suites.map((s) => <th scope="col">{s}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ impl, revision, run }) => (
+                <tr>
+                  <th scope="row" class="impl-col">
+                    <a class="impl-name" href={implHref(impl.id)}>{impl.name}</a>
+                    <span class="impl-sub">
+                      <span>Spec {revision}</span>
+                      <span>{KIND_LABEL[run.kind]}, {day(run.started_at)}</span>
+                    </span>
+                  </th>
+                  {data.suites.map((s) => {
+                    const t = run.bySuite[s]
+                    const n = graded(t)
+                    const waiting = t.pending + t.untested
+                    if (n === 0)
+                      return (
+                        <td>
+                          <span class="cell-none">
+                            <span class="cell-figure" aria-hidden="true">&ndash;</span>
+                            <span>{t.na && !waiting ? 'n/a' : waiting ? `${waiting} not graded` : 'no rows'}</span>
+                          </span>
+                        </td>
+                      )
+                    return (
+                      <td>
+                        <a class="cell" href={`${implHref(impl.id)}#suite-${s}`} aria-label={`${impl.name}, ${s}: ${t.pass} of ${n} graded rows pass${notes.filter((g) => t[g]).map((g) => `, ${t[g]} ${GROUP_LABEL[g]}`).join('')}`}>
+                          <span class="cell-figure">{t.pass}<span class="of">/{n}</span></span>
+                          <Meter tally={t} />
+                          {notes.some((g) => t[g]) && (
+                            <span class="cell-notes">
+                              {notes.filter((g) => t[g]).map((g) => (
+                                <span data-group={g}><Mark group={g} />{t[g]} {g === 'deviation' ? 'known' : g === 'provisional' ? 'provisional' : g}</span>
+                              ))}
+                            </span>
+                          )}
+                        </a>
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <ul class="legend" aria-label="What the states mean">
+          {legend.map((l) => (
+            <li>
+              <span class="state" data-group={l.group}><Mark group={l.group} />{GROUP_LABEL[l.group]}</span>
+              <span class="muted">{l.text}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+    <p class="muted small" style="margin-block-start: var(--hp-space-3)">
+      A cell reads passing rows over graded rows. Rows still waiting for a test aren&rsquo;t counted; each implementation&rsquo;s page lists them.
+      How scores are counted is on the <a href="/about/#scoring">about page</a>.
+    </p>
+  </section>
+
+  <section aria-labelledby="pairings">
+    <div class="section-head">
+      <h2 id="pairings">Pairings</h2>
+      <p>One implementation as the space host, another as the repo host.</p>
+    </div>
+    <div class="hp-window">
+      <div class="hp-window-body flush">
+        <div class="empty">
+          <h3>No pairing runs yet</h3>
+          <p>
+            A pairing run puts a space host from one implementation in front of a repo host from another, so credentials,
+            write notifications and the writer set cross a real boundary. The harness doesn&rsquo;t run pairings yet. Until it does,
+            those rows are graded with the harness standing in for the other side.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

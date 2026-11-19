@@ -1,0 +1,15 @@
+---
+// One run's graded rows as a bar: pass, known deviation, fail, in that order,
+// plus provisional fails and errors. Widths are shares of the graded rows.
+// The figures next to it carry the same numbers, so the bar is decorative.
+// Known deviations are hatched as well as tinted, so they part from passes
+// in greyscale too.
+import { graded, type Tally } from '../lib/data'
+interface Props { tally: Tally }
+const { tally } = Astro.props
+const n = graded(tally)
+const parts = (['pass', 'deviation', 'fail', 'provisional', 'error'] as const).filter((g) => tally[g] > 0)
+---
+<span class="meter" aria-hidden="true">
+  {n === 0 ? <span class="meter-empty" /> : parts.map((g) => <span class="meter-part" data-group={g} style={`flex-grow:${tally[g]}`} />)}
+</span>

@@ -1,0 +1,20 @@
+{
+  "name": "spaces-conformance-site",
+  "private": true,
+  "type": "module",
+  "description": "The results site: static Astro, built from the results branch (design ch. 8).",
+  "scripts": {
+    "data": "node scripts/data.ts",
+    "build": "node scripts/data.ts && astro build && node scripts/count.ts",
+    "dev": "astro dev",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@happyview/design-system": "1.3.0",
+    "astro": "7.3.6"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "typescript": "5.9.3"
+  }
+}

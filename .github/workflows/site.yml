@@ -1,0 +1,184 @@
+name: Site
+
+# The results site (design ch. 8.2): plain Astro, built from the `results`
+# branch, deployed to wisp.place.
+#
+# - Every pull request and push builds it. A build is fail-closed: a store
+#   with any schema problem, or a dist/ near wisp.place's 1000-file cap,
+#   fails the job. Before the results branch exists, it builds from the
+#   committed pass-index runs instead.
+# - Deploys run after Nightly and Candidate publish, on a push to main that
+#   touches the site, daily, and by hand. The results branch can't trigger
+#   a workflow itself: it holds no workflow files.
+# - Nothing deploys until vars.WISP_SITE is set. A deploy needs vars
+#   WISP_HANDLE and WISP_SITE and the secret WISP_APP_PASSWORD (wispctl reads
+#   it as WISPCTL_APP_PASSWORD, so it never reaches a command line).
+#   vars.SITE_URL turns on the smoke check.
+# - Pull requests from this repository get a wisp preview once
+#   vars.WISP_PREVIEW_CLAIM names a claimed preview subdomain. Drafts don't.
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  workflow_run:
+    workflows: [Nightly, Candidate]
+    types: [completed]
+  schedule:
+    - cron: '41 5 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: site-${{ github.event.pull_request.number || 'deploy' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+
+      - run: bun install --frozen-lockfile
+
+      - run: bun install --frozen-lockfile
+        working-directory: site
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/spec
+          key: spec-${{ hashFiles('spec/revisions.json') }}
+
+      # The results branch, if there is one yet. Shallow: the site reads files, not history.
+      - name: Check out the results
+        id: store
+        run: |
+          if git ls-remote --exit-code --heads "https://github.com/$GITHUB_REPOSITORY" results >/dev/null; then
+            git clone -q --depth 1 --branch results "https://github.com/$GITHUB_REPOSITORY" store
+            echo "store=$PWD/store" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::no results branch yet: building from the committed pass-index runs"
+          fi
+
+      - name: Check the results store
+        if: steps.store.outputs.store != ''
+        run: node cli/store.ts check --store "${{ steps.store.outputs.store }}"
+
+      # data.ts fails closed on any store problem, and writes nothing.
+      - name: Site data
+        run: bun run data
+        working-directory: site
+        env:
+          RESULTS_STORE: ${{ steps.store.outputs.store }}
+          SEED: ${{ steps.store.outputs.store == '' && 'fixtures' || '' }}
+
+      - name: Type check
+        run: ./node_modules/.bin/astro check
+        working-directory: site
+        env:
+          RESULTS_STORE: ${{ steps.store.outputs.store }}
+          SEED: ${{ steps.store.outputs.store == '' && 'fixtures' || '' }}
+
+      # The build reruns data.ts, then count.ts fails on the file cap.
+      - name: Build
+        run: bun run build
+        working-directory: site
+        env:
+          RESULTS_STORE: ${{ steps.store.outputs.store }}
+          SEED: ${{ steps.store.outputs.store == '' && 'fixtures' || '' }}
+          SITE_URL: ${{ vars.SITE_URL }}
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: site-${{ github.run_id }}
+          path: site/dist/
+          retention-days: 7
+
+  preview:
+    needs: build
+    if: github.event_name == 'pull_request' && vars.WISP_PREVIEW_CLAIM != '' && github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: site-${{ github.run_id }}
+          path: dist
+
+      - name: Install wispctl
+        run: npm i -g wispctl@2.1.0
+
+      - name: Deploy the preview
+        run: wispctl deploy "$WISP_HANDLE" --path dist --sha "$SHA" --preview-claim "$WISP_PREVIEW_CLAIM" --yes --quiet
+        env:
+          WISP_HANDLE: ${{ vars.WISP_HANDLE }}
+          WISP_PREVIEW_CLAIM: ${{ vars.WISP_PREVIEW_CLAIM }}
+          WISPCTL_APP_PASSWORD: ${{ secrets.WISP_APP_PASSWORD }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+
+      - name: Post the preview URL
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WISP_PREVIEW_CLAIM: ${{ vars.WISP_PREVIEW_CLAIM }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body "Preview of ${SHA:0:7}: https://pr-${SHA:0:7}-${WISP_PREVIEW_CLAIM}.preview.wisp.place/"
+
+  deploy:
+    needs: build
+    if: >-
+      vars.WISP_SITE != '' && github.ref == 'refs/heads/main' &&
+      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion != 'cancelled')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    concurrency:
+      group: site-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: site-${{ github.run_id }}
+          path: dist
+
+      - name: Install wispctl
+        run: npm i -g wispctl@2.1.0
+
+      - name: Deploy to wisp.place
+        run: wispctl deploy "$WISP_HANDLE" --path dist --site "$WISP_SITE" --yes --quiet
+        env:
+          WISP_HANDLE: ${{ vars.WISP_HANDLE }}
+          WISP_SITE: ${{ vars.WISP_SITE }}
+          WISPCTL_APP_PASSWORD: ${{ secrets.WISP_APP_PASSWORD }}
+
+      # The live page carries the newest run's time the build saw (the
+      # conformance-updated meta tag). Retries cover the CDN catching up.
+      - name: Smoke check
+        if: vars.SITE_URL != ''
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          expected=$(grep -o '<meta name="conformance-updated" content="[^"]*"' dist/index.html | sed 's/.*content="//; s/"$//')
+          for attempt in 1 2 3 4 5 6; do
+            live=$(curl -sS --max-time 15 "$SITE_URL/" | grep -o '<meta name="conformance-updated" content="[^"]*"' | sed 's/.*content="//; s/"$//' || true)
+            echo "Attempt $attempt: live '$live', built '$expected'"
+            [ -n "$expected" ] && [ "$live" = "$expected" ] && exit 0
+            sleep 10
+          done
+          echo "::error::$SITE_URL/ doesn't show the newest run the build saw ($expected)"
+          exit 1

@@ -1,0 +1,91 @@
+---
+// One assertion (design ch. 8.1): the sentence it tests, quoted from each
+// pinned revision with a link to that anchor, its level and basis, and how
+// every implementation's newest run did on it, with why it doesn't apply
+// where it doesn't.
+import Base from '../../layouts/Base.astro'
+import State from '../../components/State.astro'
+import { data, implHref, type Assertion, type Group } from '../../lib/data'
+
+export function getStaticPaths() {
+  return data.assertions.map((a) => ({ params: { id: a.id }, props: { a } }))
+}
+interface Props { a: Assertion }
+const { a } = Astro.props
+const BASIS: Record<string, string> = {
+  keyword: 'the quote has the keyword',
+  definition: 'the quote defines a wire format, field, method or algorithm',
+  lexicon: 'a parameter, output or error from the pinned lexicons',
+  'host-honours-may': 'a client MAY that works only if the host accepts it',
+  default: 'the quote states the value as a default',
+}
+const ROLE_LABEL: Record<string, string> = { pds: 'PDS', 'repo-host': 'repo host', 'space-host': 'space host' }
+const latestLevel = a.revisions.at(-1)?.level ?? 'info'
+// Revisions that cite the same sentence the same way show as one quote.
+const cites: { r: Assertion['revisions'][number]; revs: string[] }[] = []
+for (const r of a.revisions) {
+  const prev = cites.at(-1)
+  const same = prev && prev.r.quote === r.quote && prev.r.section === r.section && prev.r.level === r.level && prev.r.checks === r.checks && prev.r.basis.join() === r.basis.join()
+  if (same) prev.revs.push(r.revision)
+  else cites.push({ r, revs: [r.revision] })
+}
+---
+<Base title={a.id} description={`What ${a.id} checks, the spec sentence it cites, and each implementation's result.`}>
+  <div class="page-head">
+    <p class="crumbs"><a href="/">Results</a> / <a href="/spec/">Spec coverage</a> / {a.suite}</p>
+    <h1 class="assertion-id"><code>{a.id}</code></h1>
+    <p class="lede">{a.checks}</p>
+    <dl class="facts">
+      <div><dt>Suite</dt><dd>{a.suite}</dd></div>
+      <div><dt>Level</dt><dd>{latestLevel}{latestLevel === 'info' ? ', shown but never scored' : latestLevel === 'should' ? ', scored on its own' : ''}</dd></div>
+      <div><dt>Roles</dt><dd>{a.roles.map((r) => ROLE_LABEL[r] ?? r).join(', ')}</dd></div>
+      {a.profiles.length < 2 && <div><dt>Profile</dt><dd>{a.profiles.join(', ')} only</dd></div>}
+      {a.requires.length > 0 && <div><dt>Needs</dt><dd>{a.requires.map((r, i) => <>{i > 0 && ', '}<code>{r}</code></>)}</dd></div>}
+      {a.areas.length > 0 && <div><dt>Harness crypto</dt><dd>{a.areas.join(', ')}</dd></div>}
+      {a.needs_slow && <div><dt>Timing</dt><dd>Waits out a host-issued credential, so only slow runs grade it in full</dd></div>}
+    </dl>
+  </div>
+
+  <section aria-labelledby="cites">
+    <h2 id="cites" class="sr-only">What it cites</h2>
+    {cites.map(({ r, revs }) => (
+      <div class="revision-block">
+        <blockquote class="quote">
+          {r.quote ? <p>{r.quote}</p> : <p class="muted">No sentence: this row grades {r.lexicon ? <>the lexicon <code>{Array.isArray(r.lexicon) ? r.lexicon.join(', ') : r.lexicon}</code></> : 'a convention outside the proposal'}.</p>}
+          <footer>
+            {revs.length === 1 ? `Revision ${revs[0]}` : `Revisions ${revs.join(' and ')}`}
+            {r.section_url && <>, <a href={r.section_url}><code>{r.section}</code></a></>}
+            {r.basis.length > 0 && <>. Basis: {r.basis.map((b) => BASIS[b] ?? b).join('; ')}</>}.
+          </footer>
+        </blockquote>
+        {r.checks !== a.checks && <p class="muted small" style="margin-block-start: var(--hp-space-2)">At {revs.join(' and ')} it checks: {r.checks}</p>}
+      </div>
+    ))}
+  </section>
+
+  <section aria-labelledby="results">
+    <div class="section-head">
+      <h2 id="results">Results</h2>
+      <p>Each implementation&rsquo;s newest run.</p>
+    </div>
+    <div class="rows-wrap">
+      <table class="rows">
+        <thead><tr><th class="col-state">State</th><th>Implementation</th><th>Revision</th><th>What the run saw</th></tr></thead>
+        <tbody>
+          {a.results.map((r) => (
+            <tr>
+              <td class="col-state"><State group={r.group as Group} label={r.display} /></td>
+              <td><a href={implHref(r.implementation)}>{r.name}</a></td>
+              <td>{r.revision}</td>
+              <td class="why">
+                {r.message ?? ''}
+                {r.provisional && <span class="note">Provisional: {r.provisional}</span>}
+                {(r.group === 'fail' || r.group === 'error') && r.ci_url && <span class="note"><a href={r.ci_url}>The failing run</a></span>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</Base>
