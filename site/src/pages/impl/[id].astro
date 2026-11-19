@@ -17,19 +17,20 @@ interface Props { impl: Impl }
 const { impl } = Astro.props
 const runs = latestRuns(impl)
 const ROLE_LABEL: Record<string, string> = { pds: 'PDS', 'repo-host': 'Repo host', 'space-host': 'Space host' }
-const PROFILE_LABEL: Record<string, string> = { pds: 'PDS: the space authority is the user’s own account', 'bespoke-space-host': 'Bespoke space host: spaces live on DIDs the host mints' }
+const PROFILE_LABEL: Record<string, string> = { pds: 'PDS: each space belongs to a user’s own account', 'bespoke-space-host': 'Standalone space host: spaces live on DIDs it creates' }
 const OLD_DAYS = 30
+const LEVEL: Record<string, string> = { must: 'required', should: 'recommended', info: 'info' }
 const runLink = (r: { ci_url: string | null }) => r.ci_url
 const order: Group[] = ['fail', 'deviation', 'provisional', 'error', 'pass', 'pending', 'untested', 'na']
 ---
-<Base title={impl.name} description={`Spaces conformance results for ${impl.name}: score per role, deviations and every assertion.`}>
+<Base title={impl.name} description={`How ${impl.name} does against the atproto spaces spec: its scores, its known gaps and every test.`}>
   <div class="page-head">
     <p class="crumbs"><a href="/">Results</a> / {impl.name}</p>
     <h1>{impl.name}</h1>
     <dl class="facts">
       <div><dt>Roles</dt><dd>{impl.roles.map((r) => ROLE_LABEL[r] ?? r).join(', ')}</dd></div>
       <div><dt>Profile</dt><dd>{PROFILE_LABEL[impl.profile] ?? impl.profile}</dd></div>
-      <div><dt>Spec revisions claimed</dt><dd>{impl.spec_revisions.join(', ')}</dd></div>
+      <div><dt>Targets spec</dt><dd>{impl.spec_revisions.join(', ')}</dd></div>
       {(impl.homepage || impl.source) && (
         <div><dt>Project</dt><dd>
           {impl.homepage && <a href={impl.homepage}>Homepage</a>}
@@ -43,7 +44,7 @@ const order: Group[] = ['fail', 'deviation', 'provisional', 'error', 'pass', 'pe
   {impl.limits.length > 0 && (
     <section aria-labelledby="limits">
       <aside class="hp-callout" data-kind="note">
-        <p class="hp-callout-title" id="limits">What this implementation&rsquo;s manifest rules out</p>
+        <p class="hp-callout-title" id="limits">What doesn&rsquo;t apply here</p>
         <ul class="limits">{impl.limits.map((l) => <li>{l}</li>)}</ul>
       </aside>
     </section>
@@ -52,8 +53,8 @@ const order: Group[] = ['fail', 'deviation', 'provisional', 'error', 'pass', 'pe
   {runs.length === 0 && (
     <section>
       <div class="hp-window"><div class="hp-window-body flush"><div class="empty">
-        <h3>No published runs yet</h3>
-        <p>The nightly run grades every implementation at its pinned image. This one hasn&rsquo;t run yet.</p>
+        <h3>No results yet</h3>
+        <p>We haven&rsquo;t tested this one yet. Its results will show up here after the first run.</p>
       </div></div></div>
     </section>
   )}
@@ -63,8 +64,8 @@ const order: Group[] = ['fail', 'deviation', 'provisional', 'error', 'pass', 'pe
     return (
       <section aria-labelledby={`rev-${revision}`}>
         <div class="section-head">
-          <h2 id={`rev-${revision}`}>Graded at {revision}</h2>
-          <p>{KIND_LABEL[run.kind]} on {moment(run.started_at)}{run.slow ? '' : ', without the slow checks'}.</p>
+          <h2 id={`rev-${revision}`}>Spec revision {revision}</h2>
+          <p>{KIND_LABEL[run.kind]} on {moment(run.started_at)}{run.slow ? '' : ', skipping the slow checks'}.</p>
         </div>
 
         <dl class="scores">
@@ -72,8 +73,8 @@ const order: Group[] = ['fail', 'deviation', 'provisional', 'error', 'pass', 'pe
             <div class="score">
               <dt>{ROLE_LABEL[role] ?? role}</dt>
               <dd>
-                <span class="hp-figure">{pct(s.must_pass, s.must_applicable)}<span class="hp-figure-unit">of must rows</span></span>
-                <span class="detail">{s.must_pass} of {s.must_applicable} must rows pass{s.should_applicable ? `; ${s.should_pass} of ${s.should_applicable} should` : ''}</span>
+                <span class="hp-figure">{pct(s.must_pass, s.must_applicable)}<span class="hp-figure-unit">of required checks</span></span>
+                <span class="detail">{s.must_pass} of {s.must_applicable} pass{s.should_applicable ? `, plus ${s.should_pass} of ${s.should_applicable} recommended` : ''}</span>
               </dd>
             </div>
           ))}
@@ -84,21 +85,21 @@ const order: Group[] = ['fail', 'deviation', 'provisional', 'error', 'pass', 'pe
           <dl class="facts">
             <div class="facts-wide"><dt>Image</dt><dd><Digest image={run.image} /></dd></div>
             <div><dt>Source revision</dt><dd>{run.source_revision ? <code>{run.source_revision.slice(0, 12)}</code> : <span class="muted">not recorded</span>}</dd></div>
-            <div><dt>Run</dt><dd>{runLink(run) ? <a href={runLink(run)!}>CI run and logs</a> : <span class="muted">Local run, no CI log</span>}</dd></div>
+            <div><dt>Run</dt><dd>{runLink(run) ? <a href={runLink(run)!}>CI run and logs</a> : <span class="muted">Run locally, so there&rsquo;s no CI log</span>}</dd></div>
             <div><dt>Run id</dt><dd><code>{run.id}</code></dd></div>
             <div><dt>Suite commit</dt><dd><a href={`https://github.com/happyproto/spaces-conformance/tree/${run.suite_commit}`}><code>{run.suite_commit}</code></a></dd></div>
             {run.fingerprint && <div><dt>Fingerprint</dt><dd><code title={run.fingerprint}>{run.fingerprint.slice(7, 19)}</code></dd></div>}
             <div><dt>Setup</dt><dd>spaces {run.setup_mode.spaces}, accounts {run.setup_mode.accounts}, writes by {run.write_auth}</dd></div>
-            <div><dt>Peers</dt><dd>{run.peers.map((p, i) => <>{i > 0 && ', '}{p.id}{p.as ? ` as ${p.as}` : ''} <Digest image={p.image} short /></>)}</dd></div>
+            <div><dt>Also in the stack</dt><dd>{run.peers.map((p, i) => <>{i > 0 && ', '}{p.id}{p.as ? ` as ${p.as}` : ''} <Digest image={p.image} short /></>)}</dd></div>
             {run.previous_attempts.length > 0 && <div class="facts-wide"><dt>Earlier attempt</dt><dd>Rerun after {run.previous_attempts.map((a) => `${a.errored.length} error(s) and ${a.failed.length} fail(s) in ${a.id}`).join('; ')}</dd></div>}
           </dl>
           {candidate && (
             <aside class="hp-callout" data-kind="note" style="margin-block-start: var(--hp-space-6)">
-              <p class="hp-callout-title">A newer candidate image ran on {day(candidate.started_at)}</p>
+              <p class="hp-callout-title">We tested a newer image on {day(candidate.started_at)}</p>
               <p>
-                <Digest image={candidate.image} short /> passed {candidate.total.pass} of {graded(candidate.total)} graded rows.
-                {candidate.unexpected === 0 ? ' Nothing unexpected, so a pin PR moves this implementation to it.' : ` ${candidate.unexpected} result(s) weren’t expected, so the pin stays.`}
-                {candidate.ci_url && <> <a href={candidate.ci_url}>The candidate run</a>.</>}
+                <Digest image={candidate.image} short /> passed {candidate.total.pass} of {graded(candidate.total)} tests.
+                {candidate.unexpected === 0 ? ' Nothing surprising, so we’ll switch to it once the pin PR merges.' : ` ${candidate.unexpected} ${candidate.unexpected === 1 ? 'result was' : 'results were'} unexpected, so we’re staying on the current image for now.`}
+                {candidate.ci_url && <> <a href={candidate.ci_url}>See the run</a>.</>}
               </p>
             </aside>
           )}
@@ -109,8 +110,8 @@ const order: Group[] = ['fail', 'deviation', 'provisional', 'error', 'pass', 'pe
             <div class="section-head">
               <h3>Known deviations</h3>
               <p>
-                {run.deviations.reduce((n, c) => n + c.entries.length, 0)} entries from {run.deviations.length} {run.deviations.length === 1 ? 'cause' : 'causes'}, as the
-                implementation lists them. A listed row still counts as not passing. Ages are on the day of the run.
+                {run.deviations.reduce((n, c) => n + c.entries.length, 0)} failing tests the project already knows about, from {run.deviations.length} {run.deviations.length === 1 ? 'cause' : 'causes'}.
+                They still count against the score.
               </p>
             </div>
             <div class="causes">
@@ -118,7 +119,7 @@ const order: Group[] = ['fail', 'deviation', 'provisional', 'error', 'pass', 'pe
                 <article class="cause">
                   <div class="cause-head">
                     <h3><code>{c.cause}</code></h3>
-                    <span class="muted small">{c.entries.length} {c.entries.length === 1 ? 'assertion' : 'assertions'}, one cause</span>
+                    <span class="muted small">{c.entries.length} {c.entries.length === 1 ? 'test' : 'tests'}</span>
                   </div>
                   <ul>
                     {c.entries.map((e) => (
@@ -126,8 +127,8 @@ const order: Group[] = ['fail', 'deviation', 'provisional', 'error', 'pass', 'pe
                         <span><a href={assertionHref(e.assertion)}><code>{e.assertion}</code></a>: {e.reason}</span>
                         <span class="entry-meta">
                           <span>Tracking: {trackingUrl(e.tracking) ? <a href={e.tracking}>{e.tracking.replace(/^https?:\/\//, '')}</a> : e.tracking}</span>
-                          <span class="age" data-old={String(e.age_days > OLD_DAYS)}>Listed {e.age_days === 0 ? 'that day' : `${e.age_days} ${e.age_days === 1 ? 'day' : 'days'}`} (since {e.since})</span>
-                          <span>Shown as {e.display}</span>
+                          <span class="age" data-old={String(e.age_days > OLD_DAYS)}>Known for {e.age_days === 0 ? 'less than a day' : `${e.age_days} ${e.age_days === 1 ? 'day' : 'days'}`} at this run (since {e.since})</span>
+                          
                         </span>
                       </li>
                     ))}
@@ -140,8 +141,7 @@ const order: Group[] = ['fail', 'deviation', 'provisional', 'error', 'pass', 'pe
 
         <div class="block">
           <div class="section-head">
-            <h3>Every assertion</h3>
-            <p>Grouped by suite. Fails first in each suite, then deviations, then the rest.</p>
+            <h3>All tests</h3>
           </div>
           {data.suites.filter((s) => run.rows.some((r) => r.suite === s)).map((s) => {
             const t = run.bySuite[s]
@@ -151,23 +151,23 @@ const order: Group[] = ['fail', 'deviation', 'provisional', 'error', 'pass', 'pe
               <div class="suite-block" id={`suite-${s}`}>
                 <h3>
                   {s}
-                  <span class="muted">{graded(t) ? `${t.pass} of ${graded(t)} graded pass` : 'none graded yet'}{t.pending ? `, ${t.pending} pending` : ''}{t.untested ? `, ${t.untested} with no test yet` : ''}{t.na ? `, ${t.na} not applicable` : ''}</span>
+                  <span class="muted">{graded(t) ? `${t.pass} of ${graded(t)} pass` : 'nothing tested yet'}{t.pending ? `, ${t.pending} pending` : ''}{t.untested ? `, ${t.untested} without a test yet` : ''}{t.na ? `, ${t.na} don’t apply` : ''}</span>
                 </h3>
                 {graded(t) > 0 && <div style="max-inline-size: 16rem; margin-block-end: var(--hp-space-3)"><Meter tally={t} /></div>}
                 {rows.length > 0 && <div class="rows-wrap">
                   <table class="rows">
-                    <thead><tr><th class="col-state">State</th><th class="col-id">Assertion</th><th class="col-level">Level</th><th>What the run saw</th></tr></thead>
+                    <thead><tr><th class="col-state">Result</th><th class="col-id">Test</th><th class="col-level">Level</th><th>What we saw</th></tr></thead>
                     <tbody>
                       {rows.map((r) => (
                         <tr>
                           <td class="col-state"><State group={r.group as Group} label={r.display} /></td>
                           <td class="col-id"><a href={assertionHref(r.id)}><code>{r.id}</code></a></td>
-                          <td class="col-level">{r.level}</td>
+                          <td class="col-level">{LEVEL[r.level] ?? r.level}</td>
                           <td class="why">
                             {r.message ?? ''}
-                            {r.changed && <span class="note">Listed, but it failed differently: {r.changed}</span>}
-                            {r.provisional && <span class="note">Provisional: {r.provisional}</span>}
-                            {(r.group === 'fail' || r.group === 'error') && runLink(run) && <span class="note"><a href={runLink(run)!}>The failing run</a></span>}
+                            {r.changed && <span class="note">A known gap, but it failed in a new way: {r.changed}</span>}
+                            {r.provisional && <span class="note">Not counted yet: {r.provisional}</span>}
+                            {(r.group === 'fail' || r.group === 'error') && runLink(run) && <span class="note"><a href={runLink(run)!}>See the failing run</a></span>}
                           </td>
                         </tr>
                       ))}
@@ -176,7 +176,7 @@ const order: Group[] = ['fail', 'deviation', 'provisional', 'error', 'pass', 'pe
                 </div>}
                 {untested.length > 0 && (
                   <p class="untested small">
-                    <State group="untested" label={`No test yet for ${untested.length} applicable ${untested.length === 1 ? 'row' : 'rows'}`} />
+                    <State group="untested" label={`${untested.length} ${untested.length === 1 ? 'check doesn’t' : 'checks don’t'} have a test yet`} />
                     <span class="ids">{untested.map((r) => <a href={assertionHref(r.id)}><code>{r.id}</code></a>)}</span>
                   </p>
                 )}
@@ -190,7 +190,7 @@ const order: Group[] = ['fail', 'deviation', 'provisional', 'error', 'pass', 'pe
           <History runs={impl.history} revision={revision} />
           <div class="rows-wrap" style="margin-block-start: var(--hp-space-4)">
             <table class="rows">
-              <thead><tr><th>Run</th><th>Kind</th><th>Image</th><th>Graded rows passing</th></tr></thead>
+              <thead><tr><th>Run</th><th>Kind</th><th>Image</th><th>Passing</th></tr></thead>
               <tbody>
                 {impl.history.filter((h) => h.revision === revision).map((h) => (
                   <tr>

@@ -197,10 +197,10 @@ function limits(m: Manifest): string[] {
   const out: string[] = [];
   const caps = m.capabilities as { repo_host?: { foreign_authorities?: boolean }; oauth?: { scripted?: boolean } };
   if (m.profile === 'bespoke-space-host')
-    out.push('Spaces live on DIDs the host mints, and nobody signs in as them, so the assertions anchored on the authority being a signed-in account don’t apply.');
-  if (!m.roles.includes('pds')) out.push('Doesn’t claim the PDS role, so the baseline every PDS must serve isn’t graded.');
-  if (m.roles.includes('repo-host') && caps.repo_host?.foreign_authorities === false) out.push('Hosts repos only in its own spaces.');
-  if (caps.oauth?.scripted === false) out.push('Its OAuth consent can’t be scripted, so the assertions that need a scripted grant don’t run.');
+    out.push('Its spaces live on DIDs it creates, which nobody signs in as, so the tests that assume a space belongs to a signed-in account don’t apply.');
+  if (!m.roles.includes('pds')) out.push('It isn’t a PDS, so the tests for what every PDS has to serve don’t apply.');
+  if (m.roles.includes('repo-host') && caps.repo_host?.foreign_authorities === false) out.push('It only hosts repos in its own spaces.');
+  if (caps.oauth?.scripted === false) out.push('Its OAuth consent screen can’t be automated, so the tests that need a scripted sign-in don’t run.');
   return out;
 }
 

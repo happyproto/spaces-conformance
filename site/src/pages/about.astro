@@ -1,69 +1,71 @@
 ---
 // How the results are made and read (design ch. 8.1): how it runs, who runs
-// it, scoring, profiles, adding an implementation, disputing a result.
+// it, scoring, profiles, adding an implementation, disputing a result,
+// asking for a re-run. The one page that explains the vocabulary.
 import Base from '../layouts/Base.astro'
 import State from '../components/State.astro'
 import type { Group } from '../lib/data'
 
 const REPO = 'https://github.com/happyproto/spaces-conformance'
 const states: { group: Group; label?: string; scored: string; text: string }[] = [
-  { group: 'pass', scored: 'passing', text: 'The implementation did what the quoted sentence says.' },
-  { group: 'deviation', scored: 'not passing', text: 'It failed the way the implementation’s own deviation list says it will, and the entry names a tracking issue.' },
-  { group: 'fail', scored: 'not passing', text: 'It failed, and no entry covers that failure.' },
-  { group: 'fail', label: 'deviation changed', scored: 'not passing', text: 'An entry covers the row, but the failure isn’t the one the entry describes, so it’s judged as an unlisted fail.' },
-  { group: 'pass', label: 'fixed, still listed', scored: 'passing', text: 'It passed, but the implementation still lists it as a deviation. The entry is due to come out.' },
-  { group: 'provisional', scored: 'left out', text: 'It failed on a check the harness hasn’t yet confirmed on two independent implementations, so the harness may be the one that’s wrong.' },
-  { group: 'error', scored: 'left out', text: 'The stack, the setup or the harness broke. An error is no result, and the run is retried once.' },
-  { group: 'pending', scored: 'left out', text: 'The harness can’t judge the row against this implementation yet, and says why.' },
-  { group: 'untested', scored: 'left out', text: 'The row applies, but the suite has no test for it yet.' },
-  { group: 'na', scored: 'left out', text: 'The implementation doesn’t claim the role, profile or capability the row needs.' },
+  { group: 'pass', scored: 'Passes', text: 'It does what the spec says.' },
+  { group: 'deviation', scored: 'Doesn’t pass', text: 'It fails in exactly the way the project told us to expect, and they’re tracking a fix.' },
+  { group: 'fail', scored: 'Doesn’t pass', text: 'It fails, and nobody has flagged it yet.' },
+  { group: 'fail', label: 'deviation changed', scored: 'Doesn’t pass', text: 'It’s a known gap, but it failed in a different way than expected, so we treat it as a new failure.' },
+  { group: 'pass', label: 'fixed, still listed', scored: 'Passes', text: 'It passes now, but the project still lists it as a known gap. Time to take it off the list.' },
+  { group: 'provisional', scored: 'Left out', text: 'It fails a check we haven’t yet confirmed on two independent implementations, so the bug could be ours.' },
+  { group: 'error', scored: 'Left out', text: 'Something broke on our side. We retry once, and if it breaks again there’s no result.' },
+  { group: 'pending', scored: 'Left out', text: 'We can’t test this against this implementation yet. The details say why.' },
+  { group: 'untested', scored: 'Left out', text: 'It applies, but we haven’t written the test yet.' },
+  { group: 'na', scored: 'Left out', text: 'The implementation doesn’t do the job this check is about.' },
 ]
 ---
-<Base title="About" description="How the atproto spaces conformance suite runs, how results are scored, and how to add an implementation or dispute a result." current="about">
+<Base title="About" description="How we test atproto spaces implementations, how scores work, and how to add a PDS or ask for a re-run." current="about">
   <div class="page-head">
     <h1>About these results</h1>
     <p class="lede">
-      An over-the-wire test suite for atproto spaces. It talks to each implementation only over HTTP, and every assertion
-      quotes the sentence of Proposal 0016 it tests, at a pinned commit.
+      We test each implementation over HTTP, the same way any app talking to it would. Every check points at the sentence of
+      the spec it comes from, so you can always see why something passed or failed.
     </p>
   </div>
 
   <div class="prose">
-    <h2 id="how">How it runs</h2>
+    <h2 id="how">How we test</h2>
     <p>
-      Each run starts a fresh stack for one implementation: its image, pinned by digest, behind a TLS front on a private network
-      with no route to the internet, next to a PLC directory and the harness. The harness creates its own accounts and spaces,
-      then runs every suite that applies. Account and space setup isn&rsquo;t graded: an implementation that sets up spaces an older way
-      can still be graded on everything after that.
+      For each run we start a fresh, private network with the implementation, a PLC directory and our test runner, and
+      nothing else. Nothing in it can reach the internet. The test runner makes its own accounts and spaces, then works through
+      every check that applies. We don&rsquo;t grade the setup, so an implementation that creates spaces in an older way
+      still gets tested on everything after that.
     </p>
     <ul>
-      <li>Every night, each implementation runs at the image it&rsquo;s pinned to, but only if its image, the suite or the spec revision changed since its last result.</li>
-      <li>When a new image of an implementation is built, it runs as a candidate. A candidate with nothing unexpected gets a pull request that moves the pin. One with unexpected results gets an issue in the suite&rsquo;s repository, and the pin stays.</li>
-      <li>Every run&rsquo;s raw results are committed to the <a href={`${REPO}/tree/results`}>results branch</a>, with the deviation list it was judged against. Nothing is edited afterwards: a wrong result is corrected by a new run.</li>
+      <li>When a project ships a new image, we test it. If nothing surprising turns up, we open a pull request to switch to it. If something does, we open an issue in our repository and stay on the current image.</li>
+      <li>Every night, we test anything that changed since its last run: a new image, new tests, or a new spec revision. If nothing changed, we don&rsquo;t run it again.</li>
+      <li>Every result goes into the <a href={`${REPO}/tree/results`}>results branch</a> as it was recorded, along with the list of known gaps it was judged against. We never edit a result. If one is wrong, a new run replaces it.</li>
     </ul>
 
-    <h2 id="who">Who runs it</h2>
+    <h2 id="who">Who runs this</h2>
     <p>
-      <a href="https://happyproto.at/">HappyProto</a> runs the suite. HappyProto also makes HappyView, which is graded here like
-      every other implementation: from its published image, with the same harness, and with its deviation list shown in full.
-      The harness implements the spec&rsquo;s crypto and wire formats itself, from the spec text, and imports no implementation&rsquo;s code.
+      We&rsquo;re <a href="https://happyproto.at/">HappyProto</a>. We also make HappyView, and it&rsquo;s tested here like
+      everything else: from its published image, by the same tests, with its whole list of known gaps in view.
+      Our test runner implements the spec&rsquo;s crypto and wire formats itself, straight from the spec, and doesn&rsquo;t use
+      any implementation&rsquo;s code.
     </p>
 
-    <h2 id="scoring">Scoring</h2>
+    <h2 id="scoring">How scores work</h2>
     <p>
-      Each row has a level. <strong>Must</strong> rows are scored. <strong>Should</strong> rows are scored on their own.{' '}
-      <strong>Info</strong> rows record what an implementation does where the spec doesn&rsquo;t say, and are never scored.
-      A row is a must when its quoted sentence uses the keyword, or when the sentence defines the wire format, field or method being checked.
+      Every check has a level. <strong>Required</strong> checks come from a MUST in the spec, or from a sentence that defines a
+      format, field or method. <strong>Recommended</strong> checks come from a SHOULD, and get their own score.
+      <strong>Info</strong> checks just record what an implementation does where the spec doesn&rsquo;t say, and never count.
     </p>
     <p>
-      An implementation&rsquo;s score for a role is its passing must rows over the must rows that apply to it in that role.
-      Known deviations count as not passing, so listing one never raises a score.
+      An implementation&rsquo;s score is the share of required checks it passes, for each job it does. Known gaps still count
+      as failures, so listing one never raises a score.
     </p>
   </div>
 
   <div class="rows-wrap" style="margin-block-start: var(--hp-space-6); max-inline-size: 60rem">
     <table class="rows">
-      <thead><tr><th class="col-state">Shown as</th><th style="inline-size: 7rem">Scored as</th><th>When</th></tr></thead>
+      <thead><tr><th class="col-state">Result</th><th style="inline-size: 8rem">Counts as</th><th>Means</th></tr></thead>
       <tbody>
         {states.map((s) => (
           <tr>
@@ -77,52 +79,50 @@ const states: { group: Group; label?: string; scored: string; text: string }[] =
   </div>
 
   <div class="prose" style="margin-block-start: var(--hp-space-8)">
-    <h2 id="provisional">Why some fails are provisional</h2>
+    <h2 id="provisional">Why some failures don&rsquo;t count yet</h2>
     <p>
-      A suite that grades crypto can itself be wrong. So a check that runs through the harness&rsquo;s own crypto stays provisional
-      until it has passed on two implementations whose code for that area doesn&rsquo;t share a lineage. Two hosts built on the same
-      library count as one. Until then, a fail on that check is shown, and not scored.
+      Tests that check crypto can have bugs too. So until one of those checks has passed on two implementations that don&rsquo;t
+      share code for it, a failure is shown but doesn&rsquo;t count. Two projects built on the same library count as one.
     </p>
 
-    <h2 id="profiles">Profiles and roles</h2>
+    <h2 id="profiles">Jobs and kinds of host</h2>
     <p>
-      The proposal splits the work into roles: a <strong>repo host</strong> stores and serves space repos, a <strong>space host</strong>
-      handles credentials, the writer set and notifications, and a <strong>PDS</strong> serves the baseline every PDS must serve.
-      Each implementation claims the roles it plays, and only those rows apply.
+      The spec splits the work into three jobs. A <strong>repo host</strong> stores and serves people&rsquo;s space repos. A
+      <strong>space host</strong> handles credentials, who can write, and notifications. A <strong>PDS</strong> also has to
+      serve a baseline set of methods. Each implementation tells us which jobs it does, and only those checks apply.
     </p>
     <p>
-      Some rules assume the space authority is an account someone signs in as. A <strong>bespoke space host</strong> keeps spaces on
-      DIDs it mints, so those rules don&rsquo;t apply to it. The catalogue, not the implementation, decides which rows each profile
-      covers, so no implementation can opt itself out. Each implementation&rsquo;s page states what its manifest rules out.
+      Some rules assume a space belongs to an account someone signs in as. A <strong>standalone space host</strong> keeps its
+      spaces on DIDs it creates, so those rules don&rsquo;t apply to it. We decide which checks each kind of host gets, not the
+      implementation, so nobody can opt out of a check. Each implementation&rsquo;s page says what doesn&rsquo;t apply to it.
     </p>
 
     <h2 id="adding">Adding an implementation</h2>
-    <p>Open a pull request on <a href={REPO}>happyproto/spaces-conformance</a> with a folder under <code>implementations/</code>:</p>
-    <ul>
-      <li>a manifest: the roles and profile it claims, its capabilities, and the library behind each crypto area;</li>
-      <li>a compose fragment that starts it on the stack&rsquo;s network;</li>
-      <li>an adapter for account and space setup, if <code>createAccount</code> and <code>createSpace</code> aren&rsquo;t enough;</li>
-      <li>a pin for its image, by digest.</li>
-    </ul>
-    <p>Its deviation list can live in the suite&rsquo;s repository or in its own, read at the commit its image was built from.</p>
-
-    <h2 id="disputing">Disputing a result</h2>
     <p>
-      If a result looks wrong, <a href={`${REPO}/issues/new`}>open an issue</a> with the run id from the implementation&rsquo;s page
-      and the assertion id. The harness is the first suspect. A confirmed harness bug is fixed in the suite, and the next run
-      replaces the result. Nothing is ever posted on another project&rsquo;s tracker automatically.
+      The easiest way is to <a href={`${REPO}/issues/new?template=add-a-pds.yml`}>open an &ldquo;Add a PDS&rdquo; issue</a>,
+      and we&rsquo;ll take it from there. If you&rsquo;d rather send a pull request to
+      <a href={REPO}>happyproto/spaces-conformance</a>, add a folder under <code>implementations/</code> with:
+    </p>
+    <ul>
+      <li>a manifest: the jobs it does, what it supports, and which library handles each piece of crypto;</li>
+      <li>a compose file that starts it on our test network;</li>
+      <li>an adapter for creating accounts and spaces, if <code>createAccount</code> and <code>createSpace</code> aren&rsquo;t enough;</li>
+      <li>its image, pinned by digest.</li>
+    </ul>
+    <p>Its list of known gaps can live in our repository or in its own.</p>
+
+    <h2 id="disputing">If a result looks wrong</h2>
+    <p>
+      <a href={`${REPO}/issues/new`}>Open an issue</a> with the run id from the implementation&rsquo;s page and the name of the
+      check. We assume our tests are wrong until proven otherwise. If they are, we fix them, and the next run replaces the
+      result. We never post on another project&rsquo;s tracker automatically.
     </p>
 
     <h2 id="rerun">Asking for a re-run</h2>
     <p>
-      Nothing is graded again on a schedule. A new run happens when something the result depends on changes: the
-      implementation&rsquo;s image, the suite, or the spec revision. Each run records a fingerprint of those inputs, and the
-      nightly job skips any implementation whose fingerprint already has a result.
-    </p>
-    <p>
-      To have the same inputs graded again, for example after a suspected flake, use
-      the <a href={`${REPO}/issues/new?template=rerun.yml`}>re-run request form</a>. Give the implementation, the run id from its
-      page, and why. A maintainer of the suite then starts the run by hand.
+      We only test something again when it changes. If you think a result was a fluke, fill in the
+      <a href={`${REPO}/issues/new?template=rerun.yml`}>re-run request</a> with the implementation, the run id from its page,
+      and why. One of us will start a fresh run.
     </p>
   </div>
 </Base>

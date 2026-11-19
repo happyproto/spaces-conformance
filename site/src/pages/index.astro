@@ -10,12 +10,12 @@ import { data, day, graded, GROUP_LABEL, implHref, KIND_LABEL, latestRuns, type 
 const rows = data.implementations.flatMap((impl) => latestRuns(impl).map(({ revision, run }) => ({ impl, revision, run })))
 const notes: Group[] = ['deviation', 'fail', 'provisional', 'error']
 const legend: { group: Group; text: string }[] = [
-  { group: 'pass', text: 'The implementation does what the quoted sentence says.' },
-  { group: 'deviation', text: 'Fails, and the implementation lists it as a known gap with a tracking issue. Counts as not passing.' },
-  { group: 'fail', text: 'Fails, and nobody has listed it. Also shown when a listed row fails for a different reason.' },
-  { group: 'provisional', text: 'Fails where the harness hasn’t yet been cross-checked against two independent implementations. Not scored.' },
-  { group: 'error', text: 'The stack or the harness broke, so there is no result. Not scored.' },
-  { group: 'pending', text: 'The harness can’t judge this row against this implementation yet.' },
+  { group: 'pass', text: 'Does what the spec says.' },
+  { group: 'deviation', text: 'Fails, but the project already knows and is tracking a fix. Still counts against its score.' },
+  { group: 'fail', text: 'Fails, and nobody has flagged it yet. Also used when a known gap starts failing in a new way.' },
+  { group: 'provisional', text: 'Fails a check we haven’t yet confirmed on two independent implementations, so the bug could be ours. Doesn’t count.' },
+  { group: 'error', text: 'Something broke on our side during the run, so there’s no result. Doesn’t count.' },
+  { group: 'pending', text: 'We can’t test this one against this implementation yet.' },
 ]
 const suiteCount = data.suites.length
 ---
@@ -37,7 +37,7 @@ const suiteCount = data.suites.length
       <div class="hp-window-body flush">
         <div class="grid-scroll" role="region" aria-labelledby="latest" tabindex="0">
           <table class="grid">
-            <caption class="sr-only">Passing rows of the rows graded, per implementation and suite</caption>
+            <caption class="sr-only">Tests passed, by implementation and suite</caption>
             <thead>
               <tr>
                 <th scope="col" class="impl-col">Implementation</th>
@@ -63,19 +63,19 @@ const suiteCount = data.suites.length
                         <td>
                           <span class="cell-none">
                             <span class="cell-figure" aria-hidden="true">&ndash;</span>
-                            <span>{t.na && !waiting ? 'n/a' : waiting ? `${waiting} not graded` : 'no rows'}</span>
+                            <span>{t.na && !waiting ? 'doesn’t apply' : waiting ? `${waiting} not tested yet` : 'no tests'}</span>
                           </span>
                         </td>
                       )
                     return (
                       <td>
-                        <a class="cell" href={`${implHref(impl.id)}#suite-${s}`} aria-label={`${impl.name}, ${s}: ${t.pass} of ${n} graded rows pass${notes.filter((g) => t[g]).map((g) => `, ${t[g]} ${GROUP_LABEL[g]}`).join('')}`}>
+                        <a class="cell" href={`${implHref(impl.id)}#suite-${s}`} aria-label={`${impl.name}, ${s}: ${t.pass} of ${n} tests pass${notes.filter((g) => t[g]).map((g) => `, ${t[g]} ${GROUP_LABEL[g]}`).join('')}`}>
                           <span class="cell-figure">{t.pass}<span class="of">/{n}</span></span>
                           <Meter tally={t} />
                           {notes.some((g) => t[g]) && (
                             <span class="cell-notes">
                               {notes.filter((g) => t[g]).map((g) => (
-                                <span data-group={g}><Mark group={g} />{t[g]} {g === 'deviation' ? 'known' : g === 'provisional' ? 'provisional' : g}</span>
+                                <span data-group={g}><Mark group={g} />{t[g]} {g === 'deviation' ? 'known' : g === 'provisional' ? 'provisional' : g === 'fail' ? 'failing' : 'errors'}</span>
                               ))}
                             </span>
                           )}
@@ -98,25 +98,20 @@ const suiteCount = data.suites.length
         </ul>
       </div>
     </div>
-    <p class="muted small" style="margin-block-start: var(--hp-space-3)">
-      A cell reads passing rows over graded rows. Rows still waiting for a test aren&rsquo;t counted; each implementation&rsquo;s page lists them.
-      How scores are counted is on the <a href="/about/#scoring">about page</a>.
-    </p>
   </section>
 
   <section aria-labelledby="pairings">
     <div class="section-head">
       <h2 id="pairings">Pairings</h2>
-      <p>One implementation as the space host, another as the repo host.</p>
+      <p>One project&rsquo;s space host working with another project&rsquo;s repo host.</p>
     </div>
     <div class="hp-window">
       <div class="hp-window-body flush">
         <div class="empty">
           <h3>No pairing runs yet</h3>
           <p>
-            A pairing run puts a space host from one implementation in front of a repo host from another, so credentials,
-            write notifications and the writer set cross a real boundary. The harness doesn&rsquo;t run pairings yet. Until it does,
-            those rows are graded with the harness standing in for the other side.
+            Pairings will test two projects against each other, so credentials and write notifications cross a real
+            boundary. Until they&rsquo;re ready, we play the other side ourselves.
           </p>
         </div>
       </div>

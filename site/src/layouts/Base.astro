@@ -45,7 +45,7 @@ const g = data.generated
     <meta name="conformance-updated" content={g.store_updated_at ?? ''} />
   </head>
   <body>
-    <a class="skip hp-link" href="#main">Skip to the results</a>
+    <a class="skip hp-link" href="#main">Skip to content</a>
     <div class="frame hp-frame">
       <header class="site-header">
         <a class="home" href="/" aria-label="Spaces conformance, home">
@@ -68,16 +68,16 @@ const g = data.generated
       </main>
       <footer class="site-footer hp-rule">
         <p>
-          Graded against Proposal 0016 at{' '}
+          Tested against Proposal 0016 at{' '}
           {g.revisions.map((r, i) => (
             <>{i > 0 && ' and '}<a class="hp-link" href={r.url}>{r.key}</a> (<code>{r.commit.slice(0, 10)}</code>)</>
           ))}.
           Suite {g.suite_commits.length === 1 ? 'commit' : 'commits'} {g.suite_commits.map((c, i) => <>{i > 0 && ', '}<code>{c}</code></>)}.
-          Newest run {day(g.store_updated_at)}.
+          Last run {day(g.store_updated_at)}.
         </p>
         <p>
           Run by <a class="hp-link" href="https://happyproto.at/">HappyProto</a>.
-          The suite, the raw results and every deviation list are public in{' '}
+          The tests, every raw result and each project&rsquo;s list of known gaps are public in{' '}
           <a class="hp-link" href="https://github.com/happyproto/spaces-conformance">happyproto/spaces-conformance</a>.
         </p>
       </footer>

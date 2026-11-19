@@ -8,14 +8,14 @@ import { assertionHref, data } from '../lib/data'
 const byRev = [...data.coverage].sort((a, b) => (a.revision < b.revision ? 1 : -1))
 const count = (s: { must: number; should: number; info: number }) => s.must + s.should + s.info
 const label = (s: { must: number; should: number; info: number }) =>
-  count(s) === 0 ? 'none' : [s.must && `${s.must} must`, s.should && `${s.should} should`, s.info && `${s.info} info`].filter(Boolean).join(', ')
+  count(s) === 0 ? 'none' : [s.must && `${s.must} required`, s.should && `${s.should} recommended`, s.info && `${s.info} info`].filter(Boolean).join(', ')
 ---
-<Base title="Spec coverage" description="Which sections of Proposal 0016 the conformance suite tests, per pinned revision." current="spec">
+<Base title="Spec coverage" description="Which parts of the atproto spaces spec we test, and which we don't yet." current="spec">
   <div class="page-head">
     <h1>Spec coverage</h1>
     <p class="lede">
-      Each section of the pinned proposal, with the assertions that cite it. A section with none isn&rsquo;t tested by anything here.
-      Rows that grade only a lexicon parameter, output or error don&rsquo;t cite a section, and are counted on their own.
+      Every section of the proposal, with the tests that come from it. A section marked &ldquo;none&rdquo; isn&rsquo;t tested yet.
+      A few tests check only a lexicon&rsquo;s parameters, outputs or errors, so they&rsquo;re listed separately.
     </p>
   </div>
   <div class="revisions-pick">
@@ -27,7 +27,7 @@ const label = (s: { must: number; should: number; info: number }) =>
             <h2 id={`cov-${c.revision}`}>Revision {c.revision}</h2>
             <p>
               <a href={c.url}>Proposal 0016 at <code>{c.commit.slice(0, 10)}</code></a>.{' '}
-              {tested} of {c.sections.length} sections cited{c.lexicon_only.length ? `, plus ${c.lexicon_only.length} lexicon-only rows` : ''}.
+              {tested} of {c.sections.length} sections have tests{c.lexicon_only.length ? `, plus ${c.lexicon_only.length} lexicon-only tests` : ''}.
             </p>
           </div>
           <ol class="toc">

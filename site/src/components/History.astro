@@ -24,7 +24,7 @@ const path = drawn.map((p, i) => `${i ? 'L' : 'M'}${x(p.started_at).toFixed(1)},
 ---
 {drawn.length > 0 && (
   <figure class="history" style="margin:0">
-    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Share of graded must rows passing, per run, at ${revision}. The table below lists the same runs.`}>
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Required checks passing in each run at ${revision}. The table below has the same numbers.`}>
       <line class="axis" x1={PAD} x2={W - PAD} y1={y(1)} y2={y(1)} />
       <line class="axis" x1={PAD} x2={W - PAD} y1={y(0)} y2={y(0)} />
       <text class="tick" x={0} y={y(1) + 4}>100%</text>
@@ -35,8 +35,8 @@ const path = drawn.map((p, i) => `${i ? 'L' : 'M'}${x(p.started_at).toFixed(1)},
       {points.length > 1 && <text class="tick" x={W - PAD} y={H - 2} text-anchor="end">{day(points[points.length - 1].started_at)}</text>}
     </svg>
     <figcaption class="muted small">
-      Must rows passing, per run, over the last 90 days. {drawn.length === 1 ? 'One run so far.' : `${drawn.length} runs.`}
-      {points.some((p) => p.kind === 'candidate') && ' Filled dots are candidate images, not the pin.'}
+      Required checks passing in each run over the last 90 days. {drawn.length === 1 ? 'One run so far.' : `${drawn.length} runs.`}
+      {points.some((p) => p.kind === 'candidate') && ' Filled dots are newer images we tried out before switching.'}
     </figcaption>
   </figure>
 )}
