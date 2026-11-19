@@ -54,7 +54,7 @@ const states: { group: Group; label?: string; scored: string; text: string }[] =
     <h2 id="scoring">How scores work</h2>
     <p>
       Every check has a level. <strong>Required</strong> checks come from a MUST in the spec, or from a sentence that defines a
-      format, field or method. <strong>Recommended</strong> checks come from a SHOULD, and get their own score.
+      format, field or method. <strong>Recommended</strong> checks come from a SHOULD, and get their own score.{' '}
       <strong>Info</strong> checks just record what an implementation does where the spec doesn&rsquo;t say, and never count.
     </p>
     <p>
@@ -87,7 +87,7 @@ const states: { group: Group; label?: string; scored: string; text: string }[] =
 
     <h2 id="profiles">Jobs and kinds of host</h2>
     <p>
-      The spec splits the work into three jobs. A <strong>repo host</strong> stores and serves people&rsquo;s space repos. A
+      The spec splits the work into three jobs. A <strong>repo host</strong> stores and serves people&rsquo;s space repos. A{' '}
       <strong>space host</strong> handles credentials, who can write, and notifications. A <strong>PDS</strong> also has to
       serve a baseline set of methods. Each implementation tells us which jobs it does, and only those checks apply.
     </p>
@@ -100,7 +100,7 @@ const states: { group: Group; label?: string; scored: string; text: string }[] =
     <h2 id="adding">Adding an implementation</h2>
     <p>
       The easiest way is to <a href={`${REPO}/issues/new?template=add-a-pds.yml`}>open an &ldquo;Add a PDS&rdquo; issue</a>,
-      and we&rsquo;ll take it from there. If you&rsquo;d rather send a pull request to
+      and we&rsquo;ll take it from there. If you&rsquo;d rather send a pull request to{' '}
       <a href={REPO}>happyproto/spaces-conformance</a>, add a folder under <code>implementations/</code> with:
     </p>
     <ul>
@@ -120,7 +120,7 @@ const states: { group: Group; label?: string; scored: string; text: string }[] =
 
     <h2 id="rerun">Asking for a re-run</h2>
     <p>
-      We only test something again when it changes. If you think a result was a fluke, fill in the
+      We only test something again when it changes. If you think a result was a fluke, fill in the{' '}
       <a href={`${REPO}/issues/new?template=rerun.yml`}>re-run request</a> with the implementation, the run id from its page,
       and why. One of us will start a fresh run.
     </p>
