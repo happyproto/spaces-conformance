@@ -1,7 +1,11 @@
 name: Nightly
 
-# Every implementation at its pin, with --slow (design ch. 6.2). The results
-# go to the `results` branch as kind `nightly`, and any deviation a run shows
+# Every implementation whose inputs changed since it was last graded, at its
+# pin, with --slow (design ch. 6.2). cli/ci/plan.ts compares each scenario's
+# fingerprint (harness/fingerprint.ts: images, revision, --slow and the
+# code a result depends on) with the runs on the `results` branch, and skips
+# a scenario already graded without an error. The results go to the
+# `results` branch as kind `nightly`, and any deviation a run shows
 # as "fixed, still listed" gets a prune PR (cli/prune.ts). Nothing here fails
 # because an implementation does: an implementation's own CI is the only
 # place its results gate anything (design ch. 4.4 rule 6).
@@ -16,6 +20,15 @@ on:
   schedule:
     - cron: '17 4 * * *'
   workflow_dispatch:
+    inputs:
+      force:
+        description: Run every scenario given, changed or not
+        type: boolean
+        default: false
+      implementations:
+        description: Comma-separated implementation ids. Empty means all.
+        type: string
+        default: ''
 
 concurrency:
   group: nightly
@@ -40,11 +53,33 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
+      # Read-only: the results branch, to see what's already graded.
+      - name: Check out the results
+        id: store
+        run: |
+          if git ls-remote --exit-code --heads "https://github.com/$GITHUB_REPOSITORY" results >/dev/null; then
+            git clone -q --depth 1 --branch results "https://github.com/$GITHUB_REPOSITORY" store
+            echo "args=--store store" >> "$GITHUB_OUTPUT"
+          fi
+
       - id: list
-        run: echo "implementations=$(node cli/ci/targets.ts matrix)" >> "$GITHUB_OUTPUT"
+        env:
+          STORE_ARGS: ${{ steps.store.outputs.args }}
+          FORCE: ${{ inputs.force }}
+          ONLY: ${{ inputs.implementations }}
+        run: |
+          set -eu
+          set --
+          [ -n "$STORE_ARGS" ] && set -- "$@" --store store
+          [ "$FORCE" = true ] && set -- "$@" --force
+          [ -n "$ONLY" ] && set -- "$@" --only "$ONLY"
+          node cli/ci/plan.ts "$@" > plan.txt
+          head -1 plan.txt >> "$GITHUB_OUTPUT"
+          tail -n +2 plan.txt >> "$GITHUB_STEP_SUMMARY"
 
   run:
     needs: list
+    if: needs.list.outputs.implementations != '[]'
     strategy:
       fail-fast: false
       matrix:
@@ -60,7 +95,7 @@ jobs:
     needs: run
     # Publish whatever finished: one implementation's infrastructure failure
     # mustn't hold back the others' results.
-    if: always() && needs.run.result != 'cancelled'
+    if: always() && needs.run.result != 'cancelled' && needs.run.result != 'skipped'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     concurrency:

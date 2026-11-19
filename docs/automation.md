@@ -77,7 +77,7 @@ It finds entries that a run shows as "fixed, still listed" and, with `--write`, 
 |---|---|---|
 | `run.yml` | `workflow_call` | One implementation on one image. It uploads the results file and the container logs as artifacts. It commits nothing, holds no secrets and runs on GitHub's ephemeral runner, so it is safe to call for an image built from a fork's pull request. |
 | `candidate.yml` | `repository_dispatch` (`pds-test-image`, `happyview-image`), `workflow_dispatch` | Runs a new image as a candidate and publishes the result. Then it opens a pin PR, opens or updates the implementation's issue, or does neither on an error. |
-| `nightly.yml` | daily at 04:17 UTC, `workflow_dispatch` | Runs every implementation at its pin with `--slow`, publishes, then opens a prune PR if any entry is fixed. |
+| `nightly.yml` | daily at 04:17 UTC, `workflow_dispatch` (`force`, `implementations`) | Runs each implementation whose scenario fingerprint changed, at its pin with `--slow`, publishes, then opens a prune PR if any entry is fixed. `force` reruns everything given. |
 
 The workflows share these rules:
 - Only `publish` jobs write. Each runs under the `results-writer` concurrency group, so one job writes to the `results` branch at a time.
@@ -91,6 +91,7 @@ Each script is in `cli/ci/` and takes `PUBLISH_DRY_RUN=1`, which does the work l
 
 | Script | Does |
 |---|---|
+| `plan.ts` | The nightly matrix: each implementation whose fingerprint has no stored run without an error. With no `results` branch yet, everything runs. Its summary says what's unchanged and since when. |
 | `targets.ts` | The implementation list for a matrix, the implementation a dispatch target names, and an implementation's current pin. |
 | `publish-results.sh` | Checks the `results` branch out into `.store/` (creating it as an orphan the first time), runs `store.ts add` and `check`, commits and pushes. It retries a push that lost a race. |
 | `open-pin-pr.sh` | `pin/<impl>-<digest12>`: runs `cli/pin.ts`, runs `bun run validate`, then opens the PR. Does nothing while one from that branch is open. |
