@@ -24,7 +24,7 @@ describe('scenario fingerprints', () => {
     expect(other.code).toBe(a.code);
   });
 
-  it('include the partner image for an implementation that has one', () => {
-    expect(Object.keys(scenarioFingerprint('happyview', { slow: true }).images).sort()).toEqual(['happyview', 'pdsjs', 'plc']);
+  it('include the partner image and every helper image', () => {
+    expect(Object.keys(scenarioFingerprint('happyview', { slow: true }).images).sort()).toEqual(['caddy', 'curl', 'happyview', 'harness-base', 'pdsjs', 'plc', 'postgres']);
   });
 });

@@ -33,7 +33,7 @@ The nightly run grades only scenarios whose inputs changed. A scenario is one im
 
 | Part | What |
 |---|---|
-| `images` | Every image in the stack, by digest: the implementation's (a candidate's replaces the pin's), its partner's, PLC's. |
+| `images` | Every image in the stack, by digest: the implementation's (a candidate's replaces the pin's), its partner's, and the helpers: PLC, Postgres, Caddy, the curl sidecar and the harness container's base. Every one is pinned in `pins/images.env`, so nothing moves under a tag between runs. |
 | `revision` | The revision key, and its proposal and lexicon commits. |
 | `slow` | Whether the slow checks ran. |
 | `code` | The files a result can depend on: `harness/`, `suites/`, `spec/assertions.yaml`, `spec/revisions.json`, that revision's lexicons, `fixtures/`, the base stack, the implementation's folder and its partner's, `package.json`, `bun.lock` and `vitest.suite.config.ts`. |

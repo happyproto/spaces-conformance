@@ -3,8 +3,9 @@
 //
 // A scenario is one implementation graded at one revision, with or without
 // --slow. Its fingerprint covers:
-//   images    every image in the stack: the implementation's (a candidate's
-//             digest replaces the pin's), its partner's, PLC's
+//   images    every image in the stack, by digest: the implementation's (a
+//             candidate's replaces the pin's), its partner's, PLC's, and the
+//             helpers (Postgres, Caddy, the curl sidecar, the harness base)
 //   revision  the revision key and its proposal and lexicon commits
 //   slow      whether the slow checks ran
 //   code      every file that can change a raw result: harness/, suites/,
@@ -81,6 +82,19 @@ export function fingerprint(opts: { ids: string[]; images: Record<string, string
   return { digest: `sha256:${sha(JSON.stringify(body))}`, ...body };
 }
 
+/** Images every stack can pull, by id in the fingerprint and pin name. */
+export const HELPERS = [
+  ['plc', 'PLC_IMAGE'],
+  ['postgres', 'POSTGRES_IMAGE'],
+  ['caddy', 'CADDY_IMAGE'],
+  ['curl', 'CURL_IMAGE'],
+  ['harness-base', 'HARNESS_BASE_IMAGE'],
+] as const;
+
+const missing = (pin: string): never => {
+  throw new Error(`pins/images.env has no ${pin}`);
+};
+
 /**
  * One implementation's scenario as `cli/run.ts` runs it: the implementation,
  * its partner, PLC, at the pinned images unless `image` replaces the
@@ -100,7 +114,7 @@ export function scenarioFingerprint(impl: string, opts: { image?: string; revisi
   const images: Record<string, string> = {
     [impl]: opts.image ?? imageOf(impl),
     ...(partner ? { [partner]: imageOf(partner) } : {}),
-    plc: pins.get('PLC_IMAGE')!,
+    ...Object.fromEntries(HELPERS.map(([id, pin]) => [id, pins.get(pin) ?? missing(pin)])),
   };
   return fingerprint({ ids: [impl, ...(partner ? [partner] : [])], images, revision: opts.revision ?? manifest.spec_revisions[0], slow: opts.slow }, root);
 }
