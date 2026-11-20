@@ -27,6 +27,8 @@ git config user.name >/dev/null 2>&1 || {
 }
 base=$(git rev-parse --abbrev-ref HEAD)
 branch="prune/$(date -u +%Y-%m-%d)"
+# A branch left from a closed prune PR gets a successor; nothing is force-pushed.
+if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then branch="$branch-$(date -u +%H%M%S)"; fi
 git checkout -q -B "$branch"
 git add implementations
 git commit -q -m "chore(deviations): remove entries the nightly runs show as fixed"

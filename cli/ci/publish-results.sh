@@ -8,8 +8,7 @@
 # creating it as an orphan if it doesn't exist yet, adds the files with
 # `cli/store.ts add` (which validates them and writes nothing if any fails),
 # checks the store, commits and pushes. A push that loses a race is retried
-# on the new tip, up to three times; the workflows also serialise on the
-# `results-writer` concurrency group.
+# on the new tip, up to three times.
 #
 # PUBLISH_DRY_RUN=1 does everything except the push.
 
