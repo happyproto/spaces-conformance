@@ -1,0 +1,30 @@
+name: Add a PDS
+description: Tell us about a PDS or space host we should be testing.
+title: "Add: <implementation>"
+labels: [add-implementation]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Implementation name
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Repository or homepage
+      description: Where its source, or its project page, lives.
+    validations:
+      required: true
+  - type: textarea
+    id: run
+    attributes:
+      label: Image, or how to run it
+      description: A container image (by digest, if you can), or how to build and start it. If you know which spec revision it targets, say so.
+    validations:
+      required: true
+  - type: input
+    id: contact
+    attributes:
+      label: Contact
+      description: Who we can talk to about it, like a maintainer's handle. Fine to leave empty.

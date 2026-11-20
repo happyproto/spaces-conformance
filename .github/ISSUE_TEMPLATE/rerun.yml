@@ -1,0 +1,40 @@
+name: Request a re-run
+description: Ask us to test an implementation again, for example if a result looks like a fluke.
+title: "Re-run: <implementation>"
+labels: [rerun]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We only test an implementation again when something changes: its image, our tests, or the spec. If you think a result was a fluke, tell us here and one of us will start a fresh run.
+
+        If you think a result is wrong, rather than flaky, open a regular issue instead, so we can check our tests.
+  - type: input
+    id: implementation
+    attributes:
+      label: Implementation
+      description: As it appears in the results site's address, like zds or pdsjs.
+    validations:
+      required: true
+  - type: input
+    id: run
+    attributes:
+      label: Run
+      description: The run id or CI link from the implementation's page.
+    validations:
+      required: true
+  - type: dropdown
+    id: why
+    attributes:
+      label: Why
+      options:
+        - It looks like a fluke
+        - Something was down during the run
+        - Something else (tell us below)
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Which checks look off, and anything else that helps.

@@ -1,0 +1,176 @@
+name: Candidate
+
+# A new image of a tested implementation (design ch. 6.2, 6.3):
+#
+#   - pds-test sends `pds-test-image` for each new gated image. Its payload's
+#     `target` names the image, and the manifest whose image.dispatch_target
+#     matches decides the implementation. A target no manifest claims is
+#     skipped.
+#   - HappyView sends `happyview-image` from its beta and main image jobs.
+#   - workflow_dispatch does the same by hand.
+#
+# The run's results go to the `results` branch as kind `candidate`. Then:
+#   - no unexpected result and no error: a pin PR (cli/pin.ts);
+#   - an unexpected result: one open issue per implementation, updated each time;
+#   - an error: neither. An error is no result (design ch. 4.4 rule 7).
+#
+# PRs and pushes made with GITHUB_TOKEN don't start other workflows, so a pin
+# PR opened with it gets no CI. Setting the CONFORMANCE_BOT_TOKEN secret
+# (contents, pull requests and issues: write, on this repository) fixes that.
+
+permissions:
+  contents: read
+
+on:
+  repository_dispatch:
+    types: [pds-test-image, happyview-image]
+  workflow_dispatch:
+    inputs:
+      implementation:
+        description: Implementation id
+        required: true
+        type: string
+      image:
+        description: Candidate image, <repository>@sha256:<digest>
+        required: true
+        type: string
+
+concurrency:
+  group: candidate-${{ github.event.client_payload.image || inputs.image }}
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      implementation: ${{ steps.resolve.outputs.implementation }}
+      image: ${{ steps.resolve.outputs.image }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+
+      - run: bun install --frozen-lockfile --ignore-scripts
+
+      # The payload is untrusted text: it reaches the script only through env.
+      - name: Resolve the implementation
+        id: resolve
+        env:
+          EVENT: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+          TARGET: ${{ github.event.client_payload.target }}
+          PAYLOAD_IMAGE: ${{ github.event.client_payload.image }}
+          INPUT_IMPL: ${{ inputs.implementation }}
+          INPUT_IMAGE: ${{ inputs.image }}
+        run: |
+          set -eu
+          case "$EVENT:$ACTION" in
+            workflow_dispatch:*) impl=$INPUT_IMPL; image=$INPUT_IMAGE ;;
+            repository_dispatch:happyview-image) impl=$(node cli/ci/targets.ts resolve happyview); image=$PAYLOAD_IMAGE ;;
+            *) impl=$(node cli/ci/targets.ts resolve "$TARGET"); image=$PAYLOAD_IMAGE ;;
+          esac
+          if [ -z "$impl" ]; then
+            echo "No manifest claims dispatch target '$TARGET'; nothing to run." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          case "$impl" in *[!a-z0-9-]*) echo "::error::bad implementation id"; exit 1 ;; esac
+          case "$image" in *@sha256:*) ;; *) echo "::error::the image must be given by digest"; exit 1 ;; esac
+          if [ "$image" = "$(node cli/ci/targets.ts pin "$impl")" ]; then
+            echo "$impl already pins $image; nothing to run." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "implementation=$impl" >> "$GITHUB_OUTPUT"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+
+  run:
+    needs: resolve
+    if: needs.resolve.outputs.implementation != ''
+    uses: ./.github/workflows/run.yml
+    with:
+      implementation: ${{ needs.resolve.outputs.implementation }}
+      image: ${{ needs.resolve.outputs.image }}
+      kind: candidate
+      slow: true
+      suite_ref: ${{ github.sha }}
+
+  publish:
+    needs: [resolve, run]
+    if: needs.run.outputs.outcome == 'results'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    # No concurrency group here: GitHub keeps one pending job per group and
+    # cancels the rest, which would drop results. publish-results.sh retries
+    # a push that loses a race instead.
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    env:
+      IMPL: ${{ needs.resolve.outputs.implementation }}
+      IMAGE: ${{ needs.resolve.outputs.image }}
+    steps:
+      # No write token on disk or in the environment while dependencies
+      # install (least-privilege CI hardening). Pushes are allowed later, in
+      # their own step.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+
+      - run: bun install --frozen-lockfile --ignore-scripts
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/spec
+          key: spec-${{ hashFiles('spec/revisions.json') }}
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ needs.run.outputs.artifact }}
+          path: incoming
+
+      - name: Decide
+        id: decide
+        run: |
+          set -eu
+          file=$(ls incoming/*.json)
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+          node cli/report.ts "$file" --decision | tee -a "$GITHUB_OUTPUT"
+
+      - name: Allow pushes
+        env:
+          PUSH_TOKEN: ${{ secrets.CONFORMANCE_BOT_TOKEN || github.token }}
+        run: cli/ci/git-auth.sh
+
+      - name: Publish the results
+        env:
+          FILE: ${{ steps.decide.outputs.file }}
+        run: |
+          cli/ci/publish-results.sh "candidate: $IMPL at ${IMAGE#*@}" "$FILE"
+
+      - name: Open the pin PR
+        if: steps.decide.outputs.decision == 'pin'
+        env:
+          GH_TOKEN: ${{ secrets.CONFORMANCE_BOT_TOKEN || github.token }}
+          FILE: ${{ steps.decide.outputs.file }}
+        run: cli/ci/open-pin-pr.sh "$IMPL" "$IMAGE" "$FILE"
+
+      - name: Open or update the issue
+        if: steps.decide.outputs.decision == 'issue'
+        env:
+          GH_TOKEN: ${{ secrets.CONFORMANCE_BOT_TOKEN || github.token }}
+          FILE: ${{ steps.decide.outputs.file }}
+        run: cli/ci/candidate-issue.sh "$IMPL" "$FILE"

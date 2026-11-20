@@ -88,4 +88,45 @@ It finds entries that a run shows as "fixed, still listed" and, with `--write`, 
 
 ## Workflows
 
-Added with the workflows.
+| Workflow | Trigger | What it does |
+|---|---|---|
+| `run.yml` | `workflow_call` | One implementation on one image. It uploads the results file and the container logs as artifacts. It commits nothing, holds no secrets and runs on GitHub's ephemeral runner, so it is safe to call for an image built from a fork's pull request. |
+| `candidate.yml` | `repository_dispatch` (`pds-test-image`, `happyview-image`), `workflow_dispatch` | Runs a new image as a candidate and publishes the result. Then it opens a pin PR, opens or updates the implementation's issue, or does neither on an error. |
+| `nightly.yml` | daily at 04:17 UTC, `workflow_dispatch` (`force`, `implementations`) | Runs each implementation whose scenario fingerprint changed, at its pin with `--slow`, publishes, then opens a prune PR if any entry is fixed. `force` reruns everything given. It grades each implementation at the first revision in its manifest's `spec_revisions` only; another revision is graded by hand (`cli/run.ts --revision`). |
+
+The workflows share these rules:
+- Only `publish` jobs write. They share no concurrency group, because GitHub cancels all but one pending job in a group. Two publishes can race; `publish-results.sh` retries a push that loses.
+- Least-privilege CI hardening: a publish job checks out with `persist-credentials: false` and installs dependencies with `--ignore-scripts`, so no write token is on disk or in the environment while third-party code installs. `cli/ci/git-auth.sh` allows pushes in its own step afterwards, and `GH_TOKEN` is set only on the steps that call `gh`.
+- A dispatch payload is untrusted text. It reaches a script only through `env`, and `cli/run.ts --image` accepts only `<the manifest's repository>@sha256:<digest>`.
+- A target that no manifest's `image.dispatch_target` claims is skipped. So is an image an implementation already pins.
+- Nothing is opened or posted on another project's repository.
+
+### Re-runs by hand
+
+Nothing reruns on a schedule. A scenario is graded again only when its fingerprint changes, or by hand:
+- Anyone can ask with the "Request a re-run" issue template (`.github/ISSUE_TEMPLATE/rerun.yml`): the implementation, the run, and why.
+- A maintainer then runs `nightly.yml` with `workflow_dispatch`, `force: true` and `implementations: <id>`.
+
+Issue comments trigger nothing.
+
+### The scripts they call
+
+Each script is in `cli/ci/` and takes `PUBLISH_DRY_RUN=1`, which does the work locally and prints the push, PR or issue instead of making it.
+
+| Script | Does |
+|---|---|
+| `plan.ts` | The nightly matrix: each implementation whose fingerprint has no stored run without an error or an infrastructure failure. With no `results` branch yet, everything runs. Its summary says what's unchanged and since when. |
+| `targets.ts` | The implementation list for a matrix, the implementation a dispatch target names, and an implementation's current pin. |
+| `publish-results.sh` | Checks the `results` branch out into `.store/` (creating it as an orphan the first time), runs `store.ts add` and `check`, commits and pushes. It retries a push that lost a race. |
+| `open-pin-pr.sh` | `pin/<impl>-<digest12>`: runs `cli/pin.ts`, runs `bun run validate`, then opens the PR. Does nothing while one from that branch is open. If the branch is left from a closed PR, it uses a new one with a time suffix, so nothing is force-pushed. |
+| `git-auth.sh` | Lets git push with the job's token, from its step on. |
+| `candidate-issue.sh` | One open issue per implementation, labelled `candidate:<impl>`. Each new candidate with unexpected results replaces its body. |
+| `open-prune-pr.sh` | `prune/<date>`: runs `cli/prune.ts --write` and validates. Does nothing while a prune PR is open. |
+
+### Settings and secrets
+
+Without these, `run.yml`, the builds and publishing to the `results` branch still work. Pin PRs, prune PRs and dispatches need them:
+- **"Allow GitHub Actions to create and approve pull requests"**, under the repository's Actions settings, so `GITHUB_TOKEN` can open pin and prune PRs.
+- **`CONFORMANCE_BOT_TOKEN`** (optional secret): a token with contents, pull requests and issues write on this repository. GitHub doesn't start workflows for PRs opened with `GITHUB_TOKEN`, so without it a pin PR gets no CI until someone closes and reopens it.
+- **pds-test**: this repository in `targets.json`'s `consumers`, and a `CONSUMER_DISPATCH_TOKEN` that can dispatch to it.
+- **HappyView**: a `happyview-image` dispatch from its beta and main image jobs, with `client_payload.image` set to the image by digest.
