@@ -47,6 +47,7 @@ const suiteCount = data.suites.length
                     <span class="impl-sub">
                       <span>Spec {revision}</span>
                       <span>{day(run.started_at)}</span>
+                      {impl.pinned_image && run.image !== impl.pinned_image && <span>Earlier image</span>}
                     </span>
                   </th>
                 ))}

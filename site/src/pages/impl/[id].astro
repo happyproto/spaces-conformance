@@ -93,14 +93,30 @@ const order: Group[] = ['fail', 'deviation', 'provisional', 'error', 'pass', 'pe
             <div><dt>Also in the stack</dt><dd>{run.peers.map((p, i) => <>{i > 0 && ', '}{p.id}{p.as ? ` as ${p.as}` : ''} <Digest image={p.image} short /></>)}</dd></div>
             {run.previous_attempts.length > 0 && <div class="facts-wide"><dt>Earlier attempt</dt><dd>Rerun after {run.previous_attempts.map((a) => `${a.errored.length} error(s) and ${a.failed.length} fail(s) in ${a.id}`).join('; ')}</dd></div>}
           </dl>
+          {impl.pinned_image && run.image !== impl.pinned_image && (
+            <aside class="hp-callout" data-kind="caution" style="margin-block-start: var(--hp-space-6)">
+              <p class="hp-callout-title">These results are from an earlier image</p>
+              <p>
+                We now test <Digest image={impl.pinned_image} short />, but it hasn’t run yet. Until it does, this page shows the
+                last run of <Digest image={run.image} short />.
+              </p>
+            </aside>
+          )}
           {candidate && (
             <aside class="hp-callout" data-kind="note" style="margin-block-start: var(--hp-space-6)">
               <p class="hp-callout-title">We tested a newer image on {day(candidate.started_at)}</p>
-              <p>
-                <Digest image={candidate.image} short /> passed {candidate.total.pass} of {graded(candidate.total)} tests.
-                {candidate.unexpected === 0 ? ' Nothing surprising, so we’ll switch to it once the pin PR merges.' : ` ${candidate.unexpected} ${candidate.unexpected === 1 ? 'result was' : 'results were'} unexpected, so we’re staying on the current image for now.`}
-                {candidate.ci_url && <> <a href={candidate.ci_url}>See the run</a>.</>}
-              </p>
+              {candidate.infrastructure || candidate.total.error > 0 ? (
+                <p>
+                  Something broke on our side during that run, so it doesn’t count, and we’re staying on the current image.
+                  {candidate.ci_url && <> <a href={candidate.ci_url}>See the run</a>.</>}
+                </p>
+              ) : (
+                <p>
+                  <Digest image={candidate.image} short /> passed {candidate.total.pass} of {graded(candidate.total)} tests.
+                  {candidate.unexpected === 0 ? ' Nothing surprising, so we’ll switch to it once the pin PR merges.' : ` ${candidate.unexpected} ${candidate.unexpected === 1 ? 'result was' : 'results were'} unexpected, so we’re staying on the current image for now.`}
+                  {candidate.ci_url && <> <a href={candidate.ci_url}>See the run</a>.</>}
+                </p>
+              )}
             </aside>
           )}
         </div>
