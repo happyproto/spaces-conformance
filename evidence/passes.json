@@ -31,16 +31,6 @@
       "slow": true
     },
     {
-      "file": "test/fixtures/results/happyview-beta14-2026-11-13.json",
-      "implementation": "happyview",
-      "run": "2026-11-14T21-09-17Z-happyview-6191",
-      "suite_commit": "1f65b9b1fc",
-      "assertions_digest": "sha256:1c3979b0f6ece44b2c5ea433aa16a3bb1aaab5772fe18d558a3c8cb7494cb5c5",
-      "image": "ghcr.io/gamesgamesgamesgamesgames/happyview@sha256:147a27668f0fc87c2dcfde5103d01f51efe55c329273c8ae7ae292cdb87a7b93",
-      "revision": "2026-10-29",
-      "slow": true
-    },
-    {
       "file": "test/fixtures/results/parity-reference-2026-11-13.json",
       "implementation": "reference",
       "run": "2026-11-14T20-46-10Z-reference-d075",
@@ -48,6 +38,16 @@
       "assertions_digest": "sha256:1c3979b0f6ece44b2c5ea433aa16a3bb1aaab5772fe18d558a3c8cb7494cb5c5",
       "image": "ghcr.io/happyproto/pds-test/pds-spaces-alpha@sha256:1b3113b40eac2581b8f928bcec8840c8a0912c3a3d90bf3b965a775f8a97067a",
       "revision": "2026-11-12",
+      "slow": true
+    },
+    {
+      "file": "test/fixtures/results/happyview-2026-11-20.json",
+      "implementation": "happyview",
+      "run": "2026-11-20T00-19-50Z-happyview-59ca",
+      "suite_commit": "2a94b2d7d0",
+      "assertions_digest": "sha256:614cfcb91b22abedb05679b4769d019ec38e1c501c157ad7bdd83db1130b7f93",
+      "image": "ghcr.io/gamesgamesgamesgamesgames/happyview@sha256:e8d08cd61d3ecd700f7aad4da795b65b144d83b0ca6541db1f20fe7241adb73d",
+      "revision": "2026-10-29",
       "slow": true
     }
   ],
@@ -79,6 +79,10 @@
     {
       "file": "test/fixtures/results/parity-reference-g1-2026-11-13.json",
       "reason": "The reference at the HAP-427 pin graded at 2026-10-29, a revision it no longer claims: its lexicons are the 2026-11-12 set. It fails only the three policy rows that revision names differently. Kept for docs/parity.md."
+    },
+    {
+      "file": "test/fixtures/results/happyview-beta14-2026-11-13.json",
+      "reason": "Ran happyview at sha256:147a27668f0f, the pin before sha256:e8d08cd61d3e; superseded by test/fixtures/results/happyview-2026-11-20.json."
     }
   ],
   "passes": {
