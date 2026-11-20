@@ -1,0 +1,19 @@
+---
+// A state's drawn mark: 16px artwork, 1.4 stroke, in currentColor. The shape
+// carries the state without colour (a tick, a diamond, a cross, a dashed
+// cross, a triangle, a ring, a dot, a bar), and the word always sits beside
+// it, so the mark is decorative.
+import type { Group } from '../lib/data'
+interface Props { group: Group }
+const { group } = Astro.props
+---
+<svg class="mark" data-group={group} viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+  {group === 'pass' && <path d="M3.25 8.5 6.5 11.5l6.25-7" stroke-width="1.6" />}
+  {group === 'deviation' && <><path d="M8 2.25 13.75 8 8 13.75 2.25 8Z" fill="currentColor" fill-opacity=".18" /><path d="M5.5 8h5" /></>}
+  {group === 'fail' && <path d="m4 4 8 8m0-8-8 8" stroke-width="1.6" />}
+  {group === 'provisional' && <path d="m4 4 8 8m0-8-8 8" stroke-dasharray="2 2" />}
+  {group === 'error' && <><path d="M8 2.25 14.25 13.25H1.75Z" /><path d="M8 6.5v3" /><circle cx="8" cy="11.4" r=".6" fill="currentColor" stroke="none" /></>}
+  {group === 'pending' && <circle cx="8" cy="8" r="5.25" />}
+  {group === 'untested' && <circle cx="8" cy="8" r="5.25" stroke-dasharray="1.6 2.2" />}
+  {group === 'na' && <path d="M4 8h8" />}
+</svg>

@@ -1,0 +1,53 @@
+---
+// Spec coverage (design ch. 8.1): every section of each pinned revision,
+// with how many assertions cite it, so the sections nothing tests are as
+// visible as the ones that are.
+import Base from '../layouts/Base.astro'
+import { assertionHref, data } from '../lib/data'
+
+const byRev = [...data.coverage].sort((a, b) => (a.revision < b.revision ? 1 : -1))
+const count = (s: { must: number; should: number; info: number }) => s.must + s.should + s.info
+const label = (s: { must: number; should: number; info: number }) =>
+  count(s) === 0 ? 'none' : [s.must && `${s.must} required`, s.should && `${s.should} recommended`, s.info && `${s.info} info`].filter(Boolean).join(', ')
+---
+<Base title="Spec coverage" description="Which parts of the atproto spaces spec we test, and which we don't yet." current="spec">
+  <div class="page-head">
+    <h1>Spec coverage</h1>
+    <p class="lede">
+      Every section of the proposal, with the tests that come from it. A section marked &ldquo;none&rdquo; isn&rsquo;t tested yet.
+      A few tests check only a lexicon&rsquo;s parameters, outputs or errors, so they&rsquo;re listed separately.
+    </p>
+  </div>
+  <div class="revisions-pick">
+    {byRev.map((c) => {
+      const tested = c.sections.filter((s) => count(s) > 0).length
+      return (
+        <section aria-labelledby={`cov-${c.revision}`}>
+          <div class="section-head">
+            <h2 id={`cov-${c.revision}`}>Revision {c.revision}</h2>
+            <p>
+              <a href={c.url}>Proposal 0016 at <code>{c.commit.slice(0, 10)}</code></a>.{' '}
+              {tested} of {c.sections.length} sections have tests{c.lexicon_only.length ? `, plus ${c.lexicon_only.length} lexicon-only tests` : ''}.
+            </p>
+          </div>
+          <ol class="toc">
+            {c.sections.map((s) => (
+              <li data-level={String(s.level)}>
+                <span>
+                  <a href={s.url}>{s.title}</a>
+                  {s.ids.length > 0 && <span class="ids">{s.ids.map((id) => <a href={assertionHref(id)}><code>{id}</code></a>)}</span>}
+                </span>
+                <span class="count" data-none={String(count(s) === 0)}>{label(s)}</span>
+              </li>
+            ))}
+          </ol>
+          {c.lexicon_only.length > 0 && (
+            <p class="small" style="margin-block-start: var(--hp-space-4)">
+              <span class="muted">Lexicon-only:</span> <span class="ids">{c.lexicon_only.map((id) => <a href={assertionHref(id)}><code>{id}</code></a>)}</span>
+            </p>
+          )}
+        </section>
+      )
+    })}
+  </div>
+</Base>
