@@ -9,7 +9,7 @@ Results are kept on `results`, an orphan branch of this repository. It holds two
 | Path | What |
 |---|---|
 | `runs/<impl>/<yyyy>/<mm>/<run-id>.json` | One results file per run (`schemas/results.schema.json`). A file is never rewritten. A wrong result is corrected by a new run. |
-| `index/latest.json` | For each implementation and spec revision: its newest run that isn't a candidate, and a newer candidate run if there is one. |
+| `index/latest.json` | For each implementation and spec revision: its newest run that isn't a candidate, and a newer candidate run if there is one. It doesn't know the pins, which live on `main`: once a candidate's pin PR merges, that candidate run is the pin's result, but this file still lists it as a candidate. The site picks the run of the pinned image itself (`site/scripts/data.ts`). |
 | `index/<impl>.json` | Every run of one implementation, newest first, with raw status counts. |
 
 The index files are derived from `runs/` and contain no wall-clock time, so they can be checked. `schemas/index.schema.json` describes them.
@@ -40,7 +40,7 @@ The nightly run grades only scenarios whose inputs changed. A scenario is one im
 
 Left out, because they change how a result is shown and never the result: deviation lists, `vectors/` (provisional status), `evidence/`, docs, the site and CI files.
 
-`cli/run.ts` records the fingerprint as `run.fingerprint` in the results file, except for a run narrowed with `--suites`, which isn't the whole scenario. The store copies its digest into each index entry. A stored run with the same digest and no `error` result means the scenario is already graded.
+`cli/run.ts` records the fingerprint as `run.fingerprint` in the results file, except for a run narrowed with `--suites`, which isn't the whole scenario. The store copies its digest into each index entry. A stored run with the same digest, no `error` result and no infrastructure failure on an earlier attempt means the scenario is already graded. A run that needed a retry after an infrastructure failure is no result (`cli/report.ts` decides `none`), so the nightly run grades it again.
 
 ## What a run decides
 
