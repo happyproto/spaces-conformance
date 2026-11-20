@@ -11,7 +11,9 @@
 //   code      every file that can change a raw result: harness/, suites/,
 //             the catalogue and spec pins, that revision's lexicons, the
 //             record fixtures, the base stack, the implementation's folder
-//             and its partner's, the dependency lock, the suite config
+//             and its partner's, the dependency lock, the suite config and
+//             the runner (cli/run.ts). cli/verdict.ts isn't in it: it only
+//             judges a finished file, and judging never changes a raw result.
 //
 // Left out on purpose, because they change how a result is shown, never the
 // result: deviation lists, vectors/ (provisional status), evidence/, docs,
@@ -58,6 +60,9 @@ export function codeInputs(ids: string[], lexiconsCommit: string, root = ROOT): 
     'package.json',
     'bun.lock',
     'vitest.suite.config.ts',
+    // The runner: it builds the stack, passes the run's settings to the
+    // harness, and decides when a run is retried.
+    'cli/run.ts',
   ];
   return roots
     .flatMap((r) => files(join(root, r)))

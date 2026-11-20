@@ -5,6 +5,8 @@
 #
 # Runs from a full checkout of main. The branch is pin/<impl>-<digest12>, so
 # a second dispatch of the same image finds the open PR and does nothing.
+# If that branch is left over from a closed PR, a new branch with a time
+# suffix is used instead, so nothing is ever force-pushed.
 # cli/pin.ts makes the change; `bun run validate` must pass on it before
 # anything is pushed. Uses GH_TOKEN for gh.
 #
@@ -18,9 +20,14 @@ branch="pin/$impl-$(printf '%s' "$digest" | cut -c1-12)"
 old=$(node cli/ci/targets.ts pin "$impl")
 dry=${PUBLISH_DRY_RUN:-}
 
-if [ -z "$dry" ] && [ -n "$(gh pr list --head "$branch" --state open --json number --jq '.[].number')" ]; then
+if [ -z "$dry" ] && [ -n "$(gh pr list --state open --search "head:$branch" --json number --jq '.[].number')" ]; then
   echo "a pin PR from $branch is already open"
   exit 0
+fi
+if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+  echo "$branch is left from a closed PR"
+  branch="$branch-$(date -u +%Y%m%d%H%M%S)"
+  echo "using $branch"
 fi
 
 git config user.name >/dev/null 2>&1 || {

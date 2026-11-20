@@ -35,6 +35,8 @@ export interface RunEntry {
   ci_url?: string;
   /** The scenario fingerprint (harness/fingerprint.ts), when the run recorded one. */
   fingerprint?: string;
+  /** Set when an earlier attempt hit an infrastructure failure. Such a run is no result: CI doesn't act on it, and the nightly run grades the scenario again. */
+  infrastructure?: true;
   /** Raw statuses, counted. Display states are derived at read time, never stored. */
   counts: { pass: number; fail: number; error: number; skip: number };
 }
@@ -88,6 +90,7 @@ function entry(path: string, f: ResultsFile): RunEntry {
     slow: f.run.slow === true,
     ...(f.run.ci_url ? { ci_url: f.run.ci_url } : {}),
     ...(f.run.fingerprint ? { fingerprint: f.run.fingerprint.digest } : {}),
+    ...(f.run.infrastructure ? { infrastructure: true as const } : {}),
     counts,
   };
 }

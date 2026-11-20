@@ -217,7 +217,8 @@
       ],
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
         },
         "image": {
           "type": "string",
