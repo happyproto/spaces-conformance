@@ -7,6 +7,8 @@ describe('scenario fingerprints', () => {
     expect(inputs).toContain('implementations/happyview/manifest.yaml');
     expect(inputs).toContain('implementations/pdsjs/compose.yml');
     expect(inputs).toContain('suites/fixtures.ts');
+    expect(inputs).toContain('cli/run.ts');
+    expect(inputs).not.toContain('cli/verdict.ts');
     expect(inputs.some((p) => p.startsWith('spec/lexicons/98ef3a6b/'))).toBe(true);
     expect(inputs.some((p) => p.startsWith('spec/lexicons/d4def6e9/'))).toBe(false);
     expect(inputs.some((p) => p.endsWith('deviations.yaml'))).toBe(false);
