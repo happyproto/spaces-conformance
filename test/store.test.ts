@@ -99,6 +99,16 @@ describe('the results store (design ch. 7.2)', () => {
     expect(checkStore(dir)).toEqual([]);
   });
 
+  it('marks a run whose earlier attempt hit infrastructure', () => {
+    const dir = store();
+    const f = zds();
+    f.run.infrastructure = 'stack: the stack did not come up healthy';
+    expect(addRuns(dir, [{ name: 'zds', data: f }], cat).problems).toEqual([]);
+    const idx: ImplIndex = JSON.parse(readFileSync(join(dir, 'index', 'zds.json'), 'utf8'));
+    expect(idx.runs[0].infrastructure).toBe(true);
+    expect(checkStore(dir)).toEqual([]);
+  });
+
   it('is not a store without runs/', () => {
     expect(checkStore(mkdtempSync(join(tmpdir(), 'nostore-')))[0].message).toMatch(/not a results store/);
   });

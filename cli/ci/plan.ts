@@ -1,6 +1,7 @@
 // Which scenarios the nightly run grades (Trezy, Nov 19): only those whose
 // inputs changed. A scenario is skipped when the store already has a run
-// with its fingerprint (harness/fingerprint.ts) and no error; a candidate run
+// with its fingerprint (harness/fingerprint.ts), no error and no
+// infrastructure failure on an earlier attempt; a candidate run
 // counts, so once a pin PR merges, the next nightly doesn't regrade it.
 //
 //   node cli/ci/plan.ts [--store <dir>] [--force] [--only a,b]
@@ -33,7 +34,8 @@ for (const id of only) {
   const fp = scenarioFingerprint(id, { slow: true });
   const index = values.store ? join(values.store, 'index', `${id}.json`) : '';
   const runs: ImplIndex['runs'] = index && existsSync(index) ? (JSON.parse(readFileSync(index, 'utf8')) as ImplIndex).runs : [];
-  const same = runs.find((r) => r.fingerprint === fp.digest && r.counts.error === 0);
+  // A run with an error, or one rerun after an infrastructure failure, is no result.
+  const same = runs.find((r) => r.fingerprint === fp.digest && r.counts.error === 0 && !r.infrastructure);
   if (same && !values.force) {
     lines.push(`- \`${id}\`: unchanged, last graded by \`${same.id}\` (${same.kind}) on ${same.started_at.slice(0, 10)}`);
   } else {

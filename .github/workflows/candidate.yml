@@ -57,7 +57,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
 
-      - run: bun install --frozen-lockfile
+      - run: bun install --frozen-lockfile --ignore-scripts
 
       # The payload is untrusted text: it reaches the script only through env.
       - name: Resolve the implementation
@@ -105,10 +105,9 @@ jobs:
     if: needs.run.outputs.outcome == 'results'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    # One writer of the results branch at a time, across every workflow.
-    concurrency:
-      group: results-writer
-      cancel-in-progress: false
+    # No concurrency group here: GitHub keeps one pending job per group and
+    # cancels the rest, which would drop results. publish-results.sh retries
+    # a push that loses a race instead.
     permissions:
       contents: write
       pull-requests: write
@@ -116,12 +115,14 @@ jobs:
     env:
       IMPL: ${{ needs.resolve.outputs.implementation }}
       IMAGE: ${{ needs.resolve.outputs.image }}
-      GH_TOKEN: ${{ secrets.CONFORMANCE_BOT_TOKEN || github.token }}
     steps:
+      # No write token on disk or in the environment while dependencies
+      # install (least-privilege CI hardening). Pushes are allowed later, in
+      # their own step.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          token: ${{ secrets.CONFORMANCE_BOT_TOKEN || github.token }}
+          persist-credentials: false
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -129,7 +130,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
 
-      - run: bun install --frozen-lockfile
+      - run: bun install --frozen-lockfile --ignore-scripts
 
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -149,6 +150,11 @@ jobs:
           echo "file=$file" >> "$GITHUB_OUTPUT"
           node cli/report.ts "$file" --decision | tee -a "$GITHUB_OUTPUT"
 
+      - name: Allow pushes
+        env:
+          PUSH_TOKEN: ${{ secrets.CONFORMANCE_BOT_TOKEN || github.token }}
+        run: cli/ci/git-auth.sh
+
       - name: Publish the results
         env:
           FILE: ${{ steps.decide.outputs.file }}
@@ -158,11 +164,13 @@ jobs:
       - name: Open the pin PR
         if: steps.decide.outputs.decision == 'pin'
         env:
+          GH_TOKEN: ${{ secrets.CONFORMANCE_BOT_TOKEN || github.token }}
           FILE: ${{ steps.decide.outputs.file }}
         run: cli/ci/open-pin-pr.sh "$IMPL" "$IMAGE" "$FILE"
 
       - name: Open or update the issue
         if: steps.decide.outputs.decision == 'issue'
         env:
+          GH_TOKEN: ${{ secrets.CONFORMANCE_BOT_TOKEN || github.token }}
           FILE: ${{ steps.decide.outputs.file }}
         run: cli/ci/candidate-issue.sh "$IMPL" "$FILE"

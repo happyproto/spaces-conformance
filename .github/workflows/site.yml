@@ -7,9 +7,11 @@ name: Site
 #   with any schema problem, or a dist/ near wisp.place's 1000-file cap,
 #   fails the job. Before the results branch exists, it builds from the
 #   committed pass-index runs instead.
-# - Deploys run after Nightly and Candidate publish, on a push to main that
-#   touches the site, daily, and by hand. The results branch can't trigger
-#   a workflow itself: it holds no workflow files.
+# - Deploys run after Nightly and Candidate publish, on a push to main, and
+#   by hand; nothing deploys on a timer. The results branch can't trigger a
+#   workflow itself: it holds no workflow files.
+# - Dependencies install with --ignore-scripts, and secrets reach only the
+#   steps that deploy (least-privilege CI hardening).
 # - Nothing deploys until vars.WISP_SITE is set. A deploy needs vars
 #   WISP_HANDLE and WISP_SITE and the secret WISP_APP_PASSWORD (wispctl reads
 #   it as WISPCTL_APP_PASSWORD, so it never reaches a command line).
@@ -28,8 +30,6 @@ on:
   workflow_run:
     workflows: [Nightly, Candidate]
     types: [completed]
-  schedule:
-    - cron: '41 5 * * *'
   workflow_dispatch:
 
 concurrency:
@@ -51,9 +51,9 @@ jobs:
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
 
-      - run: bun install --frozen-lockfile
+      - run: bun install --frozen-lockfile --ignore-scripts
 
-      - run: bun install --frozen-lockfile
+      - run: bun install --frozen-lockfile --ignore-scripts
         working-directory: site
 
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -121,7 +121,7 @@ jobs:
           path: dist
 
       - name: Install wispctl
-        run: npm i -g wispctl@2.1.0
+        run: npm i -g wispctl@2.1.0 --ignore-scripts
 
       - name: Deploy the preview
         run: wispctl deploy "$WISP_HANDLE" --path dist --sha "$SHA" --preview-claim "$WISP_PREVIEW_CLAIM" --yes --quiet
@@ -157,7 +157,7 @@ jobs:
           path: dist
 
       - name: Install wispctl
-        run: npm i -g wispctl@2.1.0
+        run: npm i -g wispctl@2.1.0 --ignore-scripts
 
       - name: Deploy to wisp.place
         run: wispctl deploy "$WISP_HANDLE" --path dist --site "$WISP_SITE" --yes --quiet

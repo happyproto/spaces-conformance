@@ -39,7 +39,7 @@ const states: { group: Group; label?: string; scored: string; text: string }[] =
     </p>
     <ul>
       <li>When a project ships a new image, we test it. If nothing surprising turns up, we open a pull request to switch to it. If something does, we open an issue in our repository and stay on the current image.</li>
-      <li>Every night, we test anything that changed since its last run: a new image, new tests, or a new spec revision. If nothing changed, we don&rsquo;t run it again.</li>
+      <li>Every night, we re-test anything whose inputs changed since its last run: the pinned image, our tests, or the pinned spec text.</li>
       <li>Every result goes into the <a href={`${REPO}/tree/results`}>results branch</a> as it was recorded, along with the list of known gaps it was judged against. We never edit a result. If one is wrong, a new run replaces it.</li>
     </ul>
 
