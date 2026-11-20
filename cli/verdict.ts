@@ -11,14 +11,9 @@
 // that doesn't match its `expect` is "deviation changed", and fails the gate.
 
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { parseArgs } from 'node:util';
-import { loadCatalogue, resolveCatalogue } from '../harness/catalogue.ts';
-import { type Deviation, deviationsAt, loadCheckedDeviations } from '../harness/deviations.ts';
-import { loadIndependence } from '../harness/independence.ts';
-import { vectorStatus } from '../harness/provisional.ts';
-import { ROOT } from '../harness/schema.ts';
-import { judgeAll } from '../harness/verdict.ts';
+import { type Deviation, loadCheckedDeviations } from '../harness/deviations.ts';
+import { judgeFile } from '../harness/judge.ts';
 
 const { values, positionals } = parseArgs({ allowPositionals: true, options: { deviations: { type: 'string' }, json: { type: 'boolean', default: false } } });
 if (!positionals[0]) {
@@ -26,10 +21,6 @@ if (!positionals[0]) {
   process.exit(2);
 }
 const file = JSON.parse(readFileSync(positionals[0], 'utf8'));
-const catalogue = loadCatalogue(join(ROOT, 'spec', 'assertions.yaml'));
-// Judge each row as it read at the revision the run graded.
-const revision: string = file.spec.revision;
-const byId = new Map(resolveCatalogue(catalogue, revision).map((a) => [a.id, a]));
 let deviations: Deviation[] = file.deviations_applied;
 if (values.deviations) {
   const checked = await loadCheckedDeviations(values.deviations);
@@ -40,8 +31,8 @@ if (values.deviations) {
     process.exit(2);
   }
 }
-const listed = new Map(deviationsAt(deviations, revision).map((d) => [d.assertion, d]));
-const { judged, summary } = judgeAll(file.results, byId, listed, vectorStatus(), file.implementation.roles, loadIndependence(revision));
+// Each row is judged as it read at the revision the run graded.
+const { judged, summary } = judgeFile(file, deviations);
 
 if (values.json) {
   console.log(JSON.stringify({ judged, summary }, null, 2));

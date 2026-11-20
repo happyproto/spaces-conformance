@@ -8,7 +8,7 @@ import type { Problem } from './problems.ts';
 
 export const ROOT = join(import.meta.dirname, '..');
 
-export type SchemaName = 'assertions' | 'manifest' | 'deviations' | 'results';
+export type SchemaName = 'assertions' | 'manifest' | 'deviations' | 'results' | 'index';
 
 // ajv-formats is CommonJS; its default export arrives wrapped under nodenext.
 const addFormats = addFormatsModule as unknown as (ajv: Ajv2020) => Ajv2020;
@@ -20,7 +20,7 @@ function instance(): Ajv2020 {
   if (ajv) return ajv;
   ajv = new Ajv2020({ allErrors: true, strict: true, strictRequired: false, allowUnionTypes: true });
   addFormats(ajv);
-  for (const name of ['deviations', 'assertions', 'manifest', 'results'] as const) {
+  for (const name of ['deviations', 'assertions', 'manifest', 'results', 'index'] as const) {
     const schema = JSON.parse(readFileSync(join(ROOT, 'schemas', `${name}.schema.json`), 'utf8'));
     ajv.addSchema(schema, `${name}.schema.json`);
   }
