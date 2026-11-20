@@ -52,7 +52,7 @@ if (values.decision) {
 // goes into issue and PR bodies only as inline code: backticks can't close
 // the span, an @ can't mention anyone, and a pipe can't break the table.
 const code = (s: string) =>
-  `\`${s.replace(/\r?\n/g, ' ').replace(/`/g, "'").replace(/@/g, '@\u200b').replace(/\|/g, '\\|').slice(0, 200)}\``;
+  !s ? '' : `\`${s.replace(/\r?\n/g, ' ').replace(/`/g, "'").replace(/@/g, '@\u200b').replace(/\|/g, '\\|').slice(0, 200)}\``;
 const digest = (image: string) => image.split('@')[1] ?? image;
 // Only this repository's own Actions runs are linked.
 const ciUrl = file.run.ci_url && /^https:\/\/github\.com\/happyproto\/spaces-conformance\/actions\/runs\/\d+$/.test(file.run.ci_url) ? file.run.ci_url : null;
