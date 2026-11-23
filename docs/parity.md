@@ -43,7 +43,7 @@ What changed from the old pins:
 - **Cause F narrowed.** The `$link` and `$bytes` fixtures now get DRISL CIDs. The two fixtures with integers past 32 bits still differ, so the deviation expects 2 records, not 4.
 - **`cred.delegation-token-kid-enforced`** passes on pds.js and HappyView. ZDS and atproto-pds record `skip` (pending), because the harness doesn't hold those accounts' signing keys.
 
-HappyView 3.0.0-beta.14 was rerun at 2026-10-29 with its deviation list: [0 unexpected](../test/fixtures/results/happyview-beta14-2026-11-13.json).
+HappyView 3.0.0-beta.14 was rerun at 2026-10-29 with its deviation list: [0 unexpected](../test/fixtures/results/happyview-beta14-2026-11-13.json). On Nov 20, 2026 the pin moved to 3.0.0-beta.22 (34323598), and its run at 2026-10-29 gave the same raw results: [0 unexpected](../test/fixtures/results/happyview-2026-11-20.json).
 
 ## With the credential path (phase 7)
 
