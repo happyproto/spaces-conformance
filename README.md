@@ -24,6 +24,7 @@ An over-the-wire conformance suite for atproto spaces ([Proposal 0016](https://g
 | `docs/catalogue.md` | The formats and the rules the validator enforces. |
 | `evidence/passes.json` | Which implementations each assertion has passed on, rebuilt from committed results by `cli/passes.ts`. It decides the lineage rule (`docs/catalogue.md`). |
 | `docs/parity.md` | How the suite's results compare with HappyView's interop tests at the same pins, difference by difference. |
+| `site/` | The results site: static Astro, built from the `results` branch (`site/README.md`). |
 | `spikes/` | The phase 0 spikes (HappyView auth, networking) and their findings, kept as a record. Not part of the harness. |
 
 ## Working on it

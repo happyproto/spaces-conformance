@@ -1,0 +1,128 @@
+---
+// How the results are made and read (design ch. 8.1): how it runs, who runs
+// it, scoring, profiles, adding an implementation, disputing a result,
+// asking for a re-run. The one page that explains the vocabulary.
+import Base from '../layouts/Base.astro'
+import State from '../components/State.astro'
+import type { Group } from '../lib/data'
+
+const REPO = 'https://github.com/happyproto/spaces-conformance'
+const states: { group: Group; label?: string; scored: string; text: string }[] = [
+  { group: 'pass', scored: 'Passes', text: 'It does what the spec says.' },
+  { group: 'deviation', scored: 'Doesn’t pass', text: 'It fails in exactly the way the project told us to expect, and they’re tracking a fix.' },
+  { group: 'fail', scored: 'Doesn’t pass', text: 'It fails, and nobody has flagged it yet.' },
+  { group: 'fail', label: 'deviation changed', scored: 'Doesn’t pass', text: 'It’s a known gap, but it failed in a different way than expected, so we treat it as a new failure.' },
+  { group: 'pass', label: 'fixed, still listed', scored: 'Passes', text: 'It passes now, but the project still lists it as a known gap. Time to take it off the list.' },
+  { group: 'provisional', scored: 'Left out', text: 'It fails a check we haven’t yet confirmed on two independent implementations, so the bug could be ours.' },
+  { group: 'error', scored: 'Left out', text: 'Something broke on our side. We retry once, and if it breaks again there’s no result.' },
+  { group: 'pending', scored: 'Left out', text: 'We can’t test this against this implementation yet. The details say why.' },
+  { group: 'untested', scored: 'Left out', text: 'It applies, but we haven’t written the test yet.' },
+  { group: 'na', scored: 'Left out', text: 'The implementation doesn’t do the job this check is about.' },
+]
+---
+<Base title="About" description="How we test atproto spaces implementations, how scores work, and how to add a PDS or ask for a re-run." current="about">
+  <div class="page-head">
+    <h1>About these results</h1>
+    <p class="lede">
+      We test each implementation over HTTP, the same way any app talking to it would. Every check points at the sentence of
+      the spec it comes from, so you can always see why something passed or failed.
+    </p>
+  </div>
+
+  <div class="prose">
+    <h2 id="how">How we test</h2>
+    <p>
+      For each run we start a fresh, private network with the implementation, a PLC directory and our test runner, and
+      nothing else. Nothing in it can reach the internet. The test runner makes its own accounts and spaces, then works through
+      every check that applies. We don&rsquo;t grade the setup, so an implementation that creates spaces in an older way
+      still gets tested on everything after that.
+    </p>
+    <ul>
+      <li>When a project ships a new image, we test it. If nothing surprising turns up, we open a pull request to switch to it. If something does, we open an issue in our repository and stay on the current image.</li>
+      <li>Every night, we re-test anything whose inputs changed since its last run: the pinned image, our tests, or the pinned spec text.</li>
+      <li>Every result goes into the <a href={`${REPO}/tree/results`}>results branch</a> as it was recorded, along with the list of known gaps it was judged against. We never edit a result. If one is wrong, a new run replaces it.</li>
+    </ul>
+
+    <h2 id="who">Who runs this</h2>
+    <p>
+      We&rsquo;re <a href="https://happyproto.at/">HappyProto</a>. We also make HappyView, and it&rsquo;s tested here like
+      everything else: from its published image, by the same tests, with its whole list of known gaps in view.
+      Our test runner implements the spec&rsquo;s crypto and wire formats itself, straight from the spec, and doesn&rsquo;t use
+      any implementation&rsquo;s code.
+    </p>
+
+    <h2 id="scoring">How scores work</h2>
+    <p>
+      Every check has a level. <strong>Required</strong> checks come from a MUST in the spec, or from a sentence that defines a
+      format, field or method. <strong>Recommended</strong> checks come from a SHOULD, and get their own score.{' '}
+      <strong>Info</strong> checks just record what an implementation does where the spec doesn&rsquo;t say, and never count.
+    </p>
+    <p>
+      An implementation&rsquo;s score is the share of required checks it passes, for each job it does. Known gaps still count
+      as failures, so listing one never raises a score.
+    </p>
+  </div>
+
+  <div class="rows-wrap" style="margin-block-start: var(--hp-space-6); max-inline-size: 60rem">
+    <table class="rows">
+      <thead><tr><th class="col-state">Result</th><th style="inline-size: 8rem">Counts as</th><th>Means</th></tr></thead>
+      <tbody>
+        {states.map((s) => (
+          <tr>
+            <td class="col-state"><State group={s.group} label={s.label} /></td>
+            <td>{s.scored}</td>
+            <td class="why">{s.text}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="prose" style="margin-block-start: var(--hp-space-8)">
+    <h2 id="provisional">Why some failures don&rsquo;t count yet</h2>
+    <p>
+      Tests that check crypto can have bugs too. So until one of those checks has passed on two implementations that don&rsquo;t
+      share code for it, a failure is shown but doesn&rsquo;t count. Two projects built on the same library count as one.
+    </p>
+
+    <h2 id="profiles">Jobs and kinds of host</h2>
+    <p>
+      The spec splits the work into three jobs. A <strong>repo host</strong> stores and serves people&rsquo;s space repos. A{' '}
+      <strong>space host</strong> handles credentials, who can write, and notifications. A <strong>PDS</strong> also has to
+      serve a baseline set of methods. Each implementation tells us which jobs it does, and only those checks apply.
+    </p>
+    <p>
+      Some rules assume a space belongs to an account someone signs in as. A <strong>standalone space host</strong> keeps its
+      spaces on DIDs it creates, so those rules don&rsquo;t apply to it. We decide which checks each kind of host gets, not the
+      implementation, so nobody can opt out of a check. Each implementation&rsquo;s page says what doesn&rsquo;t apply to it.
+    </p>
+
+    <h2 id="adding">Adding an implementation</h2>
+    <p>
+      The easiest way is to <a href={`${REPO}/issues/new?template=add-a-pds.yml`}>open an &ldquo;Add a PDS&rdquo; issue</a>,
+      and we&rsquo;ll take it from there. If you&rsquo;d rather send a pull request to{' '}
+      <a href={REPO}>happyproto/spaces-conformance</a>, add a folder under <code>implementations/</code> with:
+    </p>
+    <ul>
+      <li>a manifest: the jobs it does, what it supports, and which library handles each piece of crypto;</li>
+      <li>a compose file that starts it on our test network;</li>
+      <li>an adapter for creating accounts and spaces, if <code>createAccount</code> and <code>createSpace</code> aren&rsquo;t enough;</li>
+      <li>its image, pinned by digest.</li>
+    </ul>
+    <p>Its list of known gaps can live in our repository or in its own.</p>
+
+    <h2 id="disputing">If a result looks wrong</h2>
+    <p>
+      <a href={`${REPO}/issues/new`}>Open an issue</a> with the run id from the implementation&rsquo;s page and the name of the
+      check. We assume our tests are wrong until proven otherwise. If they are, we fix them, and the next run replaces the
+      result. We never post on another project&rsquo;s tracker automatically.
+    </p>
+
+    <h2 id="rerun">Asking for a re-run</h2>
+    <p>
+      We only test something again when it changes. If you think a result was a fluke, fill in the{' '}
+      <a href={`${REPO}/issues/new?template=rerun.yml`}>re-run request</a> with the implementation, the run id from its page,
+      and why. One of us will start a fresh run.
+    </p>
+  </div>
+</Base>

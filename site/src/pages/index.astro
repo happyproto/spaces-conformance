@@ -1,0 +1,123 @@
+---
+// The grid (design ch. 8.1): each implementation's newest run, one row per
+// implementation and revision, one column per suite. A cell counts the rows
+// that run graded in that suite: how many passed, and what didn't.
+import Base from '../layouts/Base.astro'
+import Mark from '../components/Mark.astro'
+import Meter from '../components/Meter.astro'
+import { data, day, graded, GROUP_LABEL, implHref, KIND_LABEL, latestRuns, type Group } from '../lib/data'
+
+const rows = data.implementations.flatMap((impl) => latestRuns(impl).map(({ revision, run }) => ({ impl, revision, run })))
+const notes: Group[] = ['deviation', 'fail', 'provisional', 'error']
+const legend: { group: Group; text: string }[] = [
+  { group: 'pass', text: 'Does what the spec says.' },
+  { group: 'deviation', text: 'Fails, but the project already knows and is tracking a fix. Still counts against its score.' },
+  { group: 'fail', text: 'Fails, and nobody has flagged it yet. Also used when a known gap starts failing in a new way.' },
+  { group: 'provisional', text: 'Fails a check we haven’t yet confirmed on two independent implementations, so the bug could be ours. Doesn’t count.' },
+  { group: 'error', text: 'Something broke on our side during the run, so there’s no result. Doesn’t count.' },
+  { group: 'pending', text: 'We can’t test this one against this implementation yet.' },
+]
+const suiteCount = data.suites.length
+---
+<Base title="Spaces conformance" description="This site tracks PDS and space host conformance with the atproto spaces spec. If a PDS implementation is missing from this list, make an issue so we can get it added!" current="results">
+  <div class="page-head">
+    <h1>atproto spaces conformance</h1>
+    <p class="lede">
+      This site tracks PDS and space host conformance with the <a href="https://github.com/bluesky-social/proposals/tree/main/0016-permissioned-data">atproto spaces spec</a>.
+      If a PDS implementation is missing from this list, <a href="https://github.com/happyproto/spaces-conformance/issues/new?template=add-a-pds.yml">make an issue</a> so we can get it added!
+    </p>
+  </div>
+
+  <section aria-labelledby="latest">
+    <div class="results hp-window">
+      <header class="hp-window-bar">
+        <h2 class="hp-window-title" id="latest">Latest results</h2>
+        <span class="hp-window-meta">{rows.length} implementations, {suiteCount} suites</span>
+      </header>
+      <div class="hp-window-body flush">
+        <div class="grid-scroll" role="region" aria-labelledby="latest" tabindex="0">
+          <table class="grid" style={`--impls: ${rows.length}`}>
+            <caption class="sr-only">Tests passed, by suite and implementation</caption>
+            <thead>
+              <tr>
+                <th scope="col" class="suite-col">Suite</th>
+                {rows.map(({ impl, revision, run }) => (
+                  <th scope="col" class="impl-head">
+                    <a class="impl-name" href={implHref(impl.id)}>{impl.name}</a>
+                    <span class="impl-sub">
+                      <span>Spec {revision}</span>
+                      <span>{day(run.started_at)}</span>
+                      {impl.pinned_image && run.image !== impl.pinned_image && <span>Earlier image</span>}
+                    </span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {data.suites.map((s) => (
+                <tr>
+                  <th scope="row" class="suite-col">{s}</th>
+                  {rows.map(({ impl, run }) => {
+                    const t = run.bySuite[s]
+                    const n = graded(t)
+                    const waiting = t.pending + t.untested
+                    if (n === 0)
+                      return (
+                        <td>
+                          <span class="cell-none">
+                            <span class="cell-figure" aria-hidden="true">&ndash;</span>
+                            <span>{t.na && !waiting ? 'doesn’t apply' : waiting ? `${waiting} not tested yet` : 'no tests'}</span>
+                          </span>
+                        </td>
+                      )
+                    return (
+                      <td>
+                        <a class="cell" href={`${implHref(impl.id)}#suite-${s}`} aria-label={`${impl.name}, ${s}: ${t.pass} of ${n} tests pass${notes.filter((g) => t[g]).map((g) => `, ${t[g]} ${GROUP_LABEL[g]}`).join('')}`}>
+                          <span class="cell-figure">{t.pass}<span class="of">/{n}</span></span>
+                          <Meter tally={t} />
+                          {notes.some((g) => t[g]) && (
+                            <span class="cell-notes">
+                              {notes.filter((g) => t[g]).map((g) => (
+                                <span data-group={g}><Mark group={g} />{t[g]} {g === 'deviation' ? 'known' : g === 'provisional' ? 'provisional' : g === 'fail' ? 'failing' : 'errors'}</span>
+                              ))}
+                            </span>
+                          )}
+                        </a>
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <ul class="legend" aria-label="What the states mean">
+          {legend.map((l) => (
+            <li>
+              <span class="state" data-group={l.group}><Mark group={l.group} />{GROUP_LABEL[l.group]}</span>
+              <span class="muted">{l.text}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="pairings">
+    <div class="section-head">
+      <h2 id="pairings">Pairings</h2>
+      <p>One project&rsquo;s space host working with another project&rsquo;s repo host.</p>
+    </div>
+    <div class="hp-window">
+      <div class="hp-window-body flush">
+        <div class="empty">
+          <h3>No pairing runs yet</h3>
+          <p>
+            Pairings will test two projects against each other, so credentials and write notifications cross a real
+            boundary. Until they&rsquo;re ready, we play the other side ourselves.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

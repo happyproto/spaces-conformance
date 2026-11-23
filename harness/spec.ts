@@ -74,14 +74,16 @@ export function plainText(md: string): string {
     .trim();
 }
 
-interface Heading {
+export interface Heading {
   anchor: string;
   level: number;
   line: number;
+  /** The heading's text, as plain prose. */
+  title: string;
 }
 
 /** Every heading with its GitHub anchor (-1, -2 suffixes for repeats), skipping fenced code. */
-function headings(md: string): Heading[] {
+export function headings(md: string): Heading[] {
   const out: Heading[] = [];
   const counts = new Map<string, number>();
   let fenced = false;
@@ -96,7 +98,7 @@ function headings(md: string): Heading[] {
       .replace(/\s/g, '-');
     const n = counts.get(base) ?? 0;
     counts.set(base, n + 1);
-    out.push({ anchor: `#${n === 0 ? base : `${base}-${n}`}`, level: m[1].length, line: i });
+    out.push({ anchor: `#${n === 0 ? base : `${base}-${n}`}`, level: m[1].length, line: i, title: plainText(m[2]) });
   });
   return out;
 }

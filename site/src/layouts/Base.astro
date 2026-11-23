@@ -1,0 +1,86 @@
+---
+// Every page: the frame (the design system's technical drawing, a rail down
+// each side), a header with the logotype and three links, the page, and a
+// footer that says what was built from what. Both themes follow the OS.
+import '@happyview/design-system/tokens.css'
+import '@happyview/design-system/components.css'
+import '../styles/site.css'
+import { data, day } from '../lib/data'
+
+interface Props {
+  title: string
+  description: string
+  /** Which header link is the current page. */
+  current?: 'results' | 'spec' | 'about'
+}
+const { title, description, current } = Astro.props
+const pageTitle = title === 'Spaces conformance' ? 'Spaces conformance, by HappyProto' : `${title} · Spaces conformance`
+const canonical = new URL(Astro.url.pathname, Astro.site)
+const nav = [
+  { key: 'results', href: '/', label: 'Results' },
+  { key: 'spec', href: '/spec/', label: 'Spec coverage' },
+  { key: 'about', href: '/about/', label: 'About' },
+] as const
+const g = data.generated
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    {/* --hp-color-bg in each theme, as hex: meta tags can't read CSS variables. */}
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#060606" media="(prefers-color-scheme: dark)" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical.href} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="HappyProto" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical.href} />
+    {/* site.yml's smoke check compares this with the store's index/latest.json. */}
+    <meta name="conformance-updated" content={g.store_updated_at ?? ''} />
+  </head>
+  <body>
+    <a class="skip hp-link" href="#main">Skip to content</a>
+    <div class="frame hp-frame">
+      <header class="site-header">
+        <a class="home" href="/" aria-label="Spaces conformance, home">
+          <picture>
+            <source media="(prefers-color-scheme: dark)" srcset="/logotype.light.svg" />
+            <img class="logo" src="/logotype.dark.svg" alt="HappyProto" width="1000" height="233" />
+          </picture>
+          <span class="home-name">Spaces conformance</span>
+        </a>
+        <nav aria-label="Site">
+          <ul>
+            {nav.map((n) => (
+              <li><a href={n.href} aria-current={current === n.key ? 'page' : undefined}>{n.label}</a></li>
+            ))}
+          </ul>
+        </nav>
+      </header>
+      <main id="main" class="hp-rule">
+        <slot />
+      </main>
+      <footer class="site-footer hp-rule">
+        <p>
+          Tested against Proposal 0016 at{' '}
+          {g.revisions.map((r, i) => (
+            <>{i > 0 && ' and '}<a class="hp-link" href={r.url}>{r.key}</a> (<code>{r.commit.slice(0, 10)}</code>)</>
+          ))}.
+          Suite {g.suite_commits.length === 1 ? 'commit' : 'commits'} {g.suite_commits.map((c, i) => <>{i > 0 && ', '}<code>{c}</code></>)}.
+          Last run {day(g.store_updated_at)}.
+        </p>
+        <p>
+          Run by <a class="hp-link" href="https://happyproto.at/">HappyProto</a>.
+          The tests, every raw result and each project&rsquo;s list of known gaps are public in{' '}
+          <a class="hp-link" href="https://github.com/happyproto/spaces-conformance">happyproto/spaces-conformance</a>.
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>
