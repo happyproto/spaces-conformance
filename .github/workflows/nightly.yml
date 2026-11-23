@@ -1,0 +1,156 @@
+name: Nightly
+
+# Every implementation whose inputs changed since it was last graded, at its
+# pin, with --slow (design ch. 6.2). cli/ci/plan.ts compares each scenario's
+# fingerprint (harness/fingerprint.ts: images, revision, --slow and the
+# code a result depends on) with the runs on the `results` branch, and skips
+# a scenario already graded without an error. The results go to the
+# `results` branch as kind `nightly`, and any deviation a run shows
+# as "fixed, still listed" gets a prune PR (cli/prune.ts). Nothing here fails
+# because an implementation does: an implementation's own CI is the only
+# place its results gate anything (design ch. 4.4 rule 6).
+#
+# Pairing runs (space host A with repo host B) come later: the harness has no
+# pairing runner yet.
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Run every scenario given, changed or not
+        type: boolean
+        default: false
+      implementations:
+        description: Comma-separated implementation ids. Empty means all.
+        type: string
+        default: ''
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  list:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      implementations: ${{ steps.list.outputs.implementations }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+
+      - run: bun install --frozen-lockfile --ignore-scripts
+
+      # Read-only: the results branch, to see what's already graded.
+      - name: Check out the results
+        id: store
+        run: |
+          if git ls-remote --exit-code --heads "https://github.com/$GITHUB_REPOSITORY" results >/dev/null; then
+            git clone -q --depth 1 --branch results "https://github.com/$GITHUB_REPOSITORY" store
+            echo "args=--store store" >> "$GITHUB_OUTPUT"
+          fi
+
+      - id: list
+        env:
+          STORE_ARGS: ${{ steps.store.outputs.args }}
+          FORCE: ${{ inputs.force }}
+          ONLY: ${{ inputs.implementations }}
+        run: |
+          set -eu
+          set --
+          [ -n "$STORE_ARGS" ] && set -- "$@" --store store
+          [ "$FORCE" = true ] && set -- "$@" --force
+          [ -n "$ONLY" ] && set -- "$@" --only "$ONLY"
+          node cli/ci/plan.ts "$@" > plan.txt
+          head -1 plan.txt >> "$GITHUB_OUTPUT"
+          tail -n +2 plan.txt >> "$GITHUB_STEP_SUMMARY"
+
+  run:
+    needs: list
+    if: needs.list.outputs.implementations != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        implementation: ${{ fromJSON(needs.list.outputs.implementations) }}
+    uses: ./.github/workflows/run.yml
+    with:
+      implementation: ${{ matrix.implementation }}
+      kind: nightly
+      slow: true
+      suite_ref: ${{ github.sha }}
+
+  publish:
+    needs: run
+    # Publish whatever finished: one implementation's infrastructure failure
+    # mustn't hold back the others' results.
+    if: always() && needs.run.result != 'cancelled' && needs.run.result != 'skipped'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    # No concurrency group here: GitHub keeps one pending job per group and
+    # cancels the rest, which would drop results. publish-results.sh retries
+    # a push that loses a race instead.
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # No write token on disk or in the environment while dependencies
+      # install (least-privilege CI hardening). Pushes are allowed later, in
+      # their own step.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+
+      - run: bun install --frozen-lockfile --ignore-scripts
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/spec
+          key: spec-${{ hashFiles('spec/revisions.json') }}
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: results-*-${{ github.run_id }}-*
+          path: incoming
+          merge-multiple: true
+
+      - name: Allow pushes
+        env:
+          PUSH_TOKEN: ${{ secrets.CONFORMANCE_BOT_TOKEN || github.token }}
+        run: cli/ci/git-auth.sh
+
+      - name: Publish the results
+        id: publish
+        run: |
+          set -eu
+          set -- incoming/*.json
+          if [ ! -e "$1" ]; then
+            echo "::warning::no implementation produced results"
+            exit 0
+          fi
+          echo "any=true" >> "$GITHUB_OUTPUT"
+          cli/ci/publish-results.sh "nightly: $(date -u +%Y-%m-%d), $# run(s)" "$@"
+
+      - name: Open a prune PR
+        if: steps.publish.outputs.any == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CONFORMANCE_BOT_TOKEN || github.token }}
+        run: cli/ci/open-prune-pr.sh incoming/*.json

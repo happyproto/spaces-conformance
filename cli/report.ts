@@ -48,15 +48,21 @@ if (values.decision) {
   process.exit(0);
 }
 
-const cell = (s: string) => s.replace(/\r?\n/g, ' ').replace(/\|/g, '\\|').slice(0, 200);
+// Text the implementation's answers decide (messages, its source revision)
+// goes into issue and PR bodies only as inline code: backticks can't close
+// the span, an @ can't mention anyone, and a pipe can't break the table.
+const code = (s: string) =>
+  !s ? '' : `\`${s.replace(/\r?\n/g, ' ').replace(/`/g, "'").replace(/@/g, '@\u200b').replace(/\|/g, '\\|').slice(0, 200)}\``;
 const digest = (image: string) => image.split('@')[1] ?? image;
-const run = file.run.ci_url ? `[${file.run.id}](${file.run.ci_url})` : `\`${file.run.id}\``;
+// Only this repository's own Actions runs are linked.
+const ciUrl = file.run.ci_url && /^https:\/\/github\.com\/happyproto\/spaces-conformance\/actions\/runs\/\d+$/.test(file.run.ci_url) ? file.run.ci_url : null;
+const run = ciUrl ? `[${file.run.id}](${ciUrl})` : code(file.run.id);
 const messages = new Map(file.results.map((r) => [r.id, r.message ?? r.skip_reason ?? '']));
 const lines: string[] = [];
 const head = [
   `- Implementation: \`${file.implementation.id}\``,
   `- Image: \`${file.implementation.image}\``,
-  ...(file.implementation.source_revision ? [`- Source revision: \`${file.implementation.source_revision}\``] : []),
+  ...(file.implementation.source_revision ? [`- Source revision: ${code(file.implementation.source_revision)}`] : []),
   `- Spec revision: ${file.spec.revision} (proposal ${file.spec.proposal} at \`${file.spec.commit.slice(0, 10)}\`)`,
   `- Suite commit: \`${file.suite.commit}\``,
   `- Run: ${run}`,
@@ -77,7 +83,7 @@ if (values.body === 'pin') {
   lines.push(`The newest candidate image of \`${file.implementation.id}\` has results its deviation list doesn't expect, so its pin stays where it is.`, '');
   lines.push(...head, '', '| Assertion | Shown as | Message |', '|---|---|---|');
   for (const j of judged.filter((x) => x.gate === 'fail' && x.raw !== 'error'))
-    lines.push(`| \`${j.id}\` | ${j.display} | ${cell(j.changed ? `${messages.get(j.id)} (expected otherwise: ${j.changed})` : (messages.get(j.id) ?? ''))} |`);
+    lines.push(`| \`${j.id}\` | ${j.display} | ${code(j.changed ? `${messages.get(j.id)} (expected otherwise: ${j.changed})` : (messages.get(j.id) ?? ''))} |`);
   lines.push('', 'Each candidate run updates this issue. Close it when a candidate passes, or when the results are listed as deviations with a tracking issue.');
 } else {
   lines.push(`### ${file.implementation.id} at ${file.spec.revision}`, '', ...head, '', ...scoreTable, '', `${unexpected} unexpected, ${errors} error(s), ${warnings} warning(s)`);
