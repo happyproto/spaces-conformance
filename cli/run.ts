@@ -179,6 +179,13 @@ if (deviations) {
 const fp = values.suites ? undefined : scenarioFingerprint(impl, { image: values.image, revision, slow: values.slow! });
 if (fp) console.log(`fingerprint: ${fp.digest}`);
 
+// Create results-local (and the log directory) on the host before the stack
+// starts. The harness container writes into this bind mount as root; if it
+// creates the directory first, the host can't make results-local/logs or
+// write final-path afterwards (EACCES), and a graded run is lost.
+mkdirSync(join(ROOT, 'results-local'), { recursive: true });
+if (values.logs) mkdirSync(values.logs, { recursive: true });
+
 type Outcome =
   | { kind: 'results'; runId: string; out: string; file: any }
   | { kind: 'infrastructure'; runId: string; step: string };
