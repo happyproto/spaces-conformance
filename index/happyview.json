@@ -3,6 +3,25 @@
   "implementation": "happyview",
   "runs": [
     {
+      "id": "2026-11-24T07-05-25Z-happyview-25f1",
+      "path": "runs/happyview/2026/11/2026-11-24T07-05-25Z-happyview-25f1.json",
+      "kind": "nightly",
+      "started_at": "2026-11-24T07:05:25.167Z",
+      "finished_at": "2026-11-24T07:21:13.570Z",
+      "revision": "2026-10-29",
+      "image": "ghcr.io/gamesgamesgamesgamesgames/happyview@sha256:e8d08cd61d3ecd700f7aad4da795b65b144d83b0ca6541db1f20fe7241adb73d",
+      "suite_commit": "c7ba03e848",
+      "slow": true,
+      "ci_url": "https://github.com/happyproto/spaces-conformance/actions/runs/45345222501",
+      "fingerprint": "sha256:4b7ebc1bc53b4188255d95487536ef3d69ab63091ad27c542d3c189a062ba5da",
+      "counts": {
+        "pass": 11,
+        "fail": 23,
+        "error": 0,
+        "skip": 14
+      }
+    },
+    {
       "id": "2026-11-24T05-15-03Z-happyview-afdf",
       "path": "runs/happyview/2026/11/2026-11-24T05-15-03Z-happyview-afdf.json",
       "kind": "nightly",

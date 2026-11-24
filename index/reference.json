@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "implementation": "reference",
+  "runs": [
+    {
+      "id": "2026-11-24T07-05-17Z-reference-e3dd",
+      "path": "runs/reference/2026/11/2026-11-24T07-05-17Z-reference-e3dd.json",
+      "kind": "nightly",
+      "started_at": "2026-11-24T07:05:17.174Z",
+      "finished_at": "2026-11-24T07:27:24.423Z",
+      "revision": "2026-11-12",
+      "image": "ghcr.io/happyproto/pds-test/pds-spaces-alpha@sha256:1b3113b40eac2581b8f928bcec8840c8a0912c3a3d90bf3b965a775f8a97067a",
+      "suite_commit": "c7ba03e848",
+      "slow": true,
+      "ci_url": "https://github.com/happyproto/spaces-conformance/actions/runs/45345222501",
+      "fingerprint": "sha256:29ce92a342f1f389ecc46fb1afba78d30dd09db92d69df3643e37e01d82eec1d",
+      "counts": {
+        "pass": 47,
+        "fail": 0,
+        "error": 0,
+        "skip": 1
+      }
+    }
+  ]
+}
