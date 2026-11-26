@@ -7,6 +7,7 @@
 // read back as the policy.
 
 import { assertion, fail } from '../../harness/assert.ts';
+import { sameSpace } from '../../harness/actors/space-sync.ts';
 import type { RunContext } from '../../harness/context.ts';
 import { memberAccount, ownerSpace, SPACE_TYPE, settled, xrpcUrl } from '../fixtures.ts';
 
@@ -22,7 +23,9 @@ assertion('policy.create-get-roundtrip', async (ctx) => {
   const evidence = { status: r.status, body: JSON.stringify(r.body).slice(0, 1500) };
   if (r.status !== 200) fail(`space.getSpace answered ${r.status}`, evidence);
   const field = settled(ctx) ? 'space' : 'uri';
-  if (r.body[field] !== space) fail(`getSpace's ${field} is ${r.body[field]}, not the created space`, evidence);
+  // The Oct 29 text names a space only in the at:// form; a host may answer
+  // `uri` in it while `space` uses at:space/ (proposals#146).
+  if (!sameSpace(r.body[field], space)) fail(`getSpace's ${field} is ${r.body[field]}, not the created space`, evidence);
   const got = r.body.policy;
   if (!got || typeof got !== 'object') fail('getSpace returned no policy object', evidence);
   for (const [k, v] of Object.entries(POLICY)) if (JSON.stringify(got[k]) !== JSON.stringify(v)) fail(`policy.${k} is ${JSON.stringify(got[k])}, not ${JSON.stringify(v)}`, evidence);

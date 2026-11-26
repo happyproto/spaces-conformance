@@ -8,7 +8,23 @@
       "assertions_digest": "sha256:1c3979b0f6ece44b2c5ea433aa16a3bb1aaab5772fe18d558a3c8cb7494cb5c5",
       "image": "ghcr.io/happyproto/pds-test/zds@sha256:2ec90ddaf8a94618a9654e010586ec503d0dd7c3ec23c9a8646e3b28ad2a998f",
       "revision": "2026-11-12",
-      "slow": true
+      "slow": true,
+      "stale_passes": [
+        "deletion.credential-error",
+        "deletion.notify-retry",
+        "deletion.notify-space-deleted",
+        "policy.create-get-roundtrip",
+        "policy.member-methods",
+        "policy.put-member-upsert",
+        "writers.list-repos",
+        "writers.list-repos-since-space-rev",
+        "writers.notify-write-forwarded",
+        "writers.notify-write-sent",
+        "writers.register-expiry",
+        "writers.remove-writer",
+        "writers.removed-writer-retracked",
+        "xrpc.error.SpaceDeleted"
+      ]
     },
     {
       "file": "test/fixtures/results/parity-atproto-pds-2026-11-13.json",
@@ -18,7 +34,21 @@
       "assertions_digest": "sha256:1c3979b0f6ece44b2c5ea433aa16a3bb1aaab5772fe18d558a3c8cb7494cb5c5",
       "image": "ghcr.io/happyproto/pds-test/atproto-pds@sha256:0fe098d36c7fd8beedcdc3f68f4f8431eb4571cdf764599ee42520b22fa07a5f",
       "revision": "2026-10-29",
-      "slow": true
+      "slow": true,
+      "stale_passes": [
+        "deletion.notify-retry",
+        "deletion.notify-space-deleted",
+        "policy.create-get-roundtrip",
+        "policy.member-methods",
+        "policy.put-member-upsert",
+        "writers.list-repos",
+        "writers.list-repos-since-space-rev",
+        "writers.notify-write-forwarded",
+        "writers.notify-write-sent",
+        "writers.register-expiry",
+        "writers.remove-writer",
+        "writers.removed-writer-retracked"
+      ]
     },
     {
       "file": "test/fixtures/results/parity-pdsjs-2026-11-13.json",
@@ -28,7 +58,14 @@
       "assertions_digest": "sha256:1c3979b0f6ece44b2c5ea433aa16a3bb1aaab5772fe18d558a3c8cb7494cb5c5",
       "image": "ghcr.io/happyproto/pds-test/pdsjs@sha256:37c16c3499b54b799399118a24154d64e5397ea93a2b4da74c182f133f9e1bca",
       "revision": "2026-10-29",
-      "slow": true
+      "slow": true,
+      "stale_passes": [
+        "writers.list-repos",
+        "writers.list-repos-since-space-rev",
+        "writers.notify-write-forwarded",
+        "writers.notify-write-sent",
+        "writers.register-expiry"
+      ]
     },
     {
       "file": "test/fixtures/results/parity-reference-2026-11-13.json",
@@ -38,7 +75,23 @@
       "assertions_digest": "sha256:1c3979b0f6ece44b2c5ea433aa16a3bb1aaab5772fe18d558a3c8cb7494cb5c5",
       "image": "ghcr.io/happyproto/pds-test/pds-spaces-alpha@sha256:1b3113b40eac2581b8f928bcec8840c8a0912c3a3d90bf3b965a775f8a97067a",
       "revision": "2026-11-12",
-      "slow": true
+      "slow": true,
+      "stale_passes": [
+        "deletion.credential-error",
+        "deletion.notify-retry",
+        "deletion.notify-space-deleted",
+        "policy.create-get-roundtrip",
+        "policy.member-methods",
+        "policy.put-member-upsert",
+        "writers.list-repos",
+        "writers.list-repos-since-space-rev",
+        "writers.notify-write-forwarded",
+        "writers.notify-write-sent",
+        "writers.register-expiry",
+        "writers.remove-writer",
+        "writers.removed-writer-retracked",
+        "xrpc.error.SpaceDeleted"
+      ]
     },
     {
       "file": "test/fixtures/results/happyview-2026-11-20.json",
@@ -48,7 +101,12 @@
       "assertions_digest": "sha256:614cfcb91b22abedb05679b4769d019ec38e1c501c157ad7bdd83db1130b7f93",
       "image": "ghcr.io/gamesgamesgamesgamesgames/happyview@sha256:e8d08cd61d3ecd700f7aad4da795b65b144d83b0ca6541db1f20fe7241adb73d",
       "revision": "2026-10-29",
-      "slow": true
+      "slow": true,
+      "stale_passes": [
+        "deletion.notify-space-deleted",
+        "policy.create-get-roundtrip",
+        "writers.notify-write-forwarded"
+      ]
     }
   ],
   "excluded": [
@@ -102,13 +160,6 @@
       "cred.revoked-jti-rejected": [
         "atproto-pds",
         "pdsjs"
-      ],
-      "deletion.notify-retry": [
-        "atproto-pds"
-      ],
-      "deletion.notify-space-deleted": [
-        "atproto-pds",
-        "happyview"
       ],
       "digest.cid-drisl-plain": [
         "atproto-pds",
@@ -192,16 +243,6 @@
         "atproto-pds",
         "pdsjs"
       ],
-      "policy.create-get-roundtrip": [
-        "atproto-pds",
-        "happyview"
-      ],
-      "policy.member-methods": [
-        "atproto-pds"
-      ],
-      "policy.put-member-upsert": [
-        "atproto-pds"
-      ],
       "records.apply-writes-atomic": [
         "atproto-pds",
         "pdsjs"
@@ -226,33 +267,6 @@
         "atproto-pds",
         "happyview",
         "pdsjs"
-      ],
-      "writers.list-repos": [
-        "atproto-pds",
-        "pdsjs"
-      ],
-      "writers.list-repos-since-space-rev": [
-        "atproto-pds",
-        "pdsjs"
-      ],
-      "writers.notify-write-forwarded": [
-        "atproto-pds",
-        "happyview",
-        "pdsjs"
-      ],
-      "writers.notify-write-sent": [
-        "atproto-pds",
-        "pdsjs"
-      ],
-      "writers.register-expiry": [
-        "atproto-pds",
-        "pdsjs"
-      ],
-      "writers.remove-writer": [
-        "atproto-pds"
-      ],
-      "writers.removed-writer-retracked": [
-        "atproto-pds"
       ]
     },
     "2026-11-12": {
@@ -265,18 +279,6 @@
         "zds"
       ],
       "cred.revoked-jti-rejected": [
-        "reference",
-        "zds"
-      ],
-      "deletion.credential-error": [
-        "reference",
-        "zds"
-      ],
-      "deletion.notify-retry": [
-        "reference",
-        "zds"
-      ],
-      "deletion.notify-space-deleted": [
         "reference",
         "zds"
       ],
@@ -376,18 +378,6 @@
         "reference",
         "zds"
       ],
-      "policy.create-get-roundtrip": [
-        "reference",
-        "zds"
-      ],
-      "policy.member-methods": [
-        "reference",
-        "zds"
-      ],
-      "policy.put-member-upsert": [
-        "reference",
-        "zds"
-      ],
       "records.apply-writes-atomic": [
         "reference",
         "zds"
@@ -409,38 +399,6 @@
         "zds"
       ],
       "records.read-requires-auth": [
-        "reference",
-        "zds"
-      ],
-      "writers.list-repos": [
-        "reference",
-        "zds"
-      ],
-      "writers.list-repos-since-space-rev": [
-        "reference",
-        "zds"
-      ],
-      "writers.notify-write-forwarded": [
-        "reference",
-        "zds"
-      ],
-      "writers.notify-write-sent": [
-        "reference",
-        "zds"
-      ],
-      "writers.register-expiry": [
-        "reference",
-        "zds"
-      ],
-      "writers.remove-writer": [
-        "reference",
-        "zds"
-      ],
-      "writers.removed-writer-retracked": [
-        "reference",
-        "zds"
-      ],
-      "xrpc.error.SpaceDeleted": [
         "reference",
         "zds"
       ]

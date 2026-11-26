@@ -22,6 +22,7 @@ import { ownerSpace, settled, slow, SLOW_PENDING, xrpcUrl } from '../fixtures.ts
 import { freshRepo } from '../repo.ts';
 import { delegationToken, requestCredential } from '../credentials/delegation-token.ts';
 import { credentialed, publicSpace, received, setupOk, useReceiver } from '../sync.ts';
+import { sameSpace } from '../../harness/actors/space-sync.ts';
 
 const receiver = useReceiver();
 
@@ -65,7 +66,7 @@ assertion('xrpc.error.SpaceDeleted', async (ctx) => {
 
 /** A deletion notice for `space` (to `token`, at 2026-11-12). */
 const deletionNotice = (ctx: RunContext, space: string, token?: string) => (e: Received) =>
-  e.input.space === space &&
+  sameSpace(e.input.space, space) &&
   (settled(ctx)
     ? e.method === 'com.atproto.space.notifySpaceUpdate' && e.input.token === token && String((e.input.update as Record<string, unknown>)?.$type ?? '').endsWith('#spaceDeleted')
     : e.method === 'com.atproto.space.notifySpaceDeleted');
@@ -96,7 +97,7 @@ assertion(
     const active = await credentialed(repo, { receiver: rx, register: true });
     setupOk('deleteSpace', await deleteSpace(repo));
     const [notice] = await received(rx, from, deletionNotice(ctx, repo.space, active.token), 1);
-    const seen = rx.since(from, (e) => e.input.space === repo.space && e.method !== 'com.atproto.space.confirmRegistration');
+    const seen = rx.since(from, (e) => sameSpace(e.input.space, repo.space) && e.method !== 'com.atproto.space.confirmRegistration');
     const evidence = { ...active.answers, received: JSON.stringify(seen.map((e) => ({ method: e.method, input: { ...e.input, token: e.input.token === active.token ? 'active' : e.input.token === lapsing?.token ? 'lapsed' : e.input.token } }))).slice(0, 1500) };
     const what = settled(ctx) ? 'a notifySpaceUpdate with #spaceDeleted' : 'notifySpaceDeleted';
     if (!notice) fail(`the registered syncer got no ${what} within 20 s of deleteSpace`, evidence);

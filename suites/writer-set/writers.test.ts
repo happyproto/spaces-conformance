@@ -16,7 +16,7 @@
 import { assertion, fail, pending } from '../../harness/assert.ts';
 import { SYNCER_SERVICE } from '../../harness/actors/identity.ts';
 import type { Received } from '../../harness/actors/receiver.ts';
-import { latestByRepo, type Writer, type WriterSet } from '../../harness/actors/space-sync.ts';
+import { latestByRepo, sameSpace, type Writer, type WriterSet } from '../../harness/actors/space-sync.ts';
 import type { RunContext } from '../../harness/context.ts';
 import type { Account } from '../../harness/adapter.ts';
 import { memberAccount, ownerSpace, settled, slow, SLOW_PENDING, SPACE_TYPE, xrpcUrl } from '../fixtures.ts';
@@ -37,7 +37,7 @@ const FORWARDED = 'com.atproto.space.notifyWrite';
 /** A notification to the harness as a registered syncer, about a write to `repo` (both revisions). */
 function writeNotice(ctx: RunContext, space: string, token: string | undefined, repo?: string) {
   return (e: Received) => {
-    if (e.input.space !== space) return false;
+    if (!sameSpace(e.input.space, space)) return false;
     if (settled(ctx)) {
       const u = e.input.update as Record<string, unknown> | undefined;
       return e.method === UPDATE && e.input.token === token && String(u?.$type ?? '').endsWith('#repoWrite') && (!repo || u?.repo === repo);
@@ -77,9 +77,9 @@ assertion('writers.notify-write-sent', async (ctx) => {
   const from = rx.mark();
   const commit = await write(ctx, owner, space, 'sent');
   const method = settled(ctx) ? 'com.atproto.space.notifyRepoUpdate' : 'com.atproto.space.notifyWrite';
-  const about = (e: Received) => e.method === method && e.input.space === space && e.input.repo === owner.did;
+  const about = (e: Received) => e.method === method && sameSpace(e.input.space, space) && e.input.repo === owner.did;
   const [e] = await received(rx, from, (x) => about(x) && x.input.repoRev === commit.rev, 1);
-  const seen = rx.since(from, (x) => x.input.space === space);
+  const seen = rx.since(from, (x) => sameSpace(x.input.space, space));
   const evidence = {
     authority: authority.did,
     commit: JSON.stringify(commit),
@@ -156,7 +156,7 @@ async function registerExpiryG2(ctx: RunContext, repo: Repo) {
   const evidence = { authorize: short(r), confirms: JSON.stringify(confirms.map((e) => e.input)).slice(0, 600) };
   if (!confirms.length) fail('the space host registered the endpoint without calling confirmRegistration', evidence);
   const c = confirms[0];
-  if (c.input.space !== space || typeof c.input.challenge !== 'string' || !c.input.challenge) fail('confirmRegistration did not carry the space and a challenge', evidence);
+  if (!sameSpace(c.input.space, space) || typeof c.input.challenge !== 'string' || !c.input.challenge) fail('confirmRegistration did not carry the space and a challenge', evidence);
   // The registration is live: a write notifies.
   await write(ctx, owner, space, 'live');
   if (!(await received(rx, from, writeNotice(ctx, space, token), 1)).length) fail('the confirmed registration got no notifySpaceUpdate for a write', evidence);
@@ -177,7 +177,7 @@ async function registerExpiryG2(ctx: RunContext, repo: Repo) {
   await new Promise((res) => setTimeout(res, wait));
   const lapsed = rx.mark();
   await write(ctx, owner, space, 'lapsed-1');
-  const forToken = (e: Received) => e.method === UPDATE && e.input.space === space && e.input.token === token;
+  const forToken = (e: Received) => e.method === UPDATE && sameSpace(e.input.space, space) && e.input.token === token;
   const first = await received(rx, lapsed, forToken, 1);
   const kind = (e: Received) => String((e.input.update as Record<string, unknown>)?.$type ?? '');
   const ev2 = { ...evidence, after_expiry: JSON.stringify(first.map((e) => e.input.update)).slice(0, 600) };

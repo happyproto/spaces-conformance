@@ -9,13 +9,14 @@ import { didKey, generate, type KeyPair } from '../../harness/crypto/keys.ts';
 import { signJwt } from '../../harness/crypto/jwt.ts';
 import { http, json } from '../../harness/http.ts';
 import { randomBytes } from 'node:crypto';
+import { authorityOf } from '../../harness/actors/space-sync.ts';
 import { settled, xrpcUrl } from '../fixtures.ts';
 
 const TYP = 'atproto-space-delegation+jwt';
 
 /** A delegation token for `owner` on `space`; `header` replaces the default kid. */
 export function delegationToken(owner: Account, space: string, key: KeyPair, header: Record<string, unknown> = { kid: '#atproto' }): string {
-  const spaceDid = space.slice('at://'.length).split('/')[0];
+  const spaceDid = authorityOf(space);
   const iat = Math.floor(Date.now() / 1000);
   return signJwt(
     { typ: TYP, ...header },
