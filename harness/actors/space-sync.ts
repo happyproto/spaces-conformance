@@ -22,8 +22,23 @@ import { HARNESS_URL, SYNCER_SERVICE } from './identity.ts';
 
 export const NOTIFY_ENDPOINT = HARNESS_URL;
 
-/** The authority DID of a space URI. */
-export const authorityOf = (space: string) => space.slice('at://'.length).split('/')[0];
+/**
+ * The authority DID of a space URI, in either form: `at:space/<did>/...`
+ * (proposals#146) or `at://<did>/space/...`.
+ */
+export const authorityOf = (space: string) =>
+  (space.startsWith('at:space/') ? space.slice('at:space/'.length) : space.slice('at://'.length)).split('/')[0];
+
+/** A space URI in the `at://<did>/space/...` form, whichever form it was written in. */
+export const legacySpaceUri = (space: string) => {
+  if (!space.startsWith('at:space/')) return space;
+  const [did, ...rest] = space.slice('at:space/'.length).split('/');
+  return `at://${did}/space/${rest.join('/')}`;
+};
+
+/** Whether two space URIs name the same space, in either form. */
+export const sameSpace = (a: unknown, b: unknown) =>
+  typeof a === 'string' && typeof b === 'string' && legacySpaceUri(a) === legacySpaceUri(b);
 
 /** One writer-set entry, the same shape at both revisions. */
 export interface Writer {

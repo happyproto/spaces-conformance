@@ -5,7 +5,7 @@ import { HARNESS_DID, MANAGING_APP_SERVICE, Resolver, SYNCER_SERVICE, verifyServ
 import type { DidDocument, Plc } from '../harness/actors/plc.ts';
 import { authorityKey, ForeignAuthority } from '../harness/actors/authority.ts';
 import { Receiver } from '../harness/actors/receiver.ts';
-import { latestByRepo, SpaceSync } from '../harness/actors/space-sync.ts';
+import { authorityOf, latestByRepo, legacySpaceUri, sameSpace, SpaceSync } from '../harness/actors/space-sync.ts';
 import { verifyPresentation } from '../harness/crypto/httpsig.ts';
 import { checkCommitMac, checkCommitMacSig, checkRecordMacSig, Syncer } from '../harness/actors/syncer.ts';
 import { b64, hex } from '../harness/crypto/bytes.ts';
@@ -429,5 +429,24 @@ describe('the credentialed syncer', () => {
     const ws = await s.writers();
     expect(ws.runaway).toMatch(/twice/);
     expect(ws.writers[0]).toEqual({ repo: 'did:plc:a', present: true, repoRev: 'r1', data: 'AQ', spaceRev: 's1' });
+  });
+});
+
+describe('space URIs in either form', () => {
+  const legacy = 'at://did:plc:abc/space/com.example.space/main';
+  const current = 'at:space/did:plc:abc/com.example.space/main';
+
+  it('reads the authority from either form', () => {
+    expect(authorityOf(legacy)).toBe('did:plc:abc');
+    expect(authorityOf(current)).toBe('did:plc:abc');
+  });
+
+  it('treats both forms as the same space', () => {
+    expect(legacySpaceUri(current)).toBe(legacy);
+    expect(legacySpaceUri(legacy)).toBe(legacy);
+    expect(sameSpace(current, legacy)).toBe(true);
+    expect(sameSpace(current, current)).toBe(true);
+    expect(sameSpace(current, 'at:space/did:plc:abc/com.example.space/other')).toBe(false);
+    expect(sameSpace(undefined, legacy)).toBe(false);
   });
 });
