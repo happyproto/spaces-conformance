@@ -3,6 +3,25 @@
   "implementation": "zds",
   "runs": [
     {
+      "id": "2026-11-27T13-55-45Z-zds-cd1c",
+      "path": "runs/zds/2026/11/2026-11-27T13-55-45Z-zds-cd1c.json",
+      "kind": "nightly",
+      "started_at": "2026-11-27T13:55:45.411Z",
+      "finished_at": "2026-11-27T14:18:00.799Z",
+      "revision": "2026-11-12",
+      "image": "ghcr.io/happyproto/pds-test/zds@sha256:2ec90ddaf8a94618a9654e010586ec503d0dd7c3ec23c9a8646e3b28ad2a998f",
+      "suite_commit": "2e9ed7cf7f",
+      "slow": true,
+      "ci_url": "https://github.com/happyproto/spaces-conformance/actions/runs/46011257892",
+      "fingerprint": "sha256:c4f986c0d677cc476b69061168ec02f737bd81212943cfa7d3b2bcc127ef4efd",
+      "counts": {
+        "pass": 47,
+        "fail": 0,
+        "error": 0,
+        "skip": 1
+      }
+    },
+    {
       "id": "2026-11-24T07-28-34Z-zds-b488",
       "path": "runs/zds/2026/11/2026-11-24T07-28-34Z-zds-b488.json",
       "kind": "nightly",

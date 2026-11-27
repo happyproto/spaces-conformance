@@ -3,6 +3,25 @@
   "implementation": "pdsjs",
   "runs": [
     {
+      "id": "2026-11-27T13-55-42Z-pdsjs-8ca9",
+      "path": "runs/pdsjs/2026/11/2026-11-27T13-55-42Z-pdsjs-8ca9.json",
+      "kind": "nightly",
+      "started_at": "2026-11-27T13:55:42.935Z",
+      "finished_at": "2026-11-27T13:56:28.965Z",
+      "revision": "2026-10-29",
+      "image": "ghcr.io/happyproto/pds-test/pdsjs@sha256:37c16c3499b54b799399118a24154d64e5397ea93a2b4da74c182f133f9e1bca",
+      "suite_commit": "2e9ed7cf7f",
+      "slow": true,
+      "ci_url": "https://github.com/happyproto/spaces-conformance/actions/runs/46011257892",
+      "fingerprint": "sha256:9d8fea81e1ab7538f3eeac77dcdbba84cbe6cd9da49db307fdfd3115c44e65f1",
+      "counts": {
+        "pass": 31,
+        "fail": 8,
+        "error": 0,
+        "skip": 9
+      }
+    },
+    {
       "id": "2026-11-24T07-28-42Z-pdsjs-6881",
       "path": "runs/pdsjs/2026/11/2026-11-24T07-28-42Z-pdsjs-6881.json",
       "kind": "nightly",

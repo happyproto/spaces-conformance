@@ -3,6 +3,25 @@
   "implementation": "atproto-pds",
   "runs": [
     {
+      "id": "2026-11-27T13-55-32Z-atproto-pds-d7b7",
+      "path": "runs/atproto-pds/2026/11/2026-11-27T13-55-32Z-atproto-pds-d7b7.json",
+      "kind": "nightly",
+      "started_at": "2026-11-27T13:55:32.862Z",
+      "finished_at": "2026-11-27T13:57:03.343Z",
+      "revision": "2026-10-29",
+      "image": "ghcr.io/happyproto/pds-test/atproto-pds@sha256:0fe098d36c7fd8beedcdc3f68f4f8431eb4571cdf764599ee42520b22fa07a5f",
+      "suite_commit": "2e9ed7cf7f",
+      "slow": true,
+      "ci_url": "https://github.com/happyproto/spaces-conformance/actions/runs/46011257892",
+      "fingerprint": "sha256:49ed480bf7d278f0fbacd0c3d5cd02910144672fe12ec1dee2f31ac7b9cab633",
+      "counts": {
+        "pass": 41,
+        "fail": 0,
+        "error": 0,
+        "skip": 7
+      }
+    },
+    {
       "id": "2026-11-24T07-28-40Z-atproto-pds-a1e7",
       "path": "runs/atproto-pds/2026/11/2026-11-24T07-28-40Z-atproto-pds-a1e7.json",
       "kind": "nightly",
